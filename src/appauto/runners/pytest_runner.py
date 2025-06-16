@@ -17,6 +17,7 @@ class PytestRunner:
         no_report: bool = False,
         testpaths: str = None,
         task_id: str = None,
+        keyword: str = None,
     ):
         self.log_level = log_level
         self.notify_group = notify_group
@@ -31,6 +32,7 @@ class PytestRunner:
         self.json_report_file = (
             f"{self.timestamp}_{self.task_id}.json" if self.task_id else f"reports/json-report/{self.timestamp}.json"
         )
+        self.keyword = keyword
 
     def run(self) -> int:
         """运行 pytest 命令"""
@@ -47,6 +49,7 @@ class PytestRunner:
             f"--testpaths={self.testpaths}",
             "--json-report",
             f"--json-report-file={self.json_report_file}",
+            f"-k {self.keyword}" if self.keyword else "",
         ]
         logger.info(f"Running pytest cmd: {' '.join(cmd)}")
 

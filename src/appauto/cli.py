@@ -30,8 +30,9 @@ def cli():
 @click.option("--repeat", default=1, help="Delay in seconds between test cases. (Default: 0)")
 @click.option("--loglevel", default="INFO", help="Log Level")
 @click.option("--no-report", is_flag=True, help="Don't generate allure report (Default: False)")
+@click.option("--keyword", default=None, help="Keyword (Default: None)")
 @click.pass_context
-def run(ctx, mode, testpaths, loglevel, notify_group, notify_user, interval, repeat, no_report):
+def run(ctx, mode, testpaths, loglevel, notify_group, notify_user, interval, repeat, no_report, keyword):
     """运行测试(pytest / ui)"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -56,7 +57,9 @@ def run(ctx, mode, testpaths, loglevel, notify_group, notify_user, interval, rep
         PytestConfig(timestamp, test_dir, log_level=loglevel, no_report=no_report).config_pytest_ini()
 
         # 运行 pytest
-        runner = PytestRunner(timestamp, loglevel, notify_group, notify_user, repeat, interval, no_report, testpaths)
+        runner = PytestRunner(
+            timestamp, loglevel, notify_group, notify_user, repeat, interval, no_report, testpaths, keyword=keyword
+        )
         return_code = runner.run()
         if return_code != 0:
             raise click.ClickException(f"Tests failed with return code {return_code}")
