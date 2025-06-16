@@ -15,13 +15,14 @@ class AllureReport(object):
         folder = folder.rstrip("/") if folder.endswith("/") else folder
         logger.info(f"folder: {folder}")
 
-        report_dir = f"reports/allure-report/{folder}/{allure_tmp_folder_time_stamp}"
+        report_dir = f"reports/allure-results/{folder}/{allure_tmp_folder_time_stamp}"
 
         tmp_folder = f"reports/tmp/{allure_tmp_folder_time_stamp}"
         cmd = f"mv environment.properties.{allure_tmp_folder_time_stamp} {tmp_folder}/environment.properties"
         os.system(cmd)
 
         cmd = f"allure generate {tmp_folder} -o {report_dir} --clean"
+        logger.info(cmd)
         os.system(cmd)
 
         # os.system(f"rm -rf {tmp_folder}") # TODO 考虑是否需要立即删除临时路径。（后续 jenkins 中 allure 报告）
