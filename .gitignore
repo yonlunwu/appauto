@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+.pytest_cache
+logging.ini
+pytest.ini
+test_data.ini
+reports/*
+
+# log
+*.log
+*.log.*
+
+# Environments
+*venv*
+environment*
+
+__pycache__
+__pycache__/
+
+test.py
+*vscode*
+
+smtxauto.yaml
+smtxautodata.*
+smtxautodefault.*
+
+# *.pyc
+*.pyc
+
+nohup.out*
+
+test-results/
+test-results.*
+
+tests
+tests/

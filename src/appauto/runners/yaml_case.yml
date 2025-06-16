@@ -1,0 +1,18 @@
+TEST_CASE:
+  - name: xxx
+  - steps: # 一个用例可能有多个步骤, 每个步骤即一个请求, 每个请求都需要有自己的 request 和 response
+    - request: # request 可能包含这些字段
+      - url: xxx # 必填
+      - method: xxx # 必填
+      - json: xxx # 选填
+      - params: xxx # 选填
+    - response: 
+      - rc: 200 # 是否必须校验？
+      - data: {} # 对 data 的校验需要做到：支持判断必须有某个字段或没有某个字段，某个字段的返回必须是什么类型，某个字段的返回值必须是多少等等
+    - request:
+      - url: xxx
+      - method: xxx
+      - json: xxx
+    - response:
+      - rc: 200
+      - data: {}

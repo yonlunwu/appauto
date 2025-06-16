@@ -1,0 +1,31 @@
+ip: 1.1.1.3
+debug: false
+port: 10003
+worker_name: worker sapphire 2
+supervisor:
+  ip: 127.0.0.1
+  port: 10002
+  token: 1password
+ftransformers:
+  mem_fraction_static: 0.85
+ktransformers:
+  python_path: /home/qujing/anaconda3/envs/ktransformers-para/bin/python
+  conda_path: /mnt/data/miniconda3/envs/ktransformers-para
+  repo_path: /home/zkyd/linchen/ktransformers-dev
+  use_amx: true
+  cpu_infer: 90
+  ktrans_cache_lens: 131072
+  max_new_tokens: 8192
+  force_think: true
+  health_check_time: 300
+vox-box:
+  python_path: /mnt/data/anaconda3/envs/vox-box/bin/vox-box
+yanlong:
+  data:
+  - Ruby: ruby-lang.org
+  - Python: python.org
+  - Perl: use.perl.org
+  - C++:
+    - cpp1: 1
+    - cpp2: 2
+    - cpp3: 3

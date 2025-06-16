@@ -1,0 +1,95 @@
+[project]
+name = "appauto"
+version = "0.1.1"
+description = "Default template for PDM package"
+authors = [
+    { name = "yanlong.wu", email = "yanlong.wu@approaching.ai" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1",
+    "pytest",
+    "playwright",
+    "httpx",
+    "tenacity",
+    "paramiko",
+    "addict",
+    "jmespath",
+    "ping3",
+    "pytest-repeat",
+    "allure-pytest",
+    "pytest-json-report>=1.5.0",
+    "pyyaml>=6.0.2",
+    "jinja2>=3.1.6",
+]
+license = {text = "MIT"}
+
+[project.scripts]
+appauto = "appauto.cli:cli"
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["appauto"]
+
+[tool.pdm]
+distribution = true
+
+[dependency-groups]
+dev = [
+    "flake8>=7.2.0",
+    "black>=25.1.0",
+]
+
+[tool.black]
+line-length = 120
+target-version = ["py38"]
+exclude = '''
+/(
+  \.eggs
+  |\.git
+  |\.hg
+  |\.mypy_cache
+  |\.tox
+  |\.venv
+  |_build
+  |buck-out
+  |build
+  |dist
+  |venv
+  |version.py
+)/
+'''
+ 
+
+[tool.flake8]
+max-line-length = 120
+ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D107", "D202", "E203", "E231", "W293", "C408"]
+select = ["E", "F", "W", "C901"]
+import-order-style = "google"
+per-file-ignores = [
+    "*/tests/*:D",
+    "*/__init__.py:F401"
+]
+exclude = [
+    ".git", "__pycache__", ".mypy_cache", ".tox", ".venv",
+    "build", "dist", "venv", "version.py",
+    "docs/jupyter_execute/*", "*/build", "*/tests/*"
+]
+
+jobs = 2
+ 
+[tool.pdm.scripts]
+
+check = {composite = [
+    "black . -l 120",
+    "flake8 . --max-line-length=120",
+]}
+
+format = {composite = [
+    "black . -l 120"
+]}
