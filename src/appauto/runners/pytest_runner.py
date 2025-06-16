@@ -49,7 +49,7 @@ class PytestRunner:
             f"--testpaths={self.testpaths}",
             "--json-report",
             f"--json-report-file={self.json_report_file}",
-            f"-k {self.keyword}" if self.keyword else "",
+            f"-k {self.keyword}" if self.keyword else "", # TODO bugfix
         ]
         logger.info(f"Running pytest cmd: {' '.join(cmd)}")
 
