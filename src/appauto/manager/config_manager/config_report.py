@@ -17,7 +17,8 @@ class AllureReport(object):
 
         report_dir = f"reports/allure-results/{folder}/{allure_tmp_folder_time_stamp}"
 
-        tmp_folder = f"reports/tmp/allure-results/{allure_tmp_folder_time_stamp}"
+        # tmp_folder = f"reports/tmp/allure-results/{allure_tmp_folder_time_stamp}"
+        tmp_folder = f"allure-results/{allure_tmp_folder_time_stamp}"
         cmd = f"mv environment.properties.{allure_tmp_folder_time_stamp} {tmp_folder}/environment.properties"
         os.system(cmd)
 
