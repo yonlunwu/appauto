@@ -20,9 +20,9 @@ __pycache__/
 test.py
 *vscode*
 
-smtxauto.yaml
-smtxautodata.*
-smtxautodefault.*
+*auto.yaml
+*autodata.*
+*autodefault.*
 
 # *.pyc
 *.pyc
@@ -34,3 +34,5 @@ test-results.*
 
 tests
 tests/
+
+*appauto.egg-info
