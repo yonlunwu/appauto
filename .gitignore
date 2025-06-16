@@ -36,3 +36,5 @@ tests
 tests/
 
 *appauto.egg-info
+
+allure-results
