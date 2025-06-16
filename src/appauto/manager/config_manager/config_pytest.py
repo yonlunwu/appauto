@@ -66,7 +66,7 @@ markers =
             updates["log_level"] = self.log_level
 
         if not self.no_report:
-            updates["addopts"] = cur_cfg["addopts"] + f" --alluredir=./reports/tmp/{self.timestamp} --clean-alluredir"
+            updates["addopts"] = cur_cfg["addopts"] + f" --alluredir=./reports/tmp/allure-results/{self.timestamp} --clean-alluredir"
 
         # 如果有需要更新的配置，则更新
         if updates:
