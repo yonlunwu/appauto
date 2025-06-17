@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Download Source Code') {
             steps {
-                sh 'sudo rm -rf appauto_demo; git clone git@github.com:yonlunwu/appauto_demo.git'
+                sh "sudo rm -rf appauto_demo; git clone -b ${git_branch} ${git_url}"
                 dir('./appauto_demo') {
                     sh 'sudo apt install python3-pip'
                     sh 'sudo python -m pip install --upgrade pip'
@@ -27,7 +27,7 @@ pipeline {
 
                     dir('./appauto_demo') {
                         sh 'sudo pip install -e . --break-system-packages'
-                        sh "appauto run pytest --testpaths ${testpaths}  --notify_user ${notify_user_id} --keyword test"
+                        sh "appauto run pytest --testpaths ${testpaths}  --notify_user ${notify_user_id}"
                     }
                 }
             }
