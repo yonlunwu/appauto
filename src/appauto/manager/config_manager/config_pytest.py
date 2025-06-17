@@ -13,14 +13,20 @@ class PytestConfig:
         self,
         timestamp: str,
         test_dir: Path,
+        test_classes: str = None,
+        test_cases: str = None,
         allure_results_dir: Optional[Path] = None,
         log_level: str = "INFO",
         no_report: bool = False,
+        collect_only: bool = False,
     ):
         self.test_dir = test_dir
+        self.test_classes = test_classes
+        self.test_cases = test_cases
         self.allure_results_dir = allure_results_dir or (test_dir / "allure-results")
         self.log_level = log_level
-        self.no_report = no_report
+        self.collect_only = collect_only
+        self.no_report = True if self.collect_only else no_report
         self.timestamp = timestamp
 
     @classmethod
@@ -38,11 +44,12 @@ log_format =%(asctime)s|%(process)d:%(threadName)s:%(thread)d|%(levelname)-4s|[%
 log_date_format=%Y-%m-%d %H:%M:%S
 
 addopts = --capture=sys -sv -p no:warnings --color=no
-    
+
 # 测试标记
 markers =
+    ci: marks tests as ci
     smoke: marks tests as smoke
-    
+
 """
         with open(cls.PYTEST_INI, "w", encoding="utf-8") as file:
             file.write(content.lstrip())
@@ -62,11 +69,19 @@ markers =
         if "testpaths" not in cur_cfg or cur_cfg["testpaths"] != str(self.test_dir):
             updates["testpaths"] = str(self.test_dir)
 
+        if self.test_classes and cur_cfg["python_classes"] != self.test_classes:
+            updates["python_classes"] = str(self.test_classes)
+
+        if self.test_cases and cur_cfg["python_functions"] != self.test_cases:
+            updates["python_functions"] = str(self.test_cases)
+
         if cur_cfg["log_level"] != self.log_level:
             updates["log_level"] = self.log_level
 
+        if self.collect_only:
+            updates["addopts"] = cur_cfg["addopts"] + " --collect-only"
+
         if not self.no_report:
-            # updates["addopts"] = cur_cfg["addopts"] + f" --alluredir=./reports/tmp/allure-results/{self.timestamp} --clean-alluredir"
             updates["addopts"] = cur_cfg["addopts"] + f" --alluredir=allure-results/{self.timestamp} --clean-alluredir"
 
         # 如果有需要更新的配置，则更新

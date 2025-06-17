@@ -1,4 +1,3 @@
-# appauto/runners/pytest_runner.py
 import subprocess
 from ..manager.config_manager.config_logging import LoggingConfig
 
@@ -49,8 +48,10 @@ class PytestRunner:
             f"--testpaths={self.testpaths}",
             "--json-report",
             f"--json-report-file={self.json_report_file}",
-            f"-k {self.keyword}" if self.keyword else "", # TODO bugfix
         ]
+
+        if self.keyword:
+            cmd.append(f"-k {self.keyword}")
         logger.info(f"Running pytest cmd: {' '.join(cmd)}")
 
         # 执行命令

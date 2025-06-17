@@ -1,7 +1,7 @@
 import json
 from time import sleep
 from random import randint
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.config_manager import LoggingConfig
 from testcases.api.demo.gen_data import KLLM
 
 logger = LoggingConfig.get_logger()

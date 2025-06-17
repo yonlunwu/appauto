@@ -1,10 +1,10 @@
 import pytest
 import yaml
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 from appauto.manager.connection_manager.http import HttpClient
 from appauto.manager.utils_manager.validator_http import ResponseValidator
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.config_manager import LoggingConfig
 from appauto.manager.config_manager.config_test_data import TestDataConfig
 
 logger = LoggingConfig.get_logger()

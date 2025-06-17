@@ -4,9 +4,8 @@ from pytest import TerminalReporter
 from time import time
 from appauto.manager.utils_manager.format_output import format_time
 
-from appauto.manager.config_manager.config_logging import LoggingConfig
-from appauto.manager.notify_manager.lark_client import LarkClient
-from appauto.manager.config_manager.config_report import AllureReport
+from appauto.manager.notify_manager import LarkClient
+from appauto.manager.config_manager import LoggingConfig, AllureReport
 from appauto.manager.utils_manager.network_utils import NetworkUtils
 from time import sleep
 

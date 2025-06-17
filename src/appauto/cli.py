@@ -1,12 +1,9 @@
-# appauto/cli.py
 import click
 from typing import Dict, List
 from datetime import datetime
 from pathlib import Path
 from appauto import __version__
-from appauto.manager.config_manager.config_logging import LoggingConfig
-from appauto.manager.config_manager.config_pytest import PytestConfig
-from appauto.manager.config_manager.config_test_data import TestDataConfig
+from appauto.manager.config_manager import LoggingConfig, PytestConfig, TestDataConfig
 from appauto.runners.pytest_runner import PytestRunner
 from appauto.runners import ui_runner
 
@@ -23,16 +20,38 @@ def cli():
 )
 @click.argument("mode", type=click.Choice(["pytest", "ui"]))
 @click.option("--testpaths", required=True, help="Test paths (comma-separated)")
+@click.option("--testclasses", help="test class")
+@click.option("--testcases", help="Python functions pattern")
 # TODO 使用正确的 group & user
-@click.option("--notify_group", default=None, help="Notify Group Chat ID")
-@click.option("--notify_user", default="ou_de15ea583c7731052a0ab3bd370fc113", help="Notify User Open ID")
+@click.option("--notify-group", default=None, help="Notify Group Chat ID")
+@click.option("--notify-user", default="ou_de15ea583c7731052a0ab3bd370fc113", help="Notify User ID")
 @click.option("--interval", default=0, help="Delay in seconds between test cases. (Default: 0)")
 @click.option("--repeat", default=1, help="Delay in seconds between test cases. (Default: 0)")
 @click.option("--loglevel", default="INFO", help="Log Level")
 @click.option("--no-report", is_flag=True, help="Don't generate allure report (Default: False)")
 @click.option("--keyword", default=None, help="Keyword (Default: None)")
+@click.option("--collect-only", is_flag=True, help="Collect only test cases without executing (Default: False)")
 @click.pass_context
-def run(ctx, mode, testpaths, loglevel, notify_group, notify_user, interval, repeat, no_report, keyword):
+def run(
+    ctx,
+    mode,
+    testpaths,
+    testclasses,
+    testcases,
+    loglevel,
+    notify_group,
+    notify_user,
+    interval,
+    repeat,
+    no_report,
+    keyword,
+    collect_only,
+):
+    if collect_only:
+        no_report = True
+        notify_group = None
+        notify_user = None
+
     """运行测试(pytest / ui)"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -54,7 +73,15 @@ def run(ctx, mode, testpaths, loglevel, notify_group, notify_user, interval, rep
     if mode == "pytest":
         # 配置 pytest
         test_dir = Path(testpaths)
-        PytestConfig(timestamp, test_dir, log_level=loglevel, no_report=no_report).config_pytest_ini()
+        PytestConfig(
+            timestamp,
+            test_dir,
+            testclasses,
+            testcases,
+            log_level=loglevel,
+            no_report=no_report,
+            collect_only=collect_only,
+        ).config_pytest_ini()
 
         # 运行 pytest
         runner = PytestRunner(

@@ -1,4 +1,4 @@
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.config_manager import LoggingConfig
 
 logger = LoggingConfig.get_logger()
 

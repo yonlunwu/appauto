@@ -7,7 +7,6 @@ kllm 作为一个大的对象, 类比 tower, 下面包含多个子对象
     - 用户管理
 """
 
-from functools import cached_property
 from typing import List
 from ...base_component import BaseComponent
 from .models.model import Model

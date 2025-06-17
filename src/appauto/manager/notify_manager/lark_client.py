@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Literal
 from appauto.manager.connection_manager.http import HttpClient
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.config_manager import LoggingConfig
 
 
 logger = LoggingConfig.get_logger()

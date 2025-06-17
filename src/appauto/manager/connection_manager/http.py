@@ -1,7 +1,7 @@
 import json
 import httpx
 import addict
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.config_manager import LoggingConfig
 from typing import Optional, Dict, Any, Union
 from functools import cached_property
 

@@ -4,7 +4,7 @@ from addict import Dict as ADDict
 from httpx import Response
 import jmespath
 from typing import Any, Dict, List
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.config_manager import LoggingConfig
 import re
 
 logger = LoggingConfig.get_logger()

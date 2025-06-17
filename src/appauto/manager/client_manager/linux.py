@@ -1,5 +1,5 @@
 from appauto.manager.connection_manager.ssh import SSHClient
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.config_manager import LoggingConfig
 from tenacity import retry, stop_after_attempt, wait_fixed, wait_chain
 from paramiko.ssh_exception import (
     NoValidConnectionsError,
