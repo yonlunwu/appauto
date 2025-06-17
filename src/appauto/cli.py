@@ -22,12 +22,13 @@ def cli():
 @click.option("--testpaths", required=True, help="Test paths (comma-separated)")
 @click.option("--testclasses", help="test class")
 @click.option("--testcases", help="Python functions pattern")
+@click.option("--case-level", help="Case level marker")
 # TODO 使用正确的 group & user
 @click.option("--notify-group", default=None, help="Notify Group Chat ID")
 @click.option("--notify-user", default="ou_de15ea583c7731052a0ab3bd370fc113", help="Notify User ID")
 @click.option("--interval", default=0, help="Delay in seconds between test cases. (Default: 0)")
 @click.option("--repeat", default=1, help="Delay in seconds between test cases. (Default: 0)")
-@click.option("--loglevel", default="INFO", help="Log Level")
+@click.option("--log-level", default="INFO", help="Log Level")
 @click.option("--no-report", is_flag=True, help="Don't generate allure report (Default: False)")
 @click.option("--keyword", default=None, help="Keyword (Default: None)")
 @click.option("--collect-only", is_flag=True, help="Collect only test cases without executing (Default: False)")
@@ -38,7 +39,8 @@ def run(
     testpaths,
     testclasses,
     testcases,
-    loglevel,
+    case_level,
+    log_level,
     notify_group,
     notify_user,
     interval,
@@ -56,7 +58,7 @@ def run(
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # 配置日志
-    LoggingConfig.config_logging(log_level=loglevel, timestamp=timestamp)
+    LoggingConfig.config_logging(log_level=log_level, timestamp=timestamp)
     logger = LoggingConfig.get_logger()
     logger.info(f"Starting test run at {timestamp}")
 
@@ -66,7 +68,7 @@ def run(
 
     # 配置测试数据
     TestDataConfig().config_testdata(
-        mode=mode, testpaths=testpaths, loglevel=loglevel, timestamp=timestamp, **extra_args
+        mode=mode, testpaths=testpaths, log_level=log_level, timestamp=timestamp, **extra_args
     )
 
     # 运行测试
@@ -78,14 +80,15 @@ def run(
             test_dir,
             testclasses,
             testcases,
-            log_level=loglevel,
+            log_level=log_level,
             no_report=no_report,
             collect_only=collect_only,
+            case_level=case_level,
         ).config_pytest_ini()
 
         # 运行 pytest
         runner = PytestRunner(
-            timestamp, loglevel, notify_group, notify_user, repeat, interval, no_report, testpaths, keyword=keyword
+            timestamp, log_level, notify_group, notify_user, repeat, interval, no_report, testpaths, keyword=keyword
         )
         return_code = runner.run()
         if return_code != 0:

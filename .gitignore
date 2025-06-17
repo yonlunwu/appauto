@@ -32,9 +32,6 @@ nohup.out*
 test-results/
 test-results.*
 
-tests
-tests/
-
 *appauto.egg-info
 
 allure-results

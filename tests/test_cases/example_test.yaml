@@ -1,0 +1,35 @@
+TEST_CASE:
+  - name: "测试用户登录"
+    steps:
+      - request:
+          url: "/api/v1/login"
+          method: "POST"
+          json:
+            username: "admin"
+            password: "123456"
+        response:
+          status_code: 200
+          rc: 200
+          data:
+            token: "string"
+            user:
+              name: "admin"
+              role: "admin"
+              enabled: true
+
+  - name: "测试获取用户信息"
+    steps:
+      - request:
+          url: "/api/v1/users/1"
+          method: "GET"
+          headers:
+            Authorization: "Bearer ${token}"  # 这里可以支持变量替换
+        response:
+          status_code: 200
+          rc: 200
+          data:
+            id: 1
+            name: "admin"
+            email: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"  # 支持正则表达式
+            age: "number"  # 支持类型检查
+            tags: ["admin", "superuser"]  # 支持列表包含检查 

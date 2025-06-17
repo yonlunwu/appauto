@@ -19,6 +19,7 @@ class PytestConfig:
         log_level: str = "INFO",
         no_report: bool = False,
         collect_only: bool = False,
+        case_level: str = None,
     ):
         self.test_dir = test_dir
         self.test_classes = test_classes
@@ -28,6 +29,7 @@ class PytestConfig:
         self.collect_only = collect_only
         self.no_report = True if self.collect_only else no_report
         self.timestamp = timestamp
+        self.case_level = case_level
 
     @classmethod
     def _init(cls):
@@ -84,7 +86,12 @@ markers =
         if not self.no_report:
             updates["addopts"] = cur_cfg["addopts"] + f" --alluredir=allure-results/{self.timestamp} --clean-alluredir"
 
-        # 如果有需要更新的配置，则更新
+        if self.case_level:
+            if "addopts" in updates:
+                updates["addopts"] += f" -m {self.case_level}"
+            else:
+                updates["addopts"] = cur_cfg["addopts"] + f" -m {self.case_level}"
+
         if updates:
             for key, value in updates.items():
                 pytest_ini.config.set("pytest", key, value)

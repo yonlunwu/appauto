@@ -1,4 +1,4 @@
-ip: 1.1.1.3
+ip: 1.1.1.1
 debug: false
 port: 10003
 worker_name: worker sapphire 2
