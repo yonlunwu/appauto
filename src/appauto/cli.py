@@ -32,6 +32,8 @@ def cli():
 @click.option("--no-report", is_flag=True, help="Don't generate allure report (Default: False)")
 @click.option("--keyword", default=None, help="Keyword (Default: None)")
 @click.option("--collect-only", is_flag=True, help="Collect only test cases without executing (Default: False)")
+@click.option("--report-server", default=None, help="Report Server (Default: None)")
+@click.option("--report-url", default=None, help="Report URL (Default: None)")
 @click.pass_context
 def run(
     ctx,
@@ -48,6 +50,8 @@ def run(
     no_report,
     keyword,
     collect_only,
+    report_server,
+    report_url,
 ):
     if collect_only:
         no_report = True
@@ -88,7 +92,17 @@ def run(
 
         # 运行 pytest
         runner = PytestRunner(
-            timestamp, log_level, notify_group, notify_user, repeat, interval, no_report, testpaths, keyword=keyword
+            timestamp,
+            log_level,
+            notify_group,
+            notify_user,
+            repeat,
+            interval,
+            no_report,
+            testpaths,
+            keyword=keyword,
+            report_server=report_server,
+            report_url=report_url,
         )
         return_code = runner.run()
         if return_code != 0:

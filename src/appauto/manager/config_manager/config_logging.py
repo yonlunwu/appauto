@@ -12,7 +12,7 @@ class LoggingConfig:
     def init(cls):
         content = """
 [loggers]
-keys=root
+keys=root,httpx,httpcore
 
 [handlers]
 keys=consoleHandler, rootHandler, RotatingFileHandler
@@ -24,6 +24,18 @@ keys=sampleFormatter
 level=INFO
 handlers=consoleHandler, RotatingFileHandler
 qualname=root
+propagate=0
+
+[logger_httpx]
+level=WARNING
+handlers=
+qualname=httpx
+propagate=0
+
+[logger_httpcore]
+level=WARNING
+handlers=
+qualname=httpcore
 propagate=0
 
 [handler_consoleHandler]

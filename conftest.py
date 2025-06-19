@@ -21,6 +21,7 @@ def pytest_addoption(parser):
     parser.addoption("--testpaths", action="store", help="Test paths (comma-separated)")
     parser.addoption("--preserve_the_scene", action="store_true", help="Preserve the scene after test execution")
     parser.addoption("--report_server", action="store", help="Allure report server ip")
+    parser.addoption("--report_url", action="store", help="Allure report url")
     parser.addoption("--filling_report_url", action="store", help="Filling Allure report server ip")
     parser.addoption("--set_report_url_suffix", action="store", default=False, help="Set Allure report url suffix")
     parser.addoption("--interval", action="store", default=0, help="Delay in seconds between test cases")
@@ -49,6 +50,7 @@ def gen_report_and_send_lark(
     group_chat_id = config.getoption("--notify_group")
     user_open_id = config.getoption("--notify_user")
     testpaths = config.getoption("--testpaths")
+    report_url = config.getoption("--report_url")
 
     lark = LarkClient()
 
@@ -59,9 +61,10 @@ def gen_report_and_send_lark(
         testpaths = testpaths.replace(".py", "")
 
         allure = AllureReport()
-        report_url = allure.gen_allure_report(testpaths, timestamp)
-        report_url = str(filling_url) + "/" + report_url if filling_url else report_url
-        report_url = report_url + "/index.html" if set_url_suffix else report_url
+        if not report_url:
+            report_url = allure.gen_allure_report(testpaths, timestamp)
+            report_url = str(filling_url) + "/" + report_url if filling_url else report_url
+            report_url = report_url + "/index.html" if set_url_suffix else report_url
         report_server = report_server or NetworkUtils.get_local_ip()
         test_report = f"http://{report_server}/{report_url}"
 
@@ -99,9 +102,9 @@ def pytest_terminal_summary(terminalreporter: TerminalReporter, exitstatus, conf
 
     logger.info(case_dict)
 
-    # report_server = config.getoption("--report_server")
+    report_server = config.getoption("--report_server", None)
     # filling_url = config.getoption("--filling_report_url")
     # set_url_suffix = config.getoption("--set_report_url_suffix")
     # gen_report_and_send_lark(
     #     config, case_dict, report_server, filling_url, set_url_suffix)
-    gen_report_and_send_lark(config, case_dict)
+    gen_report_and_send_lark(config, case_dict, report_server)
