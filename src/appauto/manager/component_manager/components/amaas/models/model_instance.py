@@ -26,11 +26,11 @@ class ModelInstance(BaseComponent):
 
     # TODO BUG rc=500
     def get_logs(self, timeout=None):
-        return self.raw_get("get_logs", timeout=timeout)
+        return self.get("get_logs", timeout=timeout)
 
     def get_info(self, timeout=None):
-        return self.raw_get("get_info", timeout=timeout)
+        return self.get("get_info", timeout=timeout)
 
     # TODO 这是在做什么事情？
     def delete(self, timeout=None):
-        return self.raw_delete("stop", timeout=timeout)
+        return self.delete("stop", timeout=timeout)

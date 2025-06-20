@@ -2,10 +2,10 @@
 将 ModelStore 作为一个对象, 可能分为多种 Model: ['llm', 'vlm', 'embedding', 'rerank', 'parser', 'audio']
 """
 
+from functools import cached_property
 from ....base_component import BaseComponent
 
 
-# TODO 要继承 BaseComponent
 class ModelStore(BaseComponent):
     OBJECT_TOKEN = "model_store_id"
 
@@ -37,7 +37,7 @@ class ModelStore(BaseComponent):
             "access_limit": access_limit,
             "backend_parameters": ["--tensor-parallel-size", "1", "--max-total-tokens", str(max_token)],
         }
-        return self.raw_post("check", json=data, timeout=timeout)
+        return self.post("check", json=data, timeout=timeout)
 
     def run(self, gpu_count=1, replicas=1, access_limit=1, max_token=8194, timeout=None):
         data = {
@@ -48,4 +48,60 @@ class ModelStore(BaseComponent):
             "id": self.object_id,
             "backend_parameters": ["--tensor-parallel-size", "1", "--max-total-tokens", str(max_token)],
         }
-        return self.raw_post("run", json=data, timeout=timeout)
+        return self.post("run", json=data, timeout=timeout)
+
+    @cached_property
+    def type(self):
+        return self.data.type
+
+    @cached_property
+    def name(self):
+        return self.data.name
+
+    @property
+    def source(self):
+        return self.data.source
+
+    @property
+    def backend_type(self):
+        return self.data.backend_type
+
+    @property
+    def local_path(self):
+        return self.data.local_path
+
+    @property
+    def dir_path(self):
+        return self.data.dir_path
+
+    @property
+    def weight_size(self):
+        return self.data.weight_size
+
+    @property
+    def family(self):
+        return self.data.family
+
+    @property
+    def quanted_type(self):
+        return self.data.quanted_type
+
+    @property
+    def categories(self):
+        return self.data.categories
+
+    @property
+    def required_vram(self):
+        return self.data.required_vram
+
+    @property
+    def required_dram(self):
+        return self.data.required_dram
+
+    @property
+    def required_disk(self):
+        return self.data.required_disk
+
+    @property
+    def worker_name(self):
+        return self.data.worker_name

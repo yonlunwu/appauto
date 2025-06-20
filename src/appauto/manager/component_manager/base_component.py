@@ -1,5 +1,4 @@
 import addict
-from typing import Literal
 from functools import cached_property
 from ..connection_manager.http import HttpClient
 
@@ -51,7 +50,7 @@ class BaseComponent(object):
         retry = True
         try:
             if response.status_code == 401:
-                self.login(force=True)
+                self.login()
             elif response.status_code == 200 and response.json().get("ec", "EOK") == "EOK":
                 retry = False
         finally:
@@ -69,39 +68,6 @@ class BaseComponent(object):
     def url_prefix(self):
         return f"{'https' if self.ssl_enabled else 'http'}://{self.mgt_ip}:{self.port}"
 
-    # TODO 从 map 中获取 url & 拼接前缀
-    def get(self, url: str, **kwargs):
-        return self.http.get(url, **kwargs)
-
-    # TODO 这只是个 demo
-    def get_model_center(self):
-        """点击模型中心页面"""
-        return self.http.get(f"{self.url_prefix}/api/v1/kllm/models/types")
-
-    def list_models(
-        self,
-        pagenum: int = None,
-        per_page: int = None,
-        source=None,
-        type_: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"] = None,
-    ):
-        """进入模型中心页面，查看不同类型的 models"""
-        params = {}
-        if pagenum:
-            params["page"] = pagenum
-        if per_page:
-            params["perPage"] = per_page
-        if source:
-            params["source"] = source
-        if type_:
-            params["type"] = type_
-
-        return self.http.get(f"{self.url_prefix}/api/v1/kllm/model-store", params=params)
-
-    @cached_property
-    def get_model_types(self) -> Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]:
-        return self.get_model_center().data.types
-
     @property
     def current_object_token(self):
         return {self.OBJECT_TOKEN: self.object_id}
@@ -113,7 +79,7 @@ class BaseComponent(object):
 
         return self.parent_tokens
 
-    def raw_get(self, alias, params=None, url_map=None, timeout=None, headers=None, encode_result=True, **kwargs):
+    def get(self, alias, params=None, url_map=None, timeout=None, headers=None, encode_result=True, **kwargs):
         url_map = url_map or self.GET_URL_MAP
         url = url_map[alias]
         # TODO 完善 self.object_tokens
@@ -126,7 +92,7 @@ class BaseComponent(object):
             **kwargs,
         )
 
-    def raw_post(
+    def post(
         self,
         alias,
         params=None,
@@ -136,23 +102,36 @@ class BaseComponent(object):
         timeout=None,
         headers=None,
         encode_result=True,
+        stream=False,
         **kwargs,
     ):
         url_map = url_map or self.POST_URL_MAP
         url = url_map[alias]
         # TODO 完善 self.object_tokens
-        return self.http.post(
+        if not stream:
+            return self.http.post(
+                f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
+                params,
+                data,
+                json=json,
+                headers=headers,
+                encode_result=encode_result,
+                timeout=timeout,
+                **kwargs,
+            )
+
+        return self.http.stream_request(
+            "POST",
             f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
             params,
             data,
             json=json,
             headers=headers,
-            encode_result=encode_result,
             timeout=timeout,
             **kwargs,
         )
 
-    def raw_delete(
+    def delete(
         self,
         alias,
         params=None,

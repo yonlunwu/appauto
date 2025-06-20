@@ -153,3 +153,60 @@ class HttpClient:
         res = self.encode_result(text)
         assert res.retcode == 0
         assert res.retmsg == "success"
+
+    def stream_request(
+        self,
+        method: str,
+        url: str,
+        params: Optional[Dict] = None,
+        data: Optional[Union[Dict, str]] = None,
+        json: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        timeout: Optional[float] = None,
+        **kwargs,
+    ):
+        """返回生成器上下文管理器"""
+        self._log_request(method, url, params=params, data=data, json=json)
+
+        try:
+            # 直接返回生成器上下文管理器
+            return self.client.stream(
+                method=method.upper(),
+                url=url,
+                params=params,
+                data=data,
+                json=json,
+                headers=headers,
+                timeout=timeout,
+                **kwargs,
+            )
+        except httpx.HTTPError as e:
+            logger.error(f"Stream request failed: {e}")
+            raise
+
+    def process_stream(self, response):
+        """获取 stream chunks 的文本内容"""
+        full_content = ""
+        for line in response.iter_lines():
+            if not line or not line.startswith("data:"):
+                continue
+            payload = line.removeprefix("data:").strip()
+
+            if payload == "[DONE]":
+                break
+
+            try:
+                data = json.loads(payload)
+                chunk = data["choices"][0]["delta"].get("content")
+                if chunk:
+                    full_content += chunk
+                    # 实时输出
+                    logger.debug(chunk)
+                    logger.debug(full_content)
+
+            except Exception as e:
+                logger.error(f"Process stream request failed: {e}, init_payload: {payload}")
+                raise
+
+        logger.info(f"full_content: {full_content}")
+        return full_content
