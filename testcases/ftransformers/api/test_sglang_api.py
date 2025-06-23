@@ -12,6 +12,7 @@
 """
 
 import pytest
+import allure
 from random import choice
 from appauto.manager.connection_manager.ssh import SSHClient
 from appauto.manager.client_manager import BaseLinux
@@ -59,6 +60,7 @@ prompt_list = [
 """
 
 
+@allure.epic("TestSGLangAPISingle")
 class TestSGLangAPISingle:
     def test_stream_false(self):
         """
@@ -75,7 +77,20 @@ class TestSGLangAPISingle:
             top_p=choice([0, -0.5, 0.5, 1, 1024, None]),
         )
 
-    def test_stream_true_and_process_stream(self):
+    def test_stream_true_and_process_stream_correct(self):
+        """测试 stream=True 时可以正常工作: 参数正确"""
+        sglang.talk(
+            content=choice(prompt_list),
+            model="DeepSeek-R1",
+            stream=True,
+            max_tokens=choice([1024]),
+            temperature=choice([None]),
+            top_p=choice([None]),
+            process_stream=True,
+        )
+
+    def test_stream_true_and_process_stream_random(self):
+        """测试 stream=True 时可以正常工作: 参数随机"""
         sglang.talk(
             content=choice(prompt_list),
             model="DeepSeek-R1",
@@ -139,6 +154,6 @@ class TestSGLangAPISingle:
             top_p=top_p,
         )
 
-    def test_long_text(self):
-        """长文本提问"""
-        ...
+    # def test_long_text(self):
+    #     """长文本提问"""
+    #     ...
