@@ -1,3 +1,6 @@
+from typing import List
+
+
 def format_time(seconds):
     """
     将给定的秒数转换为人类可读的时间格式, 注意: 超过 10 分钟才转换为分钟。
@@ -26,3 +29,14 @@ def format_time(seconds):
                 return f"{value:.1f} {unit} {format_time(remainder)}"
 
     return f"{seconds:.0f} 秒"
+
+
+def str_to_list_by_split(content, singleLine=True) -> List:
+    """
+    单行: 分隔符是逗号
+    多行: 分隔符是换行符
+    """
+    if singleLine:
+        return list(filter(None, content.replace("\n", "").split(",")))
+    else:
+        return list(filter(None, content.split("\n")))

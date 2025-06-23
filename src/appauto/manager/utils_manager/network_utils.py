@@ -16,7 +16,7 @@ class NetworkUtils:
         return False
 
     @classmethod
-    def check_sshable(cls, ip, port=22):
+    def check_reachable(cls, ip, port=22):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(1)
         try:
@@ -40,13 +40,13 @@ class NetworkUtils:
             sleep(interval_s)
 
     @classmethod
-    def wait_sshable(cls, ip, port=22, interval_s: int = 1, timeout_s: int = 600):
+    def wait_reachable(cls, ip, port=22, interval_s: int = 1, timeout_s: int = 600):
         start_time = time()
         while True:
-            if cls.check_sshable(ip, port):
+            if cls.check_reachable(ip, port):
                 break
             elif time() - start_time >= timeout_s:
-                raise TimeoutError(f"Timeout while waiting for {ip} be sshable.")
+                raise TimeoutError(f"Timeout while waiting for {ip} {port} be reachable.")
             sleep(interval_s)
 
     @classmethod
