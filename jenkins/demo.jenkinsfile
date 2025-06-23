@@ -8,8 +8,8 @@ pipeline {
     stages {
         stage('Download Source Code') {
             steps {
-                sh "sudo rm -rf appauto_demo; git clone -b ${git_branch} ${git_url}"
-                dir('./appauto_demo') {
+                sh "sudo rm -rf appauto; git clone -b ${git_branch} ${git_url}"
+                dir('./appauto') {
                     sh 'pip install --upgrade pip'
                     sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
                 }
@@ -24,7 +24,7 @@ pipeline {
                     echo "job_name_list: ${job_name_list}"
                     echo "buildNumber: ${buildNumber}"
 
-                    dir('./appauto_demo') {
+                    dir('./appauto') {
                         sh 'pip install -e . --break-system-packages'
                         sh "appauto run pytest --testpaths ${testpaths}  --notify_user ${notify_user_id} --keyword smoke --report-server=192.168.110.11:9080 --report-url=job/appauto_test_demo/${buildNumber}/allure/"
                     }
@@ -35,7 +35,7 @@ pipeline {
 
     post {
         always {
-            dir('./appauto_demo') {
+            dir('./appauto') {
                 script {
                     echo "🔍 Parsing allure results directory from pytest.ini"
                     def allureResultsDir = sh(

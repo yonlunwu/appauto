@@ -64,6 +64,11 @@ class BaseComponent(object):
     def http(self):
         return HttpClient(headers=self.headers)
 
+    # 测试 sglang 不需要带前端
+    @cached_property
+    def http_without_token(self):
+        return HttpClient(headers={"accept": "application/json", "Content-Type": "application/json"})
+
     @cached_property
     def url_prefix(self):
         return f"{'https' if self.ssl_enabled else 'http'}://{self.mgt_ip}:{self.port}"
@@ -123,6 +128,46 @@ class BaseComponent(object):
         return self.http.stream_request(
             "POST",
             f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
+            params,
+            data,
+            json=json,
+            headers=headers,
+            timeout=timeout,
+            **kwargs,
+        )
+
+    # 测试 sglang 不需要带前端
+    def post_without_token(
+        self,
+        alias,
+        params=None,
+        data=None,
+        json=None,
+        url_map=None,
+        timeout=None,
+        headers=None,
+        encode_result=True,
+        stream=False,
+        **kwargs,
+    ):
+        url_map = url_map or self.POST_URL_MAP
+        url = url_map[alias]
+        # TODO 完善 self.object_tokens
+        if not stream:
+            return self.http_without_token.post(
+                f"{self.url_prefix}/{url.format(**self.object_tokens)}",
+                params,
+                data,
+                json=json,
+                headers=headers,
+                encode_result=encode_result,
+                timeout=timeout,
+                **kwargs,
+            )
+
+        return self.http_without_token.stream_request(
+            "POST",
+            f"{self.url_prefix}/{url.format(**self.object_tokens)}",
             params,
             data,
             json=json,
