@@ -7,8 +7,17 @@
 """
 
 """
-1. 线程 1 启动服务
-2. 线程 2 
+- max_tokens: int & > 0
+- temperature: ≥ 0
+- top_p: (0, 1]
+"""
+
+# TODO
+"""
+1. 完善 promp_list, 比如加上 guoheng 一测就崩的
+2. 完善用例判定标准
+3. 测试区分正常场景和异常场景 (比如分为 2 个类)
+4. 补充要测试的 model
 """
 
 import pytest
@@ -61,6 +70,7 @@ prompt_list = [
 
 
 @allure.epic("TestSGLangAPISingle")
+@pytest.mark.night
 class TestSGLangAPISingle:
     def test_stream_false(self):
         """

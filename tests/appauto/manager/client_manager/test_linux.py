@@ -21,3 +21,8 @@ class TestBaseLinux:
         lts = linux.conda_env_list(conda_path="/home/zkyd/miniconda3/bin/conda")
         logger.info(lts)
         # assert lts
+
+    def test_download_file(self):
+        remote_path = "/home/zkyd/yanlong/yanlong_eval_file_73.jsonl_results.jsonl"
+        local_path = "./yanlong_eval_file_73.jsonl_results.jsonl"
+        linux.download(remote_path, local_path)

@@ -37,3 +37,6 @@ test-results.*
 allure-results
 
 test_notify*
+
+sample*.jsonl
+problem*.jsonl
