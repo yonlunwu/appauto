@@ -24,7 +24,7 @@ logger = LoggingConfig.get_logger()
 
 
 @pytest.fixture(autouse=True, scope="function")
-def check_humaneval_all_pass():
+def fixture_check_humaneval_all_pass():
     uid = str(uuid4())
     problem_file = f"./problem_{uid}.jsonl"
     sample_file = f"./sample_{uid}.jsonl"
@@ -83,7 +83,15 @@ class CommonHumanEval:
     @classmethod
     @allure.step("construct_prompt")
     def construct_prompt(cls, prompt: str) -> str:
-        return f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nComplete the following Python code without any tests or explanation\n{prompt}\n\n### Response:"""
+        # return f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nComplete the following Python code without any tests or explanation\n{prompt}\n\n### Response:"""
+        return (
+            "Below is an instruction that describes a task. "
+            "Write a response that appropriately completes the request.\n\n"
+            "### Instruction:\n"
+            "Complete the following Python code without any tests or explanation\n"
+            f"{prompt}\n\n"
+            "### Response:"
+        )
 
     @classmethod
     @allure.step("filter_code")
@@ -173,12 +181,10 @@ class CommonHumanEval:
         return res_file
 
 
-class CommonCheck:
+class CommonCheckHumanEval:
     @classmethod
     @allure.step("check_passrate_of_humaneval")
-    def check_passrate_of_humaneval(
-        cls, res_jsonl_path: str, problems: Dict[str, Dict], expect_pass_rate=DP.humaneval_expect_passrate
-    ) -> List[str]:
+    def check_passrate_of_humaneval(cls, res_jsonl_path: str, problems: Dict[str, Dict]) -> List[str]:
         """检查 humaneval JSONL 文件中通过率 (passed == True and result == 'passed')"""
         passed_ids, failed_ids = [], []
 
@@ -204,7 +210,7 @@ class CommonCheck:
                 f"total_passed: {passwd}, pass_rate: {pass_rate}".center(200, "*")
             )
 
-            assert pass_rate >= expect_pass_rate
+            assert pass_rate >= DP.humaneval_expect_passrate
 
         except Exception as e:
             msg = f"error occurred in get_failed_task_ids: {e}, failed_ids: {failed_ids}"
@@ -212,7 +218,7 @@ class CommonCheck:
             pytest.fail(reason=msg)
 
 
-class CommonRunTest:
+class CommonRunTestHumanEval:
     lock = threading.Lock()
 
     @classmethod
@@ -235,11 +241,13 @@ class CommonRunTest:
 
         # evaluate 生成文件并检查通过率
         res_jsonl = CommonHumanEval.evaluate(sample_file, problem_file=problem_file)
-        CommonCheck.check_passrate_of_humaneval(res_jsonl, problems)
+        CommonCheckHumanEval.check_passrate_of_humaneval(res_jsonl, problems)
 
     @classmethod
     @allure.step("run_concurrency_test")
-    def run_concurrency_test(cls, problems: Dict[str, Dict], problem_file: str, sample_file: str, concurrency: int = 4):
+    def run_concurrency_test(
+        cls, problems: Dict[str, Dict], problem_file: str, sample_file: str, concurrency: int = DP.humaneval_concurrency
+    ):
         """多并发测试"""
         CommonHumanEval.write_problem_file(problem_file, problems)
 
@@ -264,4 +272,4 @@ class CommonRunTest:
         finally:
             # evaluate 生成文件并检查通过率
             res_jsonl = CommonHumanEval.evaluate(sample_file, problem_file=problem_file)
-            CommonCheck.check_passrate_of_humaneval(res_jsonl, problems)
+            CommonCheckHumanEval.check_passrate_of_humaneval(res_jsonl, problems)

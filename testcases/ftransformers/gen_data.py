@@ -12,8 +12,12 @@ logger = LoggingConfig.get_logger()
 class DefaultParams:
     ip: str = TEST_DATA_DICT.get("sglang_ip", "192.168.110.15")
     port: str = TEST_DATA_DICT.get("sglang_port", 11002)
-    humaneval_expect_passrate: float = TEST_DATA_DICT.get("humaneval_expect_passrate", 0.8)
-    humaneval_concurrency: float = TEST_DATA_DICT.get("humaneval_concurrency", 4)
+    humaneval_expect_passrate: float = float(TEST_DATA_DICT.get("humaneval_expect_passrate", 0.8))
+    humaneval_concurrency: int = int(TEST_DATA_DICT.get("humaneval_concurrency", 8))
+    humaneval_problems_num: int = int(TEST_DATA_DICT.get("humaneval_problems_num", 10))
+    mmlu_expect_passrate: float = float(TEST_DATA_DICT.get("mmlu_expect_passrate", 0.8))
+    mmlu_questions_num: int = int(TEST_DATA_DICT.get("mmlu_questions_num", 1000))
+    mmlu_concurrency: int = int(TEST_DATA_DICT.get("mmlu_concurrency", 10))
 
 
 assert DefaultParams.ip

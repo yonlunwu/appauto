@@ -3,5 +3,5 @@ from testcases.mooncake.function.ha.gen_data import mooncake
 
 
 @pytest.fixture(autouse=True)
-def start_server():
+def fixture_start_server():
     print(mooncake)
