@@ -79,6 +79,8 @@ class CommonMMLU:
     def choose_questions(
         cls, data_evaluator: MMLUDataEvaluator, scope: Literal["all", "random"], count: int = DP.mmlu_questions_num
     ) -> List[Dict]:
+        # 每次测试前都 shuffle 一下，再 sample 一下
+        random.shuffle(data_evaluator.data)
         if scope == "all":
             return data_evaluator.data
 
