@@ -40,16 +40,16 @@ class TestHumanEvalCorrect:
 
     @pytest.mark.yanlong
     def test_single_spec_problems(self, check_humaneval_all_pass):
-        """单个测试: 随机选择 4 个 humaneval 数据集进行测试"""
+        """单个测试: 指定部分 humaneval 数据集进行测试"""
         problem_file, sample_file = check_humaneval_all_pass
         problems = cs.choose_problems("spec", start=22, stop=23)
         cr.run_single_test(problems, problem_file, sample_file)
 
     @pytest.mark.dev
     def test_concurrency_random_problems(self, check_humaneval_all_pass):
-        """并发测试: 随机选择 4 个 humaneval 数据集进行测试"""
+        """并发测试: 随机选择 8 个 humaneval 数据集进行测试, 并发度: 4"""
         problem_file, sample_file = check_humaneval_all_pass
-        problems = cs.choose_problems("random", length=4)
+        problems = cs.choose_problems("random", length=8)
         cr.run_concurrency_test(problems, problem_file, sample_file, concurrency=4)
 
     @pytest.mark.night

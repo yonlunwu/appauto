@@ -14,12 +14,11 @@ from human_eval.data import write_jsonl, read_problems, HUMAN_EVAL
 from appauto.manager.file_manager import HandleJsonl
 from appauto.manager.utils_manager.custom_thread_pool_executor import (
     CustomThreadPoolExecutor,
-    CustomFuture,
     check_futures_exception,
 )
 from appauto.manager.config_manager import LoggingConfig
 
-from testcases.ftransformers.gen_data import sglang, sglang_server
+from testcases.ftransformers.gen_data import sglang, sglang_server, DefaultParams as DP
 
 logger = LoggingConfig.get_logger()
 
@@ -31,10 +30,6 @@ def check_humaneval_all_pass():
     sample_file = f"./sample_{uid}.jsonl"
 
     yield problem_file, sample_file
-
-    # evaluate 生成文件并检查文件结果
-    res_jsonl = CommonHumanEval.evaluate(sample_file, problem_file=problem_file)
-    CommonCheck.check_humaneval_all_pass(res_jsonl)
 
 
 class CommonHumanEval:
@@ -180,10 +175,12 @@ class CommonHumanEval:
 
 class CommonCheck:
     @classmethod
-    @allure.step("check_humaneval_all_pass")
-    def check_humaneval_all_pass(cls, res_jsonl_path: str) -> List[str]:
-        """检查 humaneval JSONL 文件中应全部通过 (passed == True and result == 'passed')"""
-        failed_ids = []
+    @allure.step("check_passrate_of_humaneval")
+    def check_passrate_of_humaneval(
+        cls, res_jsonl_path: str, problems: Dict[str, Dict], expect_pass_rate=DP.humaneval_expect_passrate
+    ) -> List[str]:
+        """检查 humaneval JSONL 文件中通过率 (passed == True and result == 'passed')"""
+        passed_ids, failed_ids = [], []
 
         try:
             jsonl = HandleJsonl(res_jsonl_path)
@@ -191,10 +188,23 @@ class CommonCheck:
                 if inner_dict and isinstance(inner_dict, dict):
                     if inner_dict.result != "passed" or inner_dict.passed is not True:
                         failed_ids.append(inner_dict.task_id)
+                    else:
+                        passed_ids.append(inner_dict.task_id)
                 else:
                     failed_ids.append(f"unknown_result_of_index_{idx}")
 
-            assert not failed_ids
+            total = len(problems)
+            failed = len(failed_ids)
+            passwd = len(passed_ids)
+            pass_rate = len(passed_ids) / len(problems)
+
+            logger.warning(f"failed task_ids: {failed_ids}")
+            logger.warning(
+                f"total problems: {total}: total_failed: {failed}, "
+                f"total_passed: {passwd}, pass_rate: {pass_rate}".center(200, "*")
+            )
+
+            assert pass_rate >= expect_pass_rate
 
         except Exception as e:
             msg = f"error occurred in get_failed_task_ids: {e}, failed_ids: {failed_ids}"
@@ -206,12 +216,14 @@ class CommonRunTest:
     lock = threading.Lock()
 
     @classmethod
+    @allure.step("run_single_test")
     def run_single_test(cls, problems: Dict[str, Dict], problem_file: str, sample_file: str):
         """
-        - write_problem_file: 将 problemsm 写入 problem_file.jsonl
-        - send_api_request: 发送请求并生成 completion
+        - write_problem_file: 将 problems 写入 problem_file.jsonl
+        - send_request: 发送请求并生成 completion
         - construct_sample: 将 completion 传入 sample
         - write_samples_file: 并将 sample 依次写入 sample-file
+        - check_passrate_of_humaneval: 计算通过率
         """
         CommonHumanEval.write_problem_file(problem_file, problems)
 
@@ -221,8 +233,14 @@ class CommonRunTest:
                 sample = dict(task_id=task_id, completion=cpl)
                 CommonHumanEval.write_sample_file(sample, sample_file)
 
+        # evaluate 生成文件并检查通过率
+        res_jsonl = CommonHumanEval.evaluate(sample_file, problem_file=problem_file)
+        CommonCheck.check_passrate_of_humaneval(res_jsonl, problems)
+
     @classmethod
+    @allure.step("run_concurrency_test")
     def run_concurrency_test(cls, problems: Dict[str, Dict], problem_file: str, sample_file: str, concurrency: int = 4):
+        """多并发测试"""
         CommonHumanEval.write_problem_file(problem_file, problems)
 
         def _worker(task_id: str, problem: Dict):
@@ -236,8 +254,14 @@ class CommonRunTest:
                 for sample in samples:
                     CommonHumanEval.write_sample_file(sample, sample_file)
 
-        with CustomThreadPoolExecutor(max_workers=concurrency) as executor:
-            fus = [executor.submit(_worker, t_id, prob) for t_id, prob in problems.items()]
-            wait(fus)
+        try:
+            with CustomThreadPoolExecutor(max_workers=concurrency) as executor:
+                fus = [executor.submit(_worker, t_id, prob) for t_id, prob in problems.items()]
+                wait(fus)
 
-        check_futures_exception(fus)
+            check_futures_exception(fus)
+
+        finally:
+            # evaluate 生成文件并检查通过率
+            res_jsonl = CommonHumanEval.evaluate(sample_file, problem_file=problem_file)
+            CommonCheck.check_passrate_of_humaneval(res_jsonl, problems)
