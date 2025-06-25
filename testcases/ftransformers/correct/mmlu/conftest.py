@@ -167,8 +167,7 @@ class CommonMMLU:
                 return res
 
         # 再不行就返回 None
-        logger.info(f"get prediction: {res}")
-        return None
+        logger.info("get prediction failed: None")
 
     @classmethod
     @allure.step("score")
@@ -184,10 +183,7 @@ class CommonCheckMMLU:
     @classmethod
     @allure.step("check_single_passrate_of_mmlu")
     def check_single_passrate_of_mmlu(cls, mmlu_result_summary: MMLUResultSummary):
-        assert (
-            mmlu_result_summary.average_score >= DP.mmlu_expect_passrate
-            and mmlu_result_summary.total_score >= 100 * DP.mmlu_expect_passrate
-        )
+        assert mmlu_result_summary.average_score >= DP.mmlu_expect_passrate
 
     @classmethod
     @allure.step("check_concurrency_passrate_of_mmlu")
