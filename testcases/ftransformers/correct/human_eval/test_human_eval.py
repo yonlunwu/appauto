@@ -30,21 +30,21 @@ logger = LoggingConfig.get_logger()
 
 @allure.epic("TestCorrectHumanEval")
 class TestCorrectHumanEval:
-    @pytest.mark.dev
+    # @pytest.mark.dev
     def test_single_random_problems(self, fixture_check_humaneval_all_pass):
         """单并发测试: 随机选择 4 个 humaneval 数据集进行测试"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
         problems = cs.choose_problems("random", length=DP.humaneval_problems_num)
         cr.run_single_test(problems, problem_file, sample_file)
 
-    @pytest.mark.yanlong
+    # @pytest.mark.yanlong
     def test_single_spec_problems(self, fixture_check_humaneval_all_pass):
         """单并发测试: 指定部分 humaneval 数据集进行测试"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
         problems = cs.choose_problems("spec", start=22, stop=23)
         cr.run_single_test(problems, problem_file, sample_file)
 
-    @pytest.mark.dev
+    # @pytest.mark.dev
     def test_concurrency_random_problems(self, fixture_check_humaneval_all_pass):
         """多并发测试(默认 8 并发): 随机选择 8 个 humaneval 数据集进行测试, 并发度: 4"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
