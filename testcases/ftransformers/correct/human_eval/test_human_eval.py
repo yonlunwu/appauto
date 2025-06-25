@@ -32,34 +32,35 @@ logger = LoggingConfig.get_logger()
 class TestCorrectHumanEval:
     @pytest.mark.dev
     def test_single_random_problems(self, fixture_check_humaneval_all_pass):
-        """单个测试: 随机选择 4 个 humaneval 数据集进行测试"""
+        """单并发测试: 随机选择 4 个 humaneval 数据集进行测试"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
         problems = cs.choose_problems("random", length=DP.humaneval_problems_num)
         cr.run_single_test(problems, problem_file, sample_file)
 
     @pytest.mark.yanlong
     def test_single_spec_problems(self, fixture_check_humaneval_all_pass):
-        """单个测试: 指定部分 humaneval 数据集进行测试"""
+        """单并发测试: 指定部分 humaneval 数据集进行测试"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
         problems = cs.choose_problems("spec", start=22, stop=23)
         cr.run_single_test(problems, problem_file, sample_file)
 
     @pytest.mark.dev
     def test_concurrency_random_problems(self, fixture_check_humaneval_all_pass):
-        """并发测试: 随机选择 8 个 humaneval 数据集进行测试, 并发度: 4"""
+        """多并发测试(默认 8 并发): 随机选择 8 个 humaneval 数据集进行测试, 并发度: 4"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
         problems = cs.choose_problems("random", length=DP.humaneval_problems_num)
         cr.run_concurrency_test(problems, problem_file, sample_file, concurrency=DP.humaneval_concurrency)
 
     @pytest.mark.night
     def test_single_all_problems(self, fixture_check_humaneval_all_pass):
-        """单个测试所有 humaneval 数据集"""
+        """单并发测试所有 humaneval 数据集"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
         problems = cs.choose_problems("all")
         cr.run_single_test(problems, problem_file, sample_file)
 
+    @pytest.mark.night
     def test_concurrency_all_problems(self, fixture_check_humaneval_all_pass):
-        """并发测试所有 humaneval 数据集"""
+        """多并发测试(默认 8 并发)所有 humaneval 数据集"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
         problems = cs.choose_problems("all")
         cr.run_concurrency_test(problems, problem_file, sample_file, concurrency=DP.humaneval_concurrency)
