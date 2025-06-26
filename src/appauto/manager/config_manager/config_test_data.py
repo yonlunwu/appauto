@@ -59,8 +59,9 @@ mode = pytest
         self.generate_testdata_ini()
         self.reconfig_testdata(**kwargs)
 
-    def cleanup(self):
+    @classmethod
+    def cleanup(cls):
         """清理配置文件"""
-        if os.path.exists(self.TEST_DATA_INI):
-            os.remove(self.TEST_DATA_INI)
-            logger.info(f"Removed {self.TEST_DATA_INI}")
+        if os.path.exists(cls.TEST_DATA_INI):
+            os.remove(cls.TEST_DATA_INI)
+            logger.info(f"Removed {cls.TEST_DATA_INI}")

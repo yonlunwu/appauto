@@ -33,14 +33,14 @@ class HttpClient:
         logger.info(f"[Request] {method.upper()} {url}")
         for key in ["params", "json", "data"]:
             if kwargs.get(key):
-                logger.info(f"{key.capitalize()}: {kwargs[key]}")
+                logger.info(f"[Request] {key.capitalize()}: {kwargs[key]}")
 
     def _log_response(self, response: httpx.Response):
         logger.info(f"[Response] [{response.status_code}] {response.url}")
         try:
-            logger.debug(f"Body: {response.json()}")
-        except Exception:
-            logger.error(f"Body (text): {response.text}")
+            logger.info(f"[Response] Body: {response.json()}")
+        except Exception as e:
+            logger.error(f"[Response] Body (text): {response.text} with Exception: {e}")
 
     def request(
         self,
@@ -197,6 +197,7 @@ class HttpClient:
 
             try:
                 data = json.loads(payload)
+                logger.info(f"per stream link payload: {data}")
                 chunk = data["choices"][0]["delta"].get("content")
                 if chunk:
                     full_content += chunk

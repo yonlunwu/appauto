@@ -23,7 +23,9 @@ logger = LoggingConfig.get_logger()
 
 HINT = (
     "There is a single choice question. Answer the question by replying A, B, C, D. "
-    "No other answers are accepted. Just the letter."
+    "No other answers are accepted. Just the letter. "
+    "Re-emphasize the answer format: regardless of the process, "
+    "the final answer must end with <The final answer is **option**>. Option can only be one of A/B/C/D and must be capitalized."
 )
 
 
@@ -90,7 +92,15 @@ class CommonMMLU:
     @classmethod
     @allure.step("_process_prediction")
     def _process_prediction(cls, prediction: str) -> str:
+        # 先忽略 think
+        prediction = prediction.split("think>")[-1]
+        # 拿最后一行
         prediction = prediction.lstrip("\n").split("\n")[-1]
+        for _ in range(3):
+            prediction = prediction.rstrip(">")
+            prediction = prediction.rstrip("*")
+            prediction = prediction.rstrip(".")
+        # 拿最后一个字符
         return prediction[-1:]
 
     @classmethod
@@ -113,7 +123,7 @@ class CommonMMLU:
         assert prediction
 
         prediction = cls._process_prediction(prediction)
-        logger.info(f"get prediction: {prediction}")
+        logger.info(f"get prediction from content: {prediction}")
 
         return prediction
 
@@ -128,10 +138,12 @@ class CommonMMLU:
 
         # 1. 显式语句匹配（优先）
         explicit_patterns = [
+            r"The final answer is\s*\*?\*?\s*([A-D])\b",
             r"Answer:\s*([A-D])\b",
             r"Correct answer:\s*([A-D])\b",
             r"The correct answer is\s*\*?\*?\s*([A-D])\b",
             r"Answer is\s*([A-D])\b",
+            r"The answer must be\s*([A-D])\b",
             r"Therefore,\s*answer is\s*([A-D])\b",
             r"Therefore,\s*the answer should be\s*(?:Option\s*)?([A-D])\b",
             r"The answer should be\s*(?:Option\s*)?([A-D])\b",
@@ -141,21 +153,21 @@ class CommonMMLU:
             match = re.search(pat, prediction, re.IGNORECASE)
             if match:
                 res = match.group(1).upper()
-                logger.info(f"get prediction: {res}")
+                logger.info(f"get prediction by re: {res}")
                 return res
 
         # 2. markdown 强调 **C**, **C. something**
         markdown_match = re.findall(r"\*\*\s*([A-D])[\.\s]?", prediction)
         if markdown_match:
             res = markdown_match[-1].upper()
-            logger.info(f"get prediction: {res}")
+            logger.info(f"get prediction by re: {res}")
             return res
 
         # 3. 查找单引号中的 'C' 或 "C"
         quote_match = re.findall(r"['\"]([A-D])['\"]", prediction)
         if quote_match:
             res = quote_match[-1].upper()
-            logger.info(f"get prediction: {res}")
+            logger.info(f"get prediction by re: {res}")
             return res
 
         # 4. 倒数几行是否以 "C." 或 "C" 开头
@@ -165,11 +177,11 @@ class CommonMMLU:
             match = re.match(r"^([A-D])([.\s]|$)", line)
             if match:
                 res = match.group(1).upper()
-                logger.info(f"get prediction: {res}")
+                logger.info(f"get prediction by re: {res}")
                 return res
 
         # 再不行就返回 None
-        logger.info("get prediction failed: None")
+        logger.info("get prediction by re failed: None")
 
     @classmethod
     @allure.step("score")

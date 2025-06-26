@@ -1,8 +1,16 @@
 import allure
+import pytest
 
 from appauto.manager.utils_manager.network_utils import NetworkUtils
 
 from testcases.ftransformers.gen_data import sglang_server
+
+
+@pytest.fixture(autouse=True, scope="function")
+def fixture_check_server_alive():
+    FTCommonCheck.check_sglang_server_alive()
+    yield
+    FTCommonCheck.check_sglang_server_alive()
 
 
 class FTCommonCheck:

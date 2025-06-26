@@ -19,6 +19,7 @@ class SGLang(BaseComponent):
         process_stream=False,
         timeout=None,
         encode_result=False,
+        return_speed=False,
     ):
 
         payload = {
@@ -34,6 +35,8 @@ class SGLang(BaseComponent):
             payload["temperature"] = temperature
         if top_p:
             payload["top_p"] = top_p
+        if return_speed:
+            payload["return_speed"] = return_speed
 
         # 获取原始 stream
         if not process_stream:

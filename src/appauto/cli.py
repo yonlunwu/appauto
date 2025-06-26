@@ -85,6 +85,7 @@ def run(
     logger.debug(f"Extra args: {extra_args}")
 
     # 配置测试数据
+    TestDataConfig.cleanup()
     TestDataConfig().config_testdata(
         mode=mode, testpaths=testpaths, log_level=log_level, timestamp=timestamp, **extra_args
     )

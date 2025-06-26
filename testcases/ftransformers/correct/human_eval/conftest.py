@@ -83,12 +83,12 @@ class CommonHumanEval:
     @classmethod
     @allure.step("construct_prompt")
     def construct_prompt(cls, prompt: str) -> str:
-        # return f"""Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Instruction:\nComplete the following Python code without any tests or explanation\n{prompt}\n\n### Response:"""
         return (
             "Below is an instruction that describes a task. "
             "Write a response that appropriately completes the request.\n\n"
             "### Instruction:\n"
-            "Complete the following Python code without any tests or explanation\n"
+            "Complete the following Python code without any tests or explanation, "
+            "Emphasize again: Don't test or explanation, Just complete the python code.\n"  # TODO 合理吗？
             f"{prompt}\n\n"
             "### Response:"
         )
@@ -98,6 +98,9 @@ class CommonHumanEval:
     def filter_code(cls, completion: str) -> str:
         # ignore think
         completion = completion.split("think>")[-1]
+        completion = completion.split("</think>")[-1]
+        completion = completion.split("<think/>")[-1]
+        completion = completion.split("</>")[-1]
         # The program tends to overwrite, we only take the first function
         completion = completion.lstrip("\n")
         # we also remove ```python\n and ```
@@ -108,21 +111,27 @@ class CommonHumanEval:
             completion = completion.split("# Example usage")[0]
 
         # 检查是否还有多余的
-        # 如果以 import 开头
-        if completion.startswith("def") or completion.startswith("import"):
-            logger.info("ensure startwith def or import")
+        # 如果以 import 或 from 或 def 开头
+        if completion.startswith("import") or completion.startswith("from") or completion.startswith("def"):
+            logger.info("confirmd that startwith [import|from|def], return")
             return completion
 
-        # 查找第一个 'import' 或 'def'
+        # TODO 如果以 from 开头, 需要检查是否为 python 关键字
+        # TODO 补充 from 的逻辑(是否需要 prompt 约束 import 和 from 的先后顺序？)
+        # 查找第一个 'import' ｜ 'from'｜ 'def'
         import_match = re.search(r"^\s*import\s+\S+", completion)
+        from_match = re.search(r"^\s*from\s+\S+", completion)
         def_match = re.search(r"^\s*def\s+\S+", completion)
 
         # 如果找到了 'import'，以 'import' 为准
         if import_match:
             split_index = import_match.start()
+        elif from_match:
+            split_index = from_match.start()
         elif def_match:
             split_index = def_match.start()
         else:
+            logger.info("filter code failed, return init completion")
             return completion  # 如果都没有找到，返回原文本
 
         # 返回拆分后的文本
@@ -145,7 +154,7 @@ class CommonHumanEval:
         # stream 最好不要修改, 因为内部涉及内容的解析
         res = sglang.talk(prompt, sglang_server.served_model_name, temperature=0.6, stream=False, encode_result=True)
         res = cls.filter_code(cls.fix_indents(res.choices[0].message.content))
-        logger.info(res)
+        logger.info(f"filter code done: {res}")
 
         return [res]
 
