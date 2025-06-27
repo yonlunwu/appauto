@@ -112,7 +112,6 @@ class BaseComponent(object):
     ):
         url_map = url_map or self.POST_URL_MAP
         url = url_map[alias]
-        # TODO 完善 self.object_tokens
         if not stream:
             return self.http.post(
                 f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
@@ -152,7 +151,6 @@ class BaseComponent(object):
     ):
         url_map = url_map or self.POST_URL_MAP
         url = url_map[alias]
-        # TODO 完善 self.object_tokens
         if not stream:
             return self.http_without_token.post(
                 f"{self.url_prefix}/{url.format(**self.object_tokens)}",

@@ -1,5 +1,9 @@
+from time import time
 from ...base_component import BaseComponent
 from ....server_manager import SGLangServer
+from ....config_manager import LoggingConfig
+
+logger = LoggingConfig.get_logger()
 
 
 class SGLang(BaseComponent):
@@ -20,6 +24,7 @@ class SGLang(BaseComponent):
         timeout=None,
         encode_result=False,
         return_speed=False,
+        measure_ttft=False,
     ):
 
         payload = {
@@ -38,11 +43,36 @@ class SGLang(BaseComponent):
         if return_speed:
             payload["return_speed"] = return_speed
 
-        # 获取原始 stream
-        if not process_stream:
-            return self.post_without_token("chat", json=payload, timeout=timeout, encode_result=encode_result)
+        # 测量 ttft 时也等响应结束
+        if measure_ttft:
+            start = time()
+            first_chunk = True
+            ttft = None
 
-        with self.post_without_token("chat", json=payload, timeout=timeout, stream=stream) as response:
-            return self.http_without_token.process_stream(response)
+            with self.post_without_token(
+                "chat", json=payload, timeout=timeout, encode_result=False, stream=True
+            ) as res:
+                for line in res.iter_lines():
+                    if line:
+                        logger.info(f"get res: {line}")
+                        if first_chunk:
+                            # 第一次接收到流数据，TTFT 达成
+                            ttft = time() - start
+                            logger.info(f"get ttft: {ttft}")
+                            first_chunk = False
+
+            return ttft
+
+        # 不处理 stream(提取 stream 对应的文本)时根据是否 stream 决定是否 encode_result
+        if not process_stream:
+            encode_result = False if stream else encode_result
+            return self.post_without_token(
+                "chat", json=payload, timeout=timeout, encode_result=encode_result, stream=stream
+            )
+
+        # 处理 stream 时 stream 必须为 True
+        else:
+            with self.post_without_token("chat", json=payload, timeout=timeout, stream=True) as response:
+                return self.http_without_token.process_stream(response)
 
     def server(self) -> SGLangServer: ...
