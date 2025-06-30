@@ -160,7 +160,7 @@ def deploy(host, user, password, component):
 @click.option("--ssh-user", default="zkyd", show_default=True, help="SSH 用户名")
 @click.option("--ssh-password", default="zkyd@12#$", show_default=True, help="SSH 密码")
 @click.option("--ssh-port", type=int, default=22, show_default=True, help="SSH 端口")
-@click.option("--paraller", type=str, default="1 4", show_default=True, help="并发度")
+@click.option("--parallel", type=str, default="1 4", show_default=True, help="并发度")
 @click.option(
     "--number",
     type=str,
@@ -185,7 +185,7 @@ def perf(
     ssh_user,
     ssh_password,
     ssh_port,
-    paraller,
+    parallel,
     number,
     model,
     tokenizer_path,
@@ -226,7 +226,7 @@ def perf(
     assert evalscope_path
 
     cmd = (
-        f"{evalscope_path} perf --parallel {paraller} --number {number} "
+        f"{evalscope_path} perf --parallel {parallel} --number {number} "
         f"--model /mnt/data/models/{model} "
         f"--url http://127.0.0.1:{port}/v1/chat/completions "
         f"--api {api} --dataset {dataset} "

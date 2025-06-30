@@ -9,6 +9,7 @@ logger = LoggingConfig.get_logger()
 
 
 @allure.epic("TestSpeedEvalScope")
+@pytest.mark.night
 class TestSpeedEvalScope:
     def test_speed_demo(self):
         """使用 evalscope 测试 speed, 在被测主机上执行 swanlab watch 查看结果"""
@@ -18,8 +19,8 @@ class TestSpeedEvalScope:
         name = f"appauto-bench-{timestamp}"
         cmd = (
             "appauto bench evalscope perf --mgt-ip 192.168.110.15 --port 11002 "
-            " --paraller 1 2 "
-            " --number 2 4 "
+            " --parallel 1 2 4 8 "
+            " --number 4 4 4 4 "
             " --model DeepSeek-R1-GPTQ4-experts "
             " --tokenizer-path DeepSeek-R1-GPTQ4-experts "
             f" --name {name}"

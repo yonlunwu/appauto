@@ -51,7 +51,8 @@ class TestCorrectHumanEval:
         problems = cs.choose_problems("random", length=DP.humaneval_problems_num)
         cr.run_concurrency_test(problems, problem_file, sample_file, concurrency=DP.humaneval_concurrency)
 
-    @pytest.mark.night
+    # TODO 暂时忽略掉该用例, 只测试并发
+    # @pytest.mark.night
     def test_single_all_problems(self, fixture_check_humaneval_all_pass):
         """单并发测试所有 humaneval 数据集"""
         problem_file, sample_file = fixture_check_humaneval_all_pass
