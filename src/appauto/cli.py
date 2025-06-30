@@ -21,9 +21,21 @@ def env():
     pass
 
 
+@cli.group()
+def bench():
+    """benchmark"""
+    pass
+
+
 @env.group()
 def sglang():
     """管理 sglang 服务"""
+    pass
+
+
+@bench.group()
+def evalscope():
+    """通过 evalscope 跑 benchmark, 比如 eval 和 perf"""
     pass
 
 
@@ -138,6 +150,101 @@ def run(
 def deploy(host, user, password, component):
     """部署远程环境"""
     print("deploy_demo")
+
+
+@evalscope.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
+)
+@click.option("--ip", default="192.168.110.15", help="")
+@click.option("--port", type=int, default=11002, show_default=True, help="服务端口")
+@click.option("--ssh-user", default="zkyd", show_default=True, help="SSH 用户名")
+@click.option("--ssh-password", default="zkyd@12#$", show_default=True, help="SSH 密码")
+@click.option("--ssh-port", type=int, default=22, show_default=True, help="SSH 端口")
+@click.option("--paraller", type=str, default="1 4", show_default=True, help="并发度")
+@click.option(
+    "--number",
+    type=str,
+    default="5 ",
+    show_default=True,
+    help="每个线程内部依次请求数, 比如设置为 5, 表示每个线程内部都会顺序发 5 个请求。",
+)
+@click.option("--model", type=click.Choice(["DeepSeek-R1-GPTQ4-experts"]), required=True)
+@click.option("--tokenizer-path", type=click.Choice(["DeepSeek-R1-GPTQ4-experts"]), required=True)
+@click.option("--api", type=click.Choice(["openai"]), default="openai", show_default=True)
+@click.option("--dataset", default="random", show_default=True)
+@click.option("--max-tokens", type=int, default=1024, show_default=True)
+@click.option("--min-tokens", type=int, default=1024, show_default=True)
+@click.option("--max-prompt-length", type=int, default=1024, show_default=True)
+@click.option("--min-prompt-length", type=int, default=1024, show_default=True)
+@click.option("--prefix-length", type=int, default=0, show_default=True)
+@click.option("--swanlab-api-key", type=str, default="local", show_default=True)
+@click.option("--name", type=str, default="appauto-bench", show_default=True)
+def perf(
+    ip,
+    port,
+    ssh_user,
+    ssh_password,
+    ssh_port,
+    paraller,
+    number,
+    model,
+    tokenizer_path,
+    api,
+    dataset,
+    max_tokens,
+    min_tokens,
+    max_prompt_length,
+    min_prompt_length,
+    prefix_length,
+    swanlab_api_key,
+    name,
+):
+    """远程启动 sglang 服务"""
+    logger = LoggingConfig.get_logger()
+    from appauto.manager.server_manager import SGLangServer
+
+    server = SGLangServer(
+        ip,
+        port=port,
+        ssh_user=ssh_user,
+        ssh_password=ssh_password,
+        ssh_port=ssh_port,
+        conda_path=None,
+        conda_env_name=None,
+        model_path=None,
+        amx_weight_path=None,
+        served_model_name=None,
+        cpuinfer=None,
+    )
+
+    def get_evalscope_path():
+        _, res, _ = server.run("bash -l -c 'which evalscope'", sudo=False)
+        logger.info(f"evalscope path: {res}")
+        return res.strip("\n")
+
+    evalscope_path = get_evalscope_path()
+    assert evalscope_path
+
+    cmd = (
+        f"{evalscope_path} perf --parallel {paraller} --number {number} "
+        f"--model /mnt/data/models/{model} "
+        f"--url http://127.0.0.1:{port}/v1/chat/completions "
+        f"--api {api} --dataset {dataset} "
+        f"--prefix-length {prefix_length} "
+        f"--max-tokens {max_tokens} --min-tokens {min_tokens} "
+        f"--min-prompt-length {min_prompt_length} --max-prompt-length {max_prompt_length} "
+        f"--tokenizer-path /mnt/data/models/{tokenizer_path} "
+        "--extra-args '{\"ignore_eos\": true}' "
+        f"--swanlab-api-key {swanlab_api_key} --name {name}"
+    )
+
+    try:
+        # rc, res, err = server.run(f'bash -l -c "{cmd}"', sudo=False)
+        rc, res, err = server.run(cmd, sudo=False)
+        logger.info("✅ 测试完成!")
+
+    except Exception as e:
+        logger.error("❌ 测试失败!")
 
 
 @sglang.command(

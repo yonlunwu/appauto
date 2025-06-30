@@ -26,7 +26,13 @@ pipeline {
 
                     dir('./appauto') {
                         sh 'pip install -e . --break-system-packages'
-                        sh "appauto run pytest --testpaths ${testpaths} --case-level night --sglang_ip=${sglang_ip} --sglang_port=${sglang_port} --notify-group ${notify_group_id} --report-server=192.168.110.11:9080 --report-url=job/test_sglang_demo/${buildNumber}/allure/"
+                        script {
+                            if ("${test_demo}" == "true") {
+                                sh "appauto run pytest --testpaths ${testpaths} --keyword test_single_random_peoblems --mmlu_questions_num=1 --sglang_ip=${sglang_ip} --sglang_port=${sglang_port} --notify-user ou_de15ea583c7731052a0ab3bd370fc113 --report-server=192.168.110.11:9080 --report-url=job/test_sglang_night/${buildNumber}/allure/"
+                            } else {
+                                sh "appauto run pytest --testpaths ${testpaths} --case-level night --sglang_ip=${sglang_ip} --sglang_port=${sglang_port} --notify-group ${notify_group_id} --report-server=192.168.110.11:9080 --report-url=job/test_sglang_night/${buildNumber}/allure/"
+                            }
+                        }
                     }
                 }
             }
