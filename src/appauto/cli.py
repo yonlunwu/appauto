@@ -48,18 +48,19 @@ def evalscope():
 @click.option("--testcases", help="Python functions pattern")
 @click.option("--case-level", help="Case level marker")
 # TODO 使用正确的 group & user
-@click.option("--notify-group", default=None, help="Notify Group Chat ID")
+@click.option("--notify-group", default=None, show_default=True, help="Notify Group Chat ID")
 # oc_69e39d9b1f06ea42ba76ce50e68acc77: sglang 8 卡测试
 # @click.option("--notify-user", default="ou_de15ea583c7731052a0ab3bd370fc113", help="Notify User ID")
-@click.option("--notify-user", default=None, help="Notify User ID")
-@click.option("--interval", default=0, help="Delay in seconds between test cases. (Default: 0)")
-@click.option("--repeat", default=1, help="Delay in seconds between test cases. (Default: 0)")
-@click.option("--log-level", default="INFO", help="Log Level")
-@click.option("--no-report", is_flag=True, help="Don't generate allure report (Default: False)")
-@click.option("--keyword", default=None, help="Keyword (Default: None)")
-@click.option("--collect-only", is_flag=True, help="Collect only test cases without executing (Default: False)")
-@click.option("--report-server", default=None, help="Report Server (Default: None)")
-@click.option("--report-url", default=None, help="Report URL (Default: None)")
+@click.option("--notify-user", default=None, show_default=True, help="Notify User ID")
+@click.option("--interval", default=0, show_default=True, help="Delay in seconds between test cases.")
+@click.option("--repeat", default=1, show_default=True, help="Delay in seconds between test cases")
+@click.option("--log-level", default="INFO", show_default=True, help="Log Level")
+@click.option("--no-report", is_flag=True, show_default=True, help="Don't generate allure report")
+@click.option("--keyword", default=None, show_default=True, help="Keyword")
+@click.option("--collect-only", is_flag=True, show_default=True, help="Collect only test cases without executing")
+@click.option("--report-server", default=None, show_default=True, help="Report Server")
+@click.option("--report-url", default=None, show_default=True, help="Report URL")
+@click.option("--topic", type=str, default=None, show_default=True, help="The test topic")
 @click.pass_context
 def run(
     ctx,
@@ -78,6 +79,7 @@ def run(
     collect_only,
     report_server,
     report_url,
+    topic,
 ):
     """运行测试(pytest / ui)"""
     if collect_only:
@@ -130,6 +132,7 @@ def run(
             keyword=keyword,
             report_server=report_server,
             report_url=report_url,
+            topic=topic,
         )
         return_code = runner.run()
         if return_code != 0:

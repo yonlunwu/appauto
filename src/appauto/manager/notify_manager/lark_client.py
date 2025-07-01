@@ -39,6 +39,9 @@ class LarkClient(HttpClient):
             "title": {"content": "Test Passed" if template == "green" else "Test Failed", "tag": "plain_text"},
         }
 
+    def msg_topic_card(self, topic: str):
+        return {"tag": "div", "text": {"tag": "lark_md", "content": f"**🎯 Test Topic**\n {topic}"}}
+
     def msg_env_card(self, env_summary: Dict):
         return {
             "tag": "div",
@@ -66,7 +69,7 @@ class LarkClient(HttpClient):
                     "text": {"content": "📄 点击查看测试报告", "tag": "plain_text"},
                     "type": "primary",
                     # TODO
-                    "url": link or "http://192.168.110.11:8090/test_reports/",
+                    "url": link or "http://192.168.110.11:8090/autotest/test_reports/",
                 }
             ],
         }
@@ -85,10 +88,20 @@ class LarkClient(HttpClient):
             else "green"
         )
 
-    def construct_msg_payload(self, receive_id: str, result_summary: Dict, env_summary: Dict, link: str = None):
+    def construct_msg_payload(
+        self, receive_id: str, result_summary: Dict, env_summary: Dict, link: str = None, topic: str = None
+    ):
         """
         发 dm 用 open_id; 发 group 用 chat_id(并且机器人要在 group 中)
         """
+        elements = [
+            self.msg_env_card(env_summary),
+            self.msg_summary_card(result_summary),
+            self.msg_report_card(link),
+        ]
+        if topic:
+            elements.insert(0, self.msg_topic_card(topic))
+
         return {
             "receive_id": receive_id,
             "msg_type": "interactive",
@@ -98,11 +111,7 @@ class LarkClient(HttpClient):
                     # 标题栏
                     "header": self.msg_title_card(template=self.set_template(result_summary)),
                     # 内部元素
-                    "elements": [
-                        self.msg_env_card(env_summary),
-                        self.msg_summary_card(result_summary),
-                        self.msg_report_card(link),
-                    ],
+                    "elements": elements,
                 }
             ),
         }

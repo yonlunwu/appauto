@@ -25,6 +25,7 @@ def pytest_addoption(parser):
     parser.addoption("--filling_report_url", action="store", help="Filling Allure report server ip")
     parser.addoption("--set_report_url_suffix", action="store", default=False, help="Set Allure report url suffix")
     parser.addoption("--interval", action="store", default=0, help="Delay in seconds between test cases")
+    parser.addoption("--topic", action="store", default=None, help="The test topic")
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -43,7 +44,12 @@ def pytest_runtest_protocol(item, nextitem):
 
 
 def gen_report_and_send_lark(
-    config, case_dict, report_server: str = None, filling_url: str = None, set_url_suffix: bool = False
+    config,
+    case_dict,
+    report_server: str = None,
+    filling_url: str = None,
+    set_url_suffix: bool = False,
+    topic: str = None,
 ):
     timestamp = config.getoption("--timestamp")
     no_report = config.getoption("--no_report")
@@ -71,10 +77,15 @@ def gen_report_and_send_lark(
     logger.info(f"test_report: {test_report}")
 
     if group_chat_id and group_chat_id.lower() != "none":
-        lark.send_msg(lark.construct_msg_payload(group_chat_id, case_dict, env_summary=None, link=test_report), "group")
+        lark.send_msg(
+            lark.construct_msg_payload(group_chat_id, case_dict, env_summary=None, link=test_report, topic=topic),
+            "group",
+        )
 
     elif user_open_id and user_open_id.lower() != "none":
-        lark.send_msg(lark.construct_msg_payload(user_open_id, case_dict, env_summary=None, link=test_report), "dm")
+        lark.send_msg(
+            lark.construct_msg_payload(user_open_id, case_dict, env_summary=None, link=test_report, topic=topic), "dm"
+        )
 
 
 def pytest_configure(config):
@@ -107,4 +118,7 @@ def pytest_terminal_summary(terminalreporter: TerminalReporter, exitstatus, conf
     # set_url_suffix = config.getoption("--set_report_url_suffix")
     # gen_report_and_send_lark(
     #     config, case_dict, report_server, filling_url, set_url_suffix)
-    gen_report_and_send_lark(config, case_dict, report_server)
+
+    topic = config.getoption("--topic", None)
+
+    gen_report_and_send_lark(config, case_dict, report_server, topic=topic)

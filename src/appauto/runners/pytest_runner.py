@@ -19,6 +19,7 @@ class PytestRunner:
         keyword: str = None,
         report_server: str = None,
         report_url: str = None,
+        topic: str = None,
     ):
         self.log_level = log_level
         self.notify_group = notify_group
@@ -36,6 +37,7 @@ class PytestRunner:
         self.keyword = keyword
         self.report_server = report_server
         self.report_url = report_url
+        self.topic = topic
 
     def run(self) -> int:
         """运行 pytest 命令"""
@@ -60,6 +62,8 @@ class PytestRunner:
             cmd.append(f"--report_server={self.report_server}")
         if self.report_url:
             cmd.append(f"--report_url={self.report_url}")
+        if self.topic:
+            cmd.append(f"--topic={self.topic}")
         logger.info(f"Running pytest cmd: {' '.join(cmd)}")
 
         # 执行命令
