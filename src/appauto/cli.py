@@ -239,7 +239,6 @@ def perf(
     )
 
     try:
-        # rc, res, err = server.run(f'bash -l -c "{cmd}"', sudo=False)
         rc, res, err = server.run(cmd, sudo=False)
         logger.info("✅ 测试完成!")
 

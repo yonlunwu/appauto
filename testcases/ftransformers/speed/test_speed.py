@@ -19,8 +19,9 @@ class TestSpeedEvalScope:
         name = f"appauto-bench-{timestamp}"
         cmd = (
             "appauto bench evalscope perf --mgt-ip 192.168.110.15 --port 11002 "
-            " --parallel 1 2 4 8 "
-            " --number 4 4 4 4 "
+            # NOTE 注意 parallel 和 number 要加引号,
+            " --parallel '1 2 4 8' "
+            " --number '4 4 4 4' "
             " --model DeepSeek-R1-GPTQ4-experts "
             " --tokenizer-path DeepSeek-R1-GPTQ4-experts "
             f" --name {name}"
