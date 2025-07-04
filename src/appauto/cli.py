@@ -224,7 +224,7 @@ def perf(
         # _, res, _ = server.run("bash -l -c 'which evalscope'", sudo=False)
         # logger.info(f"evalscope path: {res}")
         # return res.strip("\n")
-        return "/home/qujing/perftest/venv/evalscope-py/bin/evalscope"
+        return f"/home/{ssh_user}/perftest/venv/evalscope-py/bin/evalscope"
 
     evalscope_path = get_evalscope_path()
     assert evalscope_path
