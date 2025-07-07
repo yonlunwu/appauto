@@ -46,7 +46,7 @@ class Model(BaseComponent):
 
     def set_replicas(self, replicas: int, timeout=None):
         data = {"id": self.object_id, "replicas": replicas}
-        return self.post("set_replicas", json=data, timeout=timeout)
+        return self.post("set_replicas", json_data=data, timeout=timeout)
 
     @property
     def name(self):

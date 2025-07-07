@@ -37,7 +37,7 @@ class ModelStore(BaseComponent):
             "access_limit": access_limit,
             "backend_parameters": ["--tensor-parallel-size", "1", "--max-total-tokens", str(max_token)],
         }
-        return self.post("check", json=data, timeout=timeout)
+        return self.post("check", json_data=data, timeout=timeout)
 
     def run(self, gpu_count=1, replicas=1, access_limit=1, max_token=8194, timeout=None):
         data = {
@@ -48,7 +48,7 @@ class ModelStore(BaseComponent):
             "id": self.object_id,
             "backend_parameters": ["--tensor-parallel-size", "1", "--max-total-tokens", str(max_token)],
         }
-        return self.post("run", json=data, timeout=timeout)
+        return self.post("run", json_data=data, timeout=timeout)
 
     @cached_property
     def type(self):

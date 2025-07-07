@@ -1,5 +1,3 @@
-import pytest
-
 from appauto.manager.client_manager import BaseLinux
 from appauto.manager.config_manager import LoggingConfig
 

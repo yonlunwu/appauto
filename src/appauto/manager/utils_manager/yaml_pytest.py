@@ -73,7 +73,7 @@ class YamlItem(pytest.Item):
         response = http_client.request(
             method=request["method"],
             url=url,
-            json=request.get("json"),
+            json_data=request.get("json"),
             params=request.get("params"),
             headers=request.get("headers"),
         )

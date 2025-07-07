@@ -1,4 +1,3 @@
-import pytest
 import allure
 from time import time
 from typing import Tuple

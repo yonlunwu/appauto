@@ -50,7 +50,7 @@ class SGLang(BaseComponent):
             ttft = None
 
             with self.post_without_token(
-                "chat", json=payload, timeout=timeout, encode_result=False, stream=True
+                "chat", json_data=payload, timeout=timeout, encode_result=False, stream=True
             ) as res:
                 for line in res.iter_lines():
                     if line:
@@ -67,12 +67,12 @@ class SGLang(BaseComponent):
         if not process_stream:
             encode_result = False if stream else encode_result
             return self.post_without_token(
-                "chat", json=payload, timeout=timeout, encode_result=encode_result, stream=stream
+                "chat", json_data=payload, timeout=timeout, encode_result=encode_result, stream=stream
             )
 
         # 处理 stream 时 stream 必须为 True
         else:
-            with self.post_without_token("chat", json=payload, timeout=timeout, stream=True) as response:
-                return self.http_without_token.process_stream(response)
+            with self.post_without_token("chat", json_data=payload, timeout=timeout, stream=True) as response:
+                return self.http_without_token.process_stream_amaas(response)
 
     def server(self) -> SGLangServer: ...

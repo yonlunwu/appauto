@@ -71,7 +71,8 @@ def gen_report_and_send_lark(
             report_url = allure.gen_allure_report(testpaths, timestamp)
             report_url = str(filling_url) + "/" + report_url if filling_url else report_url
             report_url = report_url + "/index.html" if set_url_suffix else report_url
-        report_server = report_server or NetworkUtils.get_local_ip()
+        # report_server = report_server or NetworkUtils.get_local_ip()
+        report_server = report_server or f"{NetworkUtils.get_local_ip()}:8000/reports/allure-results"
         test_report = f"http://{report_server}/{report_url}"
 
     logger.info(f"test_report: {test_report}")

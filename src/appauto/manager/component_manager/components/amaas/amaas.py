@@ -93,7 +93,7 @@ class AMaaS(BaseComponent):
     def create_api_key(self, name: str = None, expires_in=None, timeout: int = None):
         # TODO 时间戳有点诡异，是个 1970 年的时间戳？
         data = {"expires_in": expires_in or "30761967", "name": name or str(uuid4())}
-        res = self.post("create", url_map=APIKey.POST_URL_MAP, json=data, timeout=timeout)
+        res = self.post("create", url_map=APIKey.POST_URL_MAP, json_data=data, timeout=timeout)
         return APIKey(self.mgt_ip, self.port, object_id=res.data.id, data=res.data)
 
     @property
@@ -110,7 +110,7 @@ class AMaaS(BaseComponent):
             "full_name": desc,
             "require_password_change": False,
         }
-        res = self.post("create", url_map=AMaaSUser.POST_URL_MAP, json=data, timeout=timeout)
+        res = self.post("create", url_map=AMaaSUser.POST_URL_MAP, json_data=data, timeout=timeout)
         return AMaaSUser(self.mgt_ip, self.port, object_id=res.data.id, data=res.data)
 
     @property

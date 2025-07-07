@@ -22,14 +22,14 @@ class LarkClient(HttpClient):
         """获取 app_access_token"""
         url = "https://open.feishu.cn/open-apis/auth/v3/app_access_token/internal"
         params = {"app_id": app_id, "app_secret": app_secret}
-        res = self.request("post", url, data=params, timeout=30)
+        res = self.request("post", url, data=params, timeout=30, check=False)
         return res.app_access_token
 
     def send_msg(self, payload: Dict, dst: Literal["dm", "group"]):
         dst_map = {"dm": "open_id", "group": "chat_id"}
         try:
             url = f"https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type={dst_map.get(dst)}"
-            self.post(url, json=payload, headers=self.headers)
+            self.post(url, json_data=payload, headers=self.headers, check=False)
         except Exception as e:
             logger.error(f"send dm msg failed: {e}")
 

@@ -36,7 +36,7 @@ class Chat(BaseComponent):
         }
         # 获取原始 stream
         if not process_stream:
-            return self.post("chat", json=data, timeout=timeout, encode_result=False)
+            return self.post("chat", json_data=data, timeout=timeout, encode_result=False)
 
-        with self.post("chat", json=data, timeout=timeout, stream=stream) as response:
-            return self.http.process_stream(response)
+        with self.post("chat", json_data=data, timeout=timeout, stream=stream) as response:
+            return self.http.process_stream_amaas(response)
