@@ -52,7 +52,7 @@ class HttpClient:
         headers: Optional[Dict[str, str]] = None,
         encode_result=True,
         timeout=None,
-        check=True,
+        check=False,
         **kwargs,
     ) -> Union[addict.Dict, httpx.Response]:
         self._log_request(method, url, params=params, data=data, json=json_data, headers=headers)
