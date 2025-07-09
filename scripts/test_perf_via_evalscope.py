@@ -1,3 +1,7 @@
+"""
+通过 evalscope 跑 perf 测试
+"""
+
 import click
 
 from evalscope.perf.main import run_perf_benchmark
@@ -42,7 +46,7 @@ def runner(
             max_prompt_length=int(input_length),
             tokenizer_path=tokenizer_path,
             extra_args={"ignore_eos": True},
-            swanlab_api_key="local",
+            # swanlab_api_key="local",
             seed=int(seed),
             name=f"{name}-{i}",
             debug=debug,
