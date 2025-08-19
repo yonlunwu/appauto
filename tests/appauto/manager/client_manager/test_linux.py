@@ -3,7 +3,7 @@ from appauto.manager.config_manager import LoggingConfig
 
 logger = LoggingConfig.get_logger()
 
-linux = BaseLinux("192.168.110.15", "zkyd", "zkyd@12#$")
+linux = BaseLinux("120.211.1.45", "zkyd", "zkyd@12#$")
 
 
 class TestBaseLinux:
@@ -24,3 +24,8 @@ class TestBaseLinux:
         remote_path = "/home/zkyd/yanlong/yanlong_eval_file_73.jsonl_results.jsonl"
         local_path = "./yanlong_eval_file_73.jsonl_results.jsonl"
         linux.download(remote_path, local_path)
+
+    def test_upload_file(self):
+        local_path = "test_playwright.py"
+        remote_path = "test_playwright.py"
+        linux.upload(remote_path, local_path)

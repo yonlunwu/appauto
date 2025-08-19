@@ -124,6 +124,11 @@ class BaseLinux(object):
         sftp.get(remote_path, local_path)
         sftp.close()
 
+    def upload(self, remote_path: str, local_path: str):
+        sftp = self.ssh.open_sftp()
+        sftp.put(local_path, remote_path)
+        sftp.close()
+
     def cpu_core(self):
         cmd = "lscpu | grep \"CPU(s)\" | head -n 1 | awk '{print $NF}'"
         _, res, _ = self.run(cmd)
