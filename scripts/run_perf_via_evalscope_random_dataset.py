@@ -130,6 +130,7 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 )
 @click.option("--input-length", type=int, default=128, show_default=True)
 @click.option("--output-length", type=int, default=512, show_default=True)
+@click.option("--read-timeout", type=int, default=600, show_default=True)
 @click.option("--seed", type=int, default=42, show_default=True)
 @click.option("--loop", type=int, default=1, show_default=True)
 @click.option("--name", type=str, default="appauto-bench", show_default=True, help="任务名称")
@@ -145,6 +146,7 @@ def runner(
     api_key,
     input_length,
     output_length,
+    read_timeout,
     tokenizer_path,
     seed,
     loop,
@@ -175,6 +177,7 @@ def runner(
             dataset="random",
             min_tokens=int(output_length),
             max_tokens=int(output_length),
+            read_timeout=int(read_timeout),
             prefix_length=0,
             min_prompt_length=int(input_length),
             max_prompt_length=int(input_length),
