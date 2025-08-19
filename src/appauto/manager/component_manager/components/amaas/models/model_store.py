@@ -3,6 +3,7 @@
 """
 
 from functools import cached_property
+from typing import List
 from ....base_component import BaseComponent
 
 
@@ -23,32 +24,72 @@ class ModelStore(BaseComponent):
     POST_URL_MAP = dict(
         check="/v1/kllm/model-store/check",
         run="/v1/kllm/model-store/run",
+        get_run_rule="/v1/kllm/model-store/get_run_rule",
     )
 
     DELETE_URL_MAP = dict(
         aaa="/v1/kllm/models/{model_id}",
     )
 
-    def check(self, replicas=1, access_limit=1, max_token=8194, timeout=None):
+    def check(
+        self,
+        replicas=1,
+        access_limit=4,
+        max_total_tokens=8194,
+        timeout=None,
+        gpu_ids: List = None,
+        tp: int = None,
+        backend_parameters: List = None,
+        cache_storage: int = 0,
+    ):
         # TODO max_token 最好能获取到 self, 因为每个 model 都不一样
         data = {
             "id": self.object_id,
             "replicas": replicas,
             "access_limit": access_limit,
-            "backend_parameters": ["--tensor-parallel-size", "1", "--max-total-tokens", str(max_token)],
+            "gpu_ids": gpu_ids,
+            "fixed_backend_parameters": [
+                "--tensor-parallel-size",
+                str(tp),
+                "--max-total-tokens",
+                str(max_total_tokens),
+            ],
+            "backend_parameters": backend_parameters or [],
+            "cache_storage": cache_storage,
         }
+
         return self.post("check", json_data=data, timeout=timeout)
 
-    def run(self, gpu_count=1, replicas=1, access_limit=1, max_token=8194, timeout=None):
+    def run(
+        self,
+        replicas=1,
+        access_limit=4,
+        max_total_tokens=8194,
+        timeout=None,
+        gpu_ids: List = None,
+        tp: int = None,
+        backend_parameters: List = None,
+        cache_storage: int = 0,
+    ):
         data = {
-            "gpu_count": gpu_count,
+            "id": self.object_id,
             "replicas": replicas,
             "access_limit": access_limit,
-            "max_input_length": max_token,
-            "id": self.object_id,
-            "backend_parameters": ["--tensor-parallel-size", "1", "--max-total-tokens", str(max_token)],
+            "gpu_ids": gpu_ids,
+            "fixed_backend_parameters": [
+                "--tensor-parallel-size",
+                str(tp),
+                "--max-total-tokens",
+                str(max_total_tokens),
+            ],
+            "backend_parameters": backend_parameters or [],
+            "cache_storage": cache_storage,
         }
         return self.post("run", json_data=data, timeout=timeout)
+
+    def get_run_rule(self, timeout=None):
+        data = {"id": self.object_id}
+        return self.post("get_run_rule", json_data=data, timeout=timeout)
 
     @cached_property
     def type(self):
