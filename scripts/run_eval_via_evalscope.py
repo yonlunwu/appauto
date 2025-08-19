@@ -7,6 +7,7 @@ from evalscope.config import TaskConfig
 
 def get_ft_port() -> int | None:
     try:
+        # cmd = "ps aux | grep ftransformers.launch_server | grep -v grep | grep -o 'port [0-9]*' | awk '{print $NF}'"
         cmd = "pgrep -f 'ftransformers.launch_server' -a | grep -o 'port [0-9]*' | awk '{print $2}'"
         result = subprocess.check_output(cmd, shell=True, text=True).strip()
         return int(result) if result.isdigit() else None

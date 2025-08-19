@@ -14,7 +14,7 @@ from evalscope.perf.main import run_perf_benchmark
 from evalscope.perf.arguments import Arguments
 
 
-def extract_json_to_csv(input_dir, output_csv, input_length, output_length, loop):
+def extract_json_to_csv(input_dir, output_csv, input_length, output_length, loop, concurrency: int = None):
     # 定义要提取的字段
     fields_to_extract = [
         "Average latency (s)",
@@ -39,7 +39,7 @@ def extract_json_to_csv(input_dir, output_csv, input_length, output_length, loop
         if dir_name.startswith("parallel_"):
             concurrency = dir_name.split("_")[1]
         else:
-            concurrency = "1"  # 默认值
+            concurrency = concurrency or "1"  # 默认值
 
         with open(json_file, "r") as f:
             try:
@@ -194,11 +194,13 @@ def runner(
         if len(number) == 1:
             # 读 json TODO 如何感知 timestamp? -> args.outputs_dir 可以感知到
             json_dir = task_cfg.outputs_dir  # 已经包括了 name
-            extract_json_to_csv(json_dir, output_csv, input_length, output_length, i)
 
         elif len(number) > 1:
             json_dir = "/".join(task_cfg.outputs_dir.split("/")[:-2])
-            extract_json_to_csv(json_dir, output_csv, input_length, output_length, i)
+
+        extract_json_to_csv(
+            json_dir, output_csv, input_length, output_length, i, None if len(parallel) > 1 else parallel[0]
+        )
 
     print(f"Save the csv result to: {output_csv}")
 
