@@ -53,7 +53,7 @@ def evalscope():
 # @click.option("--notify-user", default="ou_de15ea583c7731052a0ab3bd370fc113", help="Notify User ID")
 @click.option("--notify-user", default=None, show_default=True, help="Notify User ID")
 @click.option("--interval", default=0, show_default=True, help="Delay in seconds between test cases.")
-@click.option("--repeat", default=1, show_default=True, help="Delay in seconds between test cases")
+@click.option("--repeat", default=1, show_default=True, help="Repeat test cases")
 @click.option("--log-level", default="INFO", show_default=True, help="Log Level")
 @click.option("--no-report", is_flag=True, show_default=True, help="Don't generate allure report")
 @click.option("--keyword", default=None, show_default=True, help="Keyword")

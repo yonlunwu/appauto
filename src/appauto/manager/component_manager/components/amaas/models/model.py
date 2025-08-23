@@ -2,6 +2,7 @@
 将 Model 作为一个对象, 可能分为多种 Model: ['llm', 'vlm', 'embedding', 'rerank', 'parser', 'audio']
 """
 
+from typing import Literal
 from ....base_component import BaseComponent
 from .model_instance import ModelInstance
 
@@ -121,7 +122,7 @@ class Model(BaseComponent):
         return self.data.access_limit
 
     @property
-    def status(self):
+    def status(self) -> Literal["running", "loading", "error"]:
         return self.data.status
 
     @property

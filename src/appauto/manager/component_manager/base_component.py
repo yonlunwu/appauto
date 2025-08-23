@@ -110,6 +110,9 @@ class BaseComponent(object):
         stream=False,
         **kwargs,
     ):
+        """
+        encode_result 只在 stream=False 时才生效;
+        """
         url_map = url_map or self.POST_URL_MAP
         url = url_map[alias]
         if not stream:
