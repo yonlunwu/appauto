@@ -4,7 +4,7 @@ from ...base_component import BaseComponent
 from .models.model import Model
 from .models.model_store import ModelStore
 from .models.model_instance import ModelInstance
-from .scene import Chat
+from .scene import Chat, Embedding, Rerank, MultiModel  # TODO 结构很像，可以 base_component
 from .api_key import APIKey
 from .dashboard import DashBoard
 from .users import AMaaSUser
@@ -75,6 +75,27 @@ class AMaaS(BaseComponent):
         res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="llm"))
         logger.debug(res)
         return [Chat(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data]
+
+    @property
+    def embedding_chats(self):
+        """试验场景-embedding"""
+        res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="embedding"))
+        logger.debug(res)
+        return [Embedding(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data]
+
+    @property
+    def rerank_chats(self):
+        """试验场景-rerank"""
+        res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="rerank"))
+        logger.debug(res)
+        return [Rerank(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data]
+
+    @property
+    def multi_model_chats(self):
+        """试验场景-rerank"""
+        res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="vlm"))
+        logger.debug(res)
+        return [MultiModel(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data]
 
     @property
     def model_instances(self) -> List[ModelInstance]:

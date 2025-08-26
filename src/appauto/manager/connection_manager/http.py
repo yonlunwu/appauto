@@ -187,9 +187,10 @@ class HttpClient:
             logger.error(f"Stream request failed: {e}")
             raise
 
-    def process_stream_amaas(self, response: httpx.Response):
+    def process_stream_amaas(self, response: httpx.Response, process_chunk=True):
         """获取 stream chunks 的文本内容"""
         full_content = ""
+
         for line in response.iter_lines():
             if not line or not line.startswith("data:"):
                 continue
@@ -201,12 +202,12 @@ class HttpClient:
             try:
                 data = json.loads(payload)
                 logger.info(f"per stream link payload: {data}")
-                chunk = data["choices"][0]["delta"].get("content")
-                if chunk:
-                    full_content += chunk
-                    # 实时输出
-                    logger.debug(chunk)
-                    logger.debug(full_content)
+                if process_chunk:
+                    if chunk := data["choices"][0]["delta"].get("content"):
+                        full_content += chunk
+                        # 实时输出
+                        logger.debug(chunk)
+                        logger.debug(full_content)
 
             except Exception as e:
                 logger.error(f"Process stream request failed: {e}, init_payload: {payload}")
