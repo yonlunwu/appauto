@@ -2,9 +2,10 @@
 将 Model 作为一个对象, 可能分为多种 Model: ['llm', 'vlm', 'embedding', 'rerank', 'parser', 'audio']
 """
 
-from typing import Literal
+from typing import Literal, Dict, List
 from ....base_component import BaseComponent
 from .model_instance import ModelInstance
+from .....utils_manager.custom_list import CustomList
 
 
 # TODO 要继承 BaseComponent
@@ -38,12 +39,15 @@ class Model(BaseComponent):
 
     # TODO CustomList
     @property
-    def instances(self):
+    def instances(self) -> CustomList[ModelInstance]:
+        """模型实例"""
         res = self.get("get_instances")
-        return [
-            ModelInstance(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip)
-            for item in res.data.get("items")
-        ]
+        return CustomList(
+            [
+                ModelInstance(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip)
+                for item in res.data.get("items")
+            ]
+        )
 
     def set_replicas(self, replicas: int, timeout=None):
         data = {"id": self.object_id, "replicas": replicas}
@@ -54,15 +58,19 @@ class Model(BaseComponent):
         return self.data.name
 
     @property
-    def source(self):
+    def description(self):
+        return self.data.description
+
+    @property
+    def source(self) -> Literal["local_path"]:
         return self.data.source
 
     @property
-    def replicas(self):
+    def replicas(self) -> int:
         return self.data.replicas
 
     @property
-    def ready_replicas(self):
+    def ready_replicas(self) -> int:
         return self.data.ready_replicas
 
     @property
@@ -90,11 +98,11 @@ class Model(BaseComponent):
         return self.data.local_path
 
     @property
-    def model_store_id(self):
+    def model_store_id(self) -> int:
         return self.data.model_store_id
 
     @property
-    def categories(self):
+    def categories(self) -> List:
         return self.data.categories
 
     @property
@@ -102,23 +110,39 @@ class Model(BaseComponent):
         return self.data.placement_strategy
 
     @property
-    def cpu_offloading(self):
+    def cpu_offloading(self) -> bool:
         return self.data.cpu_offloading
 
     @property
-    def vram_count(self):
+    def distributed_inference_across_workers(self) -> bool:
+        return self.data.distributed_inference_across_workers
+
+    @property
+    def worker_selector(self) -> Dict:
+        return self.data.worker_selector
+
+    @property
+    def gpu_selector(self):
+        return self.data.gpu_selector
+
+    @property
+    def worker_id_selector(self) -> str:
+        return self.data.worker_id_selector
+
+    @property
+    def vram_count(self) -> int:
         return self.data.vram_count
 
     @property
-    def gpu_count(self):
+    def gpu_count(self) -> int:
         return self.data.gpu_count
 
     @property
-    def token_count(self):
+    def token_count(self) -> int:
         return self.data.token_count
 
     @property
-    def access_limit(self):
+    def access_limit(self) -> int:
         return self.data.access_limit
 
     @property
@@ -126,15 +150,15 @@ class Model(BaseComponent):
         return self.data.status
 
     @property
-    def family(self):
+    def family(self) -> Literal["DeepSeek", "Qwen", "parser", "BGE"]:
         return self.data.family
 
     @property
-    def meta(self):
+    def meta(self) -> Dict:
         return self.data.meta
 
     @property
-    def backend_version(self):
+    def backend_version(self) -> Literal["ftransformers", "llama-box", "pdf_parse_server"]:
         return self.data.backend_version
 
     @property
@@ -142,9 +166,53 @@ class Model(BaseComponent):
         return self.data.backend_parameters
 
     @property
-    def embedding_only(self):
+    def backend_version(self):
+        return self.data.backend_version
+
+    @property
+    def backend_parameters(self) -> List:
+        return self.data.backend_parameters
+
+    @property
+    def embedding_only(self) -> bool:
         return self.data.embedding_only
 
     @property
-    def image_only(self):
+    def image_only(self) -> bool:
         return self.data.image_only
+
+    @property
+    def reranker(self) -> bool:
+        return self.data.reranker
+
+    @property
+    def speech_to_text(self) -> bool:
+        return self.data.speech_to_text
+
+    @property
+    def text_to_speech(self) -> bool:
+        return self.data.text_to_speech
+
+    @property
+    def placement_strategy(self) -> Literal["spread"]:
+        return self.data.placement_strategy
+
+    @property
+    def cache_storage(self) -> int:
+        return self.data.cache_storage
+
+    @property
+    def max_total_tokens(self) -> int:
+        return self.data.max_total_tokens
+
+    @property
+    def created_at(self) -> str:
+        return self.data.created_at
+
+    @property
+    def updated_at(self) -> str:
+        return self.data.updated_at
+
+    @property
+    def display_model_name(self) -> str:
+        return self.data.display_model_name
