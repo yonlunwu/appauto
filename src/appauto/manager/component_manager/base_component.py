@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
 class BaseComponent(object):
     OBJECT_TOKEN = None
+    ACCESS_TOKEN = None
+
     GET_URL_MAP = {}
     PUT_URL_MAP = {}
     POST_URL_MAP = {}
@@ -48,15 +50,22 @@ class BaseComponent(object):
             "Cookie": f"AMES_session={self.token}",
         }
 
-    def login(self):
-        data = {"username": self.user, "password": self.passwd}
-        return HttpClient().post(f"{self.url_prefix}/api/auth/login", data=data)
+    def login(self, refresh=False):
+        if refresh:
+            BaseComponent.ACCESS_TOKEN = None
+
+        if BaseComponent.ACCESS_TOKEN is None:
+            data = {"username": self.user, "password": self.passwd}
+            res = HttpClient().post(f"{self.url_prefix}/api/auth/login", data=data)
+            BaseComponent.ACCESS_TOKEN = res.data.access_token
+
+        return BaseComponent.ACCESS_TOKEN
 
     def request_callback(self, response):
         retry = True
         try:
             if response.status_code == 401:
-                self.login()
+                self.login(refresh=True)
             elif response.status_code == 200 and response.json().get("ec", "EOK") == "EOK":
                 retry = False
         finally:
@@ -64,7 +73,7 @@ class BaseComponent(object):
 
     @cached_property
     def token(self):
-        return self.login().data.access_token
+        return self.login()
 
     @cached_property
     def http(self):
