@@ -4,6 +4,7 @@
 
 from functools import cached_property
 from typing import List
+from copy import deepcopy
 from ....base_component import BaseComponent
 
 
@@ -40,9 +41,11 @@ class ModelStore(BaseComponent):
         gpu_ids: List = None,
         tp: int = None,
         backend_parameters: List = None,
-        cache_storage: int = 0,
+        hicache: int = 0,
+        worker_id: int = None,
     ):
         # TODO max_token 最好能获取到 self, 因为每个 model 都不一样
+        # TODO 新版本中 replica 只能是 1
         data = {
             "id": self.object_id,
             "replicas": replicas,
@@ -55,8 +58,19 @@ class ModelStore(BaseComponent):
                 str(max_total_tokens),
             ],
             "backend_parameters": backend_parameters or [],
-            "cache_storage": cache_storage,
         }
+
+        if self.type in ["llm", "vlm"]:
+            data["cache_storage"] = hicache
+
+        if self.type in ["parser"]:
+            fix_b_p = deepcopy(data["fixed_backend_parameters"])
+            idx = fix_b_p.index("--max-total-tokens")
+            fix_b_p.pop(idx)
+            fix_b_p.pop(idx + 1)
+
+        if worker_id is not None:
+            data["worker_id"] = str(worker_id)
 
         return self.post("check", json_data=data, timeout=timeout)
 

@@ -1,3 +1,4 @@
+from typing import Literal, List, Dict
 from ....base_component import BaseComponent
 
 
@@ -17,12 +18,17 @@ class ModelInstance(BaseComponent):
 
     POST_URL_MAP = dict(
         aaa="/v1/kllm/models",
-        bbb="/v1/kllm/models/set_replicas",
     )
 
     DELETE_URL_MAP = dict(
         stop="/v1/kllm/model-instances/{model_instance_id}",
     )
+
+    def __str__(self):
+        return f"ModelInstance(Name:{self.name}, ID:{self.object_id})"
+
+    def __contains__(self, items: List["ModelInstance"]):
+        return self.object_id in [item.object_id for item in items]
 
     # TODO BUG rc=500
     def get_logs(self, timeout=None):
@@ -31,6 +37,110 @@ class ModelInstance(BaseComponent):
     def get_info(self, timeout=None):
         return self.get("get_info", timeout=timeout)
 
-    # TODO 这是在做什么事情？
-    def delete(self, timeout=None):
+    def stop(self, timeout=None):
         return self.delete("stop", timeout=timeout)
+
+    @property
+    def local_path(self) -> str:
+        return self.data.local_path
+
+    # TODO Literal
+    @property
+    def state(self) -> str:
+        return self.data.state
+
+    @property
+    def source(self) -> str:
+        return self.data.source
+
+    @property
+    def huggingface_repo_id(self):
+        return self.data.huggingface_repo_id
+
+    @property
+    def name(self) -> str:
+        return self.data.name
+
+    @property
+    def state_message(self):
+        return self.data.state_message
+
+    @property
+    def worker_ip(self) -> str:
+        return self.data.worker_ip
+
+    @property
+    def worker_id(self) -> int:
+        return self.data.worker_id
+
+    @property
+    def worker_name(self) -> str:
+        return self.data.worker_name
+
+    @property
+    def pid(self) -> int:
+        return self.data.pid
+
+    @property
+    def distributed_servers(self) -> Dict:
+        return self.data.distributed_servers
+
+    @property
+    def model_id(self) -> int:
+        return self.data.model_id
+
+    @property
+    def model_name(self) -> str:
+        return self.data.model_name
+
+    @property
+    def huggingface_filename(self) -> str:
+        return self.data.huggingface_filename
+
+    @property
+    def ollama_library_model_name(self) -> str:
+        return self.data.ollama_library_model_name
+
+    @property
+    def computed_resource_claim(self) -> Dict:
+        return self.data.computed_resource_claim
+
+    @property
+    def cache_storage(self) -> int:
+        return self.data.cache_storage
+
+    @property
+    def model_scope_model_id(self) -> str:
+        return self.data.model_scope_model_id
+
+    @property
+    def model_scope_file_path(self) -> str:
+        return self.data.model_scope_file_path
+
+    @property
+    def instance_port(self) -> int:
+        return self.data.port
+
+    @property
+    def max_total_tokens(self) -> int:
+        return self.data.max_total_tokens
+
+    @property
+    def deleted_at(self) -> str:
+        return self.data.deleted_at
+
+    @property
+    def download_progress(self) -> float:
+        return self.data.download_progress
+
+    @property
+    def backend_parameters(self) -> List:
+        return self.data.backend_parameters
+
+    @property
+    def launch_parameters(self) -> List:
+        return self.data.launch_parameters
+
+    @property
+    def gpu_indexes(self) -> List:
+        return self.data.gpu_indexes

@@ -15,13 +15,16 @@ logger = LoggingConfig.get_logger()
 class AMaaS(BaseComponent):
     OBJECT_TOKEN = None
 
+    def __str__(self):
+        return self.mgt_ip
+
     @property
     def model_stores(self) -> CustomList[ModelStore]:
         params = dict(page=1, perPage=100)
         res = self.get("list_model_stores", params, ModelStore.GET_URL_MAP)
         return CustomList(
             [
-                ModelStore(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip)
+                ModelStore(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip, amaas=self)
                 for item in res.data.get("items")
             ]
         )
@@ -71,7 +74,10 @@ class AMaaS(BaseComponent):
         """模型管理-模型运行"""
         res = self.get(alias="get_models", url_map=Model.GET_URL_MAP)
         return CustomList(
-            [Model(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip) for item in res.data.get("items")]
+            [
+                Model(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip, amaas=self)
+                for item in res.data.get("items")
+            ]
         )
 
     @property
@@ -83,7 +89,7 @@ class AMaaS(BaseComponent):
         if res.retcode == 0:
             return CustomList(
                 [
-                    Worker(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip)
+                    Worker(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip, amaas=self)
                     for item in res.data.worker_resource_list
                 ]
             )
@@ -93,28 +99,34 @@ class AMaaS(BaseComponent):
         """试验场景-对话"""
         res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="llm"))
         logger.debug(res)
-        return CustomList([Chat(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data])
+        return CustomList([Chat(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self) for item in res.data])
 
     @property
     def embedding_chats(self) -> CustomList[Embedding]:
         """试验场景-embedding"""
         res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="embedding"))
         logger.debug(res)
-        return CustomList([Embedding(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data])
+        return CustomList(
+            [Embedding(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self) for item in res.data]
+        )
 
     @property
     def rerank_chats(self) -> CustomList[Rerank]:
         """试验场景-rerank"""
         res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="rerank"))
         logger.debug(res)
-        return CustomList([Rerank(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data])
+        return CustomList(
+            [Rerank(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self) for item in res.data]
+        )
 
     @property
     def multi_model_chats(self) -> CustomList[MultiModel]:
         """试验场景-rerank"""
         res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="vlm"))
         logger.debug(res)
-        return CustomList([MultiModel(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data])
+        return CustomList(
+            [MultiModel(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self) for item in res.data]
+        )
 
     @property
     def api_keys(self) -> CustomList[APIKey]:
@@ -122,21 +134,24 @@ class AMaaS(BaseComponent):
         params = dict(page=1, perpage=1000)
         res = self.get("list_all", url_map=APIKey.GET_URL_MAP, params=params)
         return CustomList(
-            [APIKey(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data.get("items")]
+            [APIKey(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self) for item in res.data.get("items")]
         )
 
     def create_api_key(self, name: str = None, expires_in=None, timeout: int = None):
         # TODO 时间戳有点诡异，是个 1970 年的时间戳？
         data = {"expires_in": expires_in or "30761967", "name": name or str(uuid4())}
         res = self.post("create", url_map=APIKey.POST_URL_MAP, json_data=data, timeout=timeout)
-        return APIKey(self.mgt_ip, self.port, object_id=res.data.id, data=res.data)
+        return APIKey(self.mgt_ip, self.port, object_id=res.data.id, data=res.data, amaas=self)
 
     @property
     def users(self):
         """用户管理"""
         params = dict(page=1, perpage=1000)
         res = self.get("list_all", url_map=AMaaSUser.GET_URL_MAP, params=params)
-        return [AMaaSUser(self.mgt_ip, self.port, object_id=item.id, data=item) for item in res.data.get("items")]
+        return [
+            AMaaSUser(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self)
+            for item in res.data.get("items")
+        ]
 
     def create_user(self, username, passwd, is_admin: bool, desc: str = None, timeout: int = None):
         data = {
@@ -147,10 +162,10 @@ class AMaaS(BaseComponent):
             "require_password_change": False,
         }
         res = self.post("create", url_map=AMaaSUser.POST_URL_MAP, json_data=data, timeout=timeout)
-        return AMaaSUser(self.mgt_ip, self.port, object_id=res.data.id, data=res.data)
+        return AMaaSUser(self.mgt_ip, self.port, object_id=res.data.id, data=res.data, amaas=self)
 
     @property
     def dashboard(self):
         """数据概览"""
         res = self.get("get", url_map=DashBoard.GET_URL_MAP)
-        return DashBoard(self.mgt_ip, self.port, data=res.data)
+        return DashBoard(self.mgt_ip, self.port, data=res.data, amaas=self)

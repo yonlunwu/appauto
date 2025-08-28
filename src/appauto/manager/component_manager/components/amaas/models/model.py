@@ -2,7 +2,9 @@
 将 Model 作为一个对象, 可能分为多种 Model: ['llm', 'vlm', 'embedding', 'rerank', 'parser', 'audio']
 """
 
+import json
 from typing import Literal, Dict, List
+from copy import deepcopy
 from ....base_component import BaseComponent
 from .model_instance import ModelInstance
 from .....utils_manager.custom_list import CustomList
@@ -27,7 +29,7 @@ class Model(BaseComponent):
 
     POST_URL_MAP = dict(
         aaa="/v1/kllm/models",
-        set_replicas="/v1/kllm/models/set_replicas",
+        create_replica="/v1/kllm/models/create-replica",
     )
 
     DELETE_URL_MAP = dict(
@@ -49,9 +51,66 @@ class Model(BaseComponent):
             ]
         )
 
-    def set_replicas(self, replicas: int, timeout=None):
-        data = {"id": self.object_id, "replicas": replicas}
-        return self.post("set_replicas", json_data=data, timeout=timeout)
+    def check(
+        self,
+        worker_id: int = None,
+        gpu_ids: List = None,
+        tp: Literal[1, 2, 4, 8] = 1,
+        hicache: int = 0,
+        timeout=None,
+    ):
+        from .model_store import ModelStore
+
+        assert tp or gpu_ids
+        assert isinstance(hicache, int)
+
+        b_p_list = deepcopy(self.backend_parameters)
+        b_p_dict = {b_p_list[i]: b_p_list[i + 1] for i in range(0, len(b_p_list), 2)}
+
+        b_p_dict["--tensor-parallel-size"] = "0" if gpu_ids else str(tp)
+
+        data = {
+            "id": [m_s.object_id for m_s in self.amaas.init_model_stores if m_s.name == self.name][0],
+            "worker_id": str(worker_id),
+            "gpu_ids": gpu_ids,
+            "access_limit": self.access_limit,
+            "backend_parameters": [item for k, v in b_p_dict.items() for item in (k, v)],
+            "fixed_backend_parameters": [],  # fixed 在这里表示高级参数，v3.3.0 这个版本固定为 []
+            "replicas": 1,  # v3.3.0 版本只能添加 1 个副本
+            "cache_storage": hicache,
+        }
+
+        self.post("check", json_data=data, url_map=ModelStore.POST_URL_MAP, timeout=timeout)
+
+    def create_replica(
+        self, worker_id: int, tp: Literal[1, 2, 4, 8] = 1, gpu_ids: List = None, hicache: int = 0, timeout=None
+    ) -> ModelInstance:
+        assert tp or gpu_ids
+        assert isinstance(hicache, int)
+
+        # 先获取所有副本
+        before = self.instances
+
+        b_p_list = deepcopy(self.backend_parameters)
+        b_p_dict = {b_p_list[i]: b_p_list[i + 1] for i in range(0, len(b_p_list), 2)}
+
+        b_p_dict["--tensor-parallel-size"] = "0" if gpu_ids else str(tp)
+
+        data = {
+            "model_id": self.object_id,
+            "worker_id": str(worker_id),
+            "gpu_ids": gpu_ids,
+            "access_limit": self.access_limit,
+            "backend_parameters": [item for k, v in b_p_dict.items() for item in (k, v)],
+            "fixed_backend_parameters": [],  # fixed 在这里表示高级参数，v3.3.0 这个版本固定为 []
+            "replicas": 1,  # v3.3.0 版本只能添加 1 个副本
+            "cache_storage": hicache,
+        }
+
+        self.post("create_replica", json_data=data, timeout=timeout)
+
+        # 再次获取所有副本
+        return [ins for ins in self.instances if ins not in before][0]
 
     @property
     def name(self):
@@ -159,14 +218,6 @@ class Model(BaseComponent):
 
     @property
     def backend_version(self) -> Literal["ftransformers", "llama-box", "pdf_parse_server"]:
-        return self.data.backend_version
-
-    @property
-    def backend_parameters(self):
-        return self.data.backend_parameters
-
-    @property
-    def backend_version(self):
         return self.data.backend_version
 
     @property

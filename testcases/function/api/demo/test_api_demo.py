@@ -35,7 +35,9 @@ def test_check_and_run_model_store():
 
     EMB_MODEL = [model for model in models if model.name == "bge-m3-FP16"][0]
     cur_rep = len(EMB_MODEL.instances)
-    EMB_MODEL.set_replicas(cur_rep + 1)
+    work_id = AMAAS.workers[0].object_id
+    EMB_MODEL.check(work_id, tp=1)
+    EMB_MODEL.create_replica(work_id, tp=1)
     sleep(randint(5, 10))
     assert len(EMB_MODEL.instances) == cur_rep + 1
 

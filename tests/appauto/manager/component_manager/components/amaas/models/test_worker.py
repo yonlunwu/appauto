@@ -17,6 +17,7 @@ class TestAMaaSWorker:
             for worker in workers:
                 logger.info(worker.data)
                 logger.info(worker.name)
+                logger.info(worker.object_id)
 
     def test_get_worker_attr(self):
         amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
@@ -26,7 +27,9 @@ class TestAMaaSWorker:
             assert workers
 
             for worker in workers:
+                logger.info(worker.amaas)
                 logger.info(worker.name)
+                logger.info(worker.object_id)
                 logger.info(worker.gpu_empty_count)
                 logger.info(worker.gpu_sum)
                 logger.info(worker.cache_capacity)
