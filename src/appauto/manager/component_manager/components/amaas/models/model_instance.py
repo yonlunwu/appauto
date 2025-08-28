@@ -1,5 +1,12 @@
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING, Optional
+from functools import cached_property
 from ....base_component import BaseComponent
+from .....utils_manager.custom_list import CustomList
+
+if TYPE_CHECKING:
+    from .model import Model
+    from .worker import Worker
+    from .gpu import GPU
 
 
 # TODO 要继承 BaseComponent
@@ -24,11 +31,39 @@ class ModelInstance(BaseComponent):
         stop="/v1/kllm/model-instances/{model_instance_id}",
     )
 
+    def __init__(
+        self,
+        mgt_ip=None,
+        port=None,
+        username="admin",
+        passwd="123456",
+        object_id=None,
+        data=None,
+        ssl_enabled=False,
+        parent_tokens=None,
+        amaas=None,
+        model: "Model" = None,
+    ):
+        super().__init__(mgt_ip, port, username, passwd, object_id, data, ssl_enabled, parent_tokens, amaas)
+        self.model = model
+
     def __str__(self):
         return f"ModelInstance(Name:{self.name}, ID:{self.object_id})"
 
     def __contains__(self, items: List["ModelInstance"]):
         return self.object_id in [item.object_id for item in items]
+
+    # TODO 要感知所在的 gpu 和 worker
+    @cached_property
+    def worker(self) -> Optional["Worker"]:
+        if workers := self.model.amaas.workers:
+            return [worker for worker in workers if self.worker_name == worker.name][0]
+
+    @cached_property
+    def gpus(self) -> CustomList["GPU"]:
+        return CustomList(
+            [gpu for gpu in self.worker.gpus if int(gpu.index) in [int(g_i.split(":")[-1]) for g_i in self.gpu_indexes]]
+        )
 
     # TODO BUG rc=500
     def get_logs(self, timeout=None):
@@ -142,5 +177,5 @@ class ModelInstance(BaseComponent):
         return self.data.launch_parameters
 
     @property
-    def gpu_indexes(self) -> List:
+    def gpu_indexes(self) -> List[str]:
         return self.data.gpu_indexes

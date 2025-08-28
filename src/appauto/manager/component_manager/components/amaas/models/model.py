@@ -46,7 +46,7 @@ class Model(BaseComponent):
         res = self.get("get_instances")
         return CustomList(
             [
-                ModelInstance(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip)
+                ModelInstance(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip, model=self)
                 for item in res.data.get("items")
             ]
         )
@@ -80,7 +80,7 @@ class Model(BaseComponent):
             "cache_storage": hicache,
         }
 
-        self.post("check", json_data=data, url_map=ModelStore.POST_URL_MAP, timeout=timeout)
+        return self.post("check", json_data=data, url_map=ModelStore.POST_URL_MAP, timeout=timeout)
 
     def create_replica(
         self, worker_id: int, tp: Literal[1, 2, 4, 8] = 1, gpu_ids: List = None, hicache: int = 0, timeout=None

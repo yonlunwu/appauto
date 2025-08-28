@@ -109,8 +109,7 @@ class TestModelsBaseOption:
         assert not failed_models
 
     def test_batch_query_llm(self):
-        # chat = [chat for chat in amaas.llm_chats if chat.object_id == "DeepSeek-R1-0528-GPU-weight"][0]
-        chat = [chat for chat in amaas.llm_chats if chat.object_id == "Qwen2.5-32B-Instruct-GPTQ-Int8"][0]
+        chat = [chat for chat in amaas.llm_chats if chat.object_id == DP.model_name][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -156,7 +155,7 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_multi_model(self):
-        chat = [chat for chat in amaas.multi_model_chats if chat.display_model_name == "Qwen2.5-VL-7B-Instruct-AWQ"][0]
+        chat = [chat for chat in amaas.multi_model_chats if chat.display_model_name == "Qwen2.5-VL-7B-Instruct"][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:

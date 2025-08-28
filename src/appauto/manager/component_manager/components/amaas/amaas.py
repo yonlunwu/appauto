@@ -121,7 +121,7 @@ class AMaaS(BaseComponent):
 
     @property
     def multi_model_chats(self) -> CustomList[MultiModel]:
-        """试验场景-rerank"""
+        """试验场景-多模态"""
         res = self.get(alias="get_models", url_map=Chat.GET_URL_MAP, params=dict(categories="vlm"))
         logger.debug(res)
         return CustomList(
@@ -144,7 +144,7 @@ class AMaaS(BaseComponent):
         return APIKey(self.mgt_ip, self.port, object_id=res.data.id, data=res.data, amaas=self)
 
     @property
-    def users(self):
+    def users(self) -> List[AMaaSUser]:
         """用户管理"""
         params = dict(page=1, perpage=1000)
         res = self.get("list_all", url_map=AMaaSUser.GET_URL_MAP, params=params)
@@ -165,7 +165,7 @@ class AMaaS(BaseComponent):
         return AMaaSUser(self.mgt_ip, self.port, object_id=res.data.id, data=res.data, amaas=self)
 
     @property
-    def dashboard(self):
+    def dashboard(self) -> DashBoard:
         """数据概览"""
         res = self.get("get", url_map=DashBoard.GET_URL_MAP)
         return DashBoard(self.mgt_ip, self.port, data=res.data, amaas=self)

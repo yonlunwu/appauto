@@ -50,8 +50,12 @@ class GPU(BaseComponent):
         return self.data.uuid
 
     @property
-    def vendor(self):
+    def vendor(self) -> Literal["NVIDIA"]:
         return self.data.vendor
+
+    @property
+    def index(self) -> int:
+        return self.data.index
 
     @property
     def core(self) -> Dict:

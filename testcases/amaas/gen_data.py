@@ -15,6 +15,7 @@ class DefaultParams:
     wait_model_running_timeout_s: int = int(TEST_DATA_DICT.get("wait_model_running_timeout_s", 600))
     concurrency: int = int(TEST_DATA_DICT.get("concurrency", 2))
     query_count: int = int(TEST_DATA_DICT.get("query_count", 4))
+    model_name: str = TEST_DATA_DICT.get("model_name", "Qwen2.5-7B-Instruct")
 
 
 assert DefaultParams.ip
