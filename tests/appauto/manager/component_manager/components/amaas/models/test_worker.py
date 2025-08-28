@@ -36,3 +36,17 @@ class TestAMaaSWorker:
                 logger.info(worker.cache_total)
                 logger.info(worker.cache_used)
                 logger.info(worker.cache_available)
+
+    def test_get_worker_model_instances_obj(self):
+        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
+        assert amaas
+
+        for worker in amaas.workers:
+            logger.info(worker.name)
+            logger.info(worker.model_instances)
+            logger.info(worker.model_instances_obj)
+
+            for ins in worker.model_instances_obj:
+                logger.info(ins.name)
+                logger.info(ins.object_id)
+                logger.info(ins)

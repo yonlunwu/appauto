@@ -20,23 +20,6 @@ class TestAMaaSModel:
                 logger.info(f"backend_parameters: {model.backend_parameters}")
                 logger.info(f"backend_version: {model.backend_version}")
 
-    def test_get_worker_attr(self):
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
-
-        if workers := amaas.workers:
-            assert workers
-
-            for worker in workers:
-                logger.info(worker.amaas)
-                logger.info(worker.name)
-                logger.info(worker.gpu_empty_count)
-                logger.info(worker.gpu_sum)
-                logger.info(worker.cache_capacity)
-                logger.info(worker.cache_total)
-                logger.info(worker.cache_used)
-                logger.info(worker.cache_available)
-
     def test_create_and_delete_replica(self):
         amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
         assert amaas

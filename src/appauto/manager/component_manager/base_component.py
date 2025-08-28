@@ -1,10 +1,14 @@
 import addict
+from typing import TYPE_CHECKING
 from functools import cached_property
 from ..connection_manager.http import HttpClient
 
 from ..config_manager.config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
+
+if TYPE_CHECKING:
+    from .components.amaas import AMaaS
 
 
 class BaseComponent(object):
@@ -24,6 +28,7 @@ class BaseComponent(object):
         data=None,
         ssl_enabled=False,
         parent_tokens=None,
+        amaas: "AMaaS" = None,
     ):
         self.mgt_ip = mgt_ip
         self.port = port
@@ -33,6 +38,7 @@ class BaseComponent(object):
         self.data = data
         self.ssl_enabled = ssl_enabled
         self.parent_tokens = parent_tokens or {}
+        self.amaas = amaas
 
     @cached_property
     def headers(self):

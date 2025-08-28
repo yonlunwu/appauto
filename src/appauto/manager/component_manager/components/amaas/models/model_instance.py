@@ -1,4 +1,4 @@
-from typing import Literal, List, Dict
+from typing import List, Dict
 from ....base_component import BaseComponent
 
 
