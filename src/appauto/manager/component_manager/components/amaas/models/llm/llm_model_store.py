@@ -1,5 +1,7 @@
 from typing import List
+from time import sleep
 from ..base.base_model_store import BaseModelStore
+from .llm_model import LLMModel
 
 
 class LLMModelStore(BaseModelStore):
@@ -47,8 +49,14 @@ class LLMModelStore(BaseModelStore):
         max_total_tokens=50000,
         backend_parameters: List = None,
         cache_storage: int = 0,
+        wait_for_running=False,
+        interval_s: int = 30,
+        running_timeout_s: int = 600,
         timeout=None,
-    ):
+    ) -> LLMModel:
+
+        assert not [m for m in self.amaas.model.llm if m.name == self.name]
+
         data = {
             "worker_id": str(worker_id),
             "id": self.object_id,
@@ -64,4 +72,13 @@ class LLMModelStore(BaseModelStore):
             "backend_parameters": backend_parameters or [],
             "cache_storage": cache_storage,
         }
-        return self.post("run", json_data=data, timeout=timeout)
+
+        self.post("run", json_data=data, timeout=timeout)
+
+        sleep(1)
+        model = [m for m in self.amaas.model.llm if m.name == self.name][0]
+
+        if wait_for_running:
+            model.wait_for_running(interval_s, running_timeout_s)
+
+        return model

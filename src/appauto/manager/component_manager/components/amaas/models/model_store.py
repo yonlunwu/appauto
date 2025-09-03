@@ -21,7 +21,7 @@ class ModelStore(BaseModelStore):
     def llm(self) -> CustomList[LLMModelStore]:
         return CustomList(
             [
-                LLMModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                LLMModelStore(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self.amaas)
                 for item in self.data
                 if item["type"] == "llm"
             ]
@@ -31,7 +31,7 @@ class ModelStore(BaseModelStore):
     def vlm(self) -> CustomList[VLMModelStore]:
         return CustomList(
             [
-                VLMModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                VLMModelStore(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self.amaas)
                 for item in self.data
                 if item["type"] == "vlm"
             ]
@@ -41,7 +41,7 @@ class ModelStore(BaseModelStore):
     def embedding(self) -> CustomList[EmbeddingModelStore]:
         return CustomList(
             [
-                EmbeddingModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                EmbeddingModelStore(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self.amaas)
                 for item in self.data
                 if item["type"] == "embedding"
             ]
@@ -51,7 +51,7 @@ class ModelStore(BaseModelStore):
     def rerank(self) -> CustomList[RerankModelStore]:
         return CustomList(
             [
-                RerankModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                RerankModelStore(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self.amaas)
                 for item in self.data
                 if item["type"] == "rerank"
             ]
@@ -61,7 +61,7 @@ class ModelStore(BaseModelStore):
     def parser(self) -> CustomList[ParserModelStore]:
         return CustomList(
             [
-                ParserModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                ParserModelStore(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self.amaas)
                 for item in self.data
                 if item["type"] == "parser"
             ]
@@ -71,7 +71,7 @@ class ModelStore(BaseModelStore):
     def audio(self) -> CustomList[AudioModelStore]:
         return CustomList(
             [
-                AudioModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                AudioModelStore(self.mgt_ip, self.port, object_id=item.id, data=item, amaas=self.amaas)
                 for item in self.data
                 if item["type"] == "audio"
             ]

@@ -5,6 +5,7 @@
 from copy import deepcopy
 from typing import List, Literal
 from ..base import BaseModel, BaseModelStore
+from ..model_instance import ModelInstance
 
 
 class EmbeddingModel(BaseModel):
@@ -33,7 +34,20 @@ class EmbeddingModel(BaseModel):
 
         return self.post("check", url_map=BaseModelStore.POST_URL_MAP, json_data=data, timeout=timeout)
 
-    def create_replica(self, worker_id: int, tp: Literal[1, 2, 4, 8] = 1, gpu_ids: List = None, timeout=None):
+    def create_replica(
+        self,
+        worker_id: int,
+        gpu_ids: List = None,
+        tp: Literal[1, 2, 4, 8] = 1,
+        wait_for_running=False,
+        interval_s: int = 30,
+        running_timeout_s: int = 600,
+        timeout=None,
+    ) -> ModelInstance:
+        """
+        - running_timeout_s: 等待 running 超时时间;
+        - timeout: 单请求超时时间
+        """
 
         assert tp or gpu_ids
 
@@ -56,5 +70,9 @@ class EmbeddingModel(BaseModel):
 
         self.post("create_replica", json_data=data, timeout=timeout)
 
-        # 再次获取所有副本
-        return [ins for ins in self.instances if ins not in before][0]
+        ins = [ins for ins in self.instances if ins not in before][0]
+
+        if wait_for_running:
+            ins.wait_for_running(interval_s, running_timeout_s)
+
+        return ins

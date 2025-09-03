@@ -175,3 +175,57 @@ class TestAMaaSModelStore:
                 )
 
         assert not failed
+
+    def test_wait_for_running_outter(self, amaas: AMaaS):
+        # 使用 model.wait_for_running 时最好不要有已经在运行的该 model
+        assert not [m for m in amaas.model.llm if m.name == "DeepSeek-R1-0528-GPU-weight"]
+
+        r1 = [m_s for m_s in amaas.init_model_store.llm if m_s.name == "DeepSeek-R1-0528-GPU-weight"][0]
+
+        worker = choice(amaas.workers)
+        rule = r1.get_run_rule()
+
+        res = r1.check(
+            worker_id=worker.object_id,
+            tp=1,
+            access_limit=rule.data.access_limit,
+            max_total_tokens=rule.data.max_total_tokens,
+        )
+        assert not res.data.messages
+
+        r1.run(
+            worker_id=worker.object_id,
+            tp=1,
+            access_limit=rule.data.access_limit,
+            max_total_tokens=rule.data.max_total_tokens,
+        )
+
+        model = [m for m in amaas.model.llm if m.name == "DeepSeek-R1-0528-GPU-weight"][0]
+        model.wait_for_running()
+
+    def test_wait_for_running_inner(self, amaas: AMaaS):
+        # 使用 model.wait_for_running 时最好不要有已经在运行的该 model
+        assert not [m for m in amaas.model.llm if m.name == "DeepSeek-R1-0528-GPU-weight"]
+
+        r1 = [m_s for m_s in amaas.init_model_store.llm if m_s.name == "DeepSeek-R1-0528-GPU-weight"][0]
+
+        worker = choice(amaas.workers)
+        rule = r1.get_run_rule()
+
+        res = r1.check(
+            worker_id=worker.object_id,
+            tp=1,
+            access_limit=rule.data.access_limit,
+            max_total_tokens=rule.data.max_total_tokens,
+        )
+        assert not res.data.messages
+
+        model = r1.run(
+            worker_id=worker.object_id,
+            tp=1,
+            access_limit=rule.data.access_limit,
+            max_total_tokens=rule.data.max_total_tokens,
+            wait_for_running=True,
+        )
+        logger.info(model.object_id)
+        logger.info(model.name)

@@ -33,8 +33,15 @@ class ParserModel(BaseModel):
         worker_id: int,
         gpu_ids: List = None,
         tp: Literal[1, 2, 4, 8] = 1,
+        wait_for_running=False,
+        interval_s: int = 30,
+        running_timeout_s: int = 600,
         timeout=None,
     ) -> ModelInstance:
+        """
+        - running_timeout_s: 等待 running 超时时间;
+        - timeout: 单请求超时时间
+        """
 
         assert tp or gpu_ids
 
@@ -53,4 +60,9 @@ class ParserModel(BaseModel):
 
         self.post("create_replica", json_data=data, timeout=timeout)
 
-        return [ins for ins in self.instances if ins not in before][0]
+        ins = [ins for ins in self.instances if ins not in before][0]
+
+        if wait_for_running:
+            ins.wait_for_running(interval_s, running_timeout_s)
+
+        return ins

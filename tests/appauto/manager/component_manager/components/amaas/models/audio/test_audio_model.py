@@ -15,7 +15,9 @@ class TestAudioModel:
         worker_id = amaas.workers[0].object_id
 
         audio.check(worker_id=worker_id, tp=1)
-        audio.create_replica(worker_id=worker_id, tp=1)
+        ins = audio.create_replica(worker_id=worker_id, tp=1, wait_for_running=True)
+        logger.info(ins.name)
+        logger.info(ins.object_id)
 
     def test_audio_model_stop(self, amaas: AMaaS):
         assert amaas

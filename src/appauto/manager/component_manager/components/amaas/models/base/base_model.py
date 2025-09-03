@@ -64,10 +64,14 @@ class BaseModel(BaseComponent):
     def workers(self): ...
 
     def wait_for_running(self, interval_s: int = 30, timeout_s: int = 600):
+        """
+        使用 model.wait_for_running 时不要有已经在运行的该 model
+        """
         start_time = time()
 
         while time() - start_time <= timeout_s:
-            # TODO refresh
+
+            self.refresh()
 
             if self.status == "running":
                 logger.info(f"model: {self.name}, running succeed".center(100, "="))
@@ -77,7 +81,7 @@ class BaseModel(BaseComponent):
                 logger.info(f"model: {self.name}, running failed: error".center(100, "="))
                 raise RuntimeError(f"{self.name} running failed, status is error.")
 
-            elif self.status == "loading":
+            elif self.status in ["loading", "pending", "analyzing"]:
                 logger.info(f"model: {self.name}, still loading".center(100, "="))
                 sleep(interval_s)
                 continue
@@ -94,7 +98,6 @@ class BaseModel(BaseComponent):
         res = self.get("get_instances")
         return CustomList(
             [
-                # ModelInstance(port=self.port, data=item, object_id=item.id, mgt_ip=self.mgt_ip, model=self)
                 ModelInstance(self.mgt_ip, self.port, data=item, object_id=item.id, model=self)
                 for item in res.data.get("items")
             ]
@@ -197,7 +200,7 @@ class BaseModel(BaseComponent):
         return self.data.access_limit
 
     @property
-    def status(self) -> Literal["running", "loading", "error"]:
+    def status(self) -> Literal["running", "loading", "error", "pending", "analyzing"]:
         return self.data.status
 
     @property

@@ -1,5 +1,7 @@
 from typing import List
+from time import sleep
 from ..base.base_model_store import BaseModelStore
+from .embedding_model import EmbeddingModel
 
 
 class EmbeddingModelStore(BaseModelStore):
@@ -42,8 +44,14 @@ class EmbeddingModelStore(BaseModelStore):
         access_limit=-1,
         max_total_tokens=50000,
         backend_parameters: List = None,
+        wait_for_running=False,
+        interval_s: int = 30,
+        running_timeout_s: int = 600,
         timeout=None,
-    ):
+    ) -> EmbeddingModel:
+
+        assert not [m for m in self.amaas.model.embedding if m.name == self.name]
+
         data = {
             "id": self.object_id,
             "replicas": 1,
@@ -59,4 +67,12 @@ class EmbeddingModelStore(BaseModelStore):
             ],
         }
 
-        return self.post("run", json_data=data, timeout=timeout)
+        self.post("run", json_data=data, timeout=timeout)
+
+        sleep(1)
+        model = [m for m in self.amaas.model.embedding if m.name == self.name][0]
+
+        if wait_for_running:
+            model.wait_for_running(interval_s, running_timeout_s)
+
+        return model

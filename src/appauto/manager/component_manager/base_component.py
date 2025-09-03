@@ -45,9 +45,7 @@ class BaseComponent(object):
         self.amaas = amaas
 
     def refresh(self, alias=None):
-        endpoint = self.GET_URL_MAP[alias or self.REFRESH_ALIAS]
-
-        res = self.get(endpoint.format(*self.object_tokens))
+        res = self.get(alias or self.REFRESH_ALIAS)
 
         if not alias:
             self.data = res.data

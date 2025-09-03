@@ -3,9 +3,14 @@
 """
 
 from copy import deepcopy
+from time import sleep
 from typing import List, Literal
 from ..base import BaseModel, BaseModelStore
 from ..model_instance import ModelInstance
+
+from appauto.manager.config_manager import LoggingConfig
+
+logger = LoggingConfig.get_logger()
 
 
 class LLMModel(BaseModel):
@@ -43,8 +48,20 @@ class LLMModel(BaseModel):
         return self.post("check", url_map=BaseModelStore.POST_URL_MAP, json_data=data, timeout=timeout)
 
     def create_replica(
-        self, worker_id: int, tp: Literal[1, 2, 4, 8] = 1, gpu_ids: List = None, hicache: int = 0, timeout=None
+        self,
+        worker_id: int,
+        tp: Literal[1, 2, 4, 8] = 1,
+        gpu_ids: List = None,
+        hicache: int = 0,
+        wait_for_running=False,
+        interval_s: int = 30,
+        running_timeout_s: int = 600,
+        timeout=None,
     ) -> ModelInstance:
+        """
+        - running_timeout_s: 等待 running 超时时间;
+        - timeout: 单请求超时时间
+        """
         assert tp or gpu_ids
         assert isinstance(hicache, int)
 
@@ -68,6 +85,15 @@ class LLMModel(BaseModel):
         }
 
         self.post("create_replica", json_data=data, timeout=timeout)
+        sleep(3)
 
-        # 再次获取所有副本
-        return [ins for ins in self.instances if ins not in before][0]
+        ins = [ins for ins in self.instances if ins not in before][0]
+
+        logger.info(ins.name)
+        logger.info(ins.object_id)
+        logger.info(ins.state)
+
+        if wait_for_running:
+            ins.wait_for_running(interval_s, running_timeout_s)
+
+        return ins

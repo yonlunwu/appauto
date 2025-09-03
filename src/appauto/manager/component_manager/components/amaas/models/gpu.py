@@ -37,8 +37,9 @@ class GPU(BaseComponent):
     def __str__(self):
         return f"GPU(Name: {self.name}, ID: {self.object_id}, worker: {self.worker.name},)"
 
-    def refresh(self, alias=None):
-        res = super().refresh(alias)
+    def refresh(self):
+        data = {"worker_id": str(self.worker.object_id)}
+        res = self.post("detail", json_data=data)
         self.data = [inner_dict for _, inner_dict in res.data.get(self.name).items()][0]
         return res
 

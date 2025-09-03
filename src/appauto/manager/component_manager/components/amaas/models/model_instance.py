@@ -1,7 +1,13 @@
+from time import time, sleep
 from typing import List, Dict, TYPE_CHECKING, Optional, Literal
 from functools import cached_property
 from ....base_component import BaseComponent
 from .....utils_manager.custom_list import CustomList
+
+
+from appauto.manager.config_manager import LoggingConfig
+
+logger = LoggingConfig.get_logger()
 
 if TYPE_CHECKING:
     from .model import Model
@@ -15,7 +21,7 @@ class ModelInstance(BaseComponent):
 
     GET_URL_MAP = dict(
         get_instances="/v1/kllm/model-instances",
-        get_info="/v1/kllm/model-instances/{model_instance_id}",
+        get_self="/v1/kllm/model-instances/{model_instance_id}",
         get_logs="/v1/kllm/model-instances/{model_instance_id}/logs",
     )
 
@@ -50,13 +56,43 @@ class ModelInstance(BaseComponent):
     def __str__(self):
         return f"ModelInstance(Name:{self.name}, ID:{self.object_id})"
 
-    def __contains__(self, items: List["ModelInstance"]):
-        return self.object_id in [item.object_id for item in items]
+    def __contains__(self, item: "ModelInstance"):
+        return self.object_id == item.object_id
 
-    def refresh(self, alias=None):
-        res = super().refresh(alias)
+    def __eq__(self, other: "ModelInstance"):
+        if other is None:
+            return False
+        return self.object_id == other.object_id
+
+    def refresh(self):
+        res = self.model.get("get_instances")
         self.data = [item for item in res.data.get("items") if item.id == self.object_id][0]
         return res
+
+    def wait_for_running(self, interval_s: int = 30, timeout_s: int = 600):
+        """
+        使用 model_instance.wait_for_running 时要有 model
+        """
+        start_time = time()
+
+        while time() - start_time <= timeout_s:
+
+            self.refresh()
+
+            if self.state == "running":
+                logger.info(f"model: {self.name}, running succeed".center(100, "="))
+                return
+
+            elif self.state == "error":
+                logger.info(f"model: {self.name}, running failed: error".center(100, "="))
+                raise RuntimeError(f"{self.name} running failed, status is error.")
+
+            elif self.state in ["loading", "pending", "analyzing", "scheduled", "starting"]:
+                logger.info(f"model: {self.name}, still {self.state}".center(100, "="))
+                sleep(interval_s)
+                continue
+
+        raise TimeoutError(f"Timeout while waiting for {self.name} running.")
 
     # TODO 要感知所在的 gpu 和 worker
     @cached_property
@@ -74,9 +110,6 @@ class ModelInstance(BaseComponent):
     def get_logs(self, timeout=None):
         return self.get("get_logs", timeout=timeout)
 
-    def get_info(self, timeout=None):
-        return self.get("get_info", timeout=timeout)
-
     def stop(self, timeout=None):
         return self.delete("stop", timeout=timeout)
 
@@ -86,7 +119,7 @@ class ModelInstance(BaseComponent):
 
     # TODO Literal
     @property
-    def state(self) -> str:
+    def state(self) -> Literal["running", "loading", "error", "pending", "analyzing"]:
         return self.data.state
 
     @property
