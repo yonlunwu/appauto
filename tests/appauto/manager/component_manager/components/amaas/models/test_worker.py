@@ -5,12 +5,9 @@ logger = LoggingConfig.get_logger()
 
 
 class TestAMaaSWorker:
-    def test_list_amaas_workers(self):
+    def test_list_amaas_workers(self, amaas: AMaaS):
         # TODO 将 amaas 抽出来
         # TODO 标记哪些 tests 是 ci
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
-
         if workers := amaas.workers:
             assert workers
 
@@ -19,10 +16,7 @@ class TestAMaaSWorker:
                 logger.info(worker.name)
                 logger.info(worker.object_id)
 
-    def test_get_worker_attr(self):
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
-
+    def test_get_worker_attr(self, amaas: AMaaS):
         if workers := amaas.workers:
             assert workers
 
@@ -37,16 +31,13 @@ class TestAMaaSWorker:
                 logger.info(worker.cache_used)
                 logger.info(worker.cache_available)
 
-    def test_get_worker_model_instances_obj(self):
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
-
+    def test_get_worker_model_instances_obj(self, amaas: AMaaS):
         for worker in amaas.workers:
             logger.info(worker.name)
             logger.info(worker.model_instances)
-            logger.info(worker.model_instances_obj)
+            logger.info(worker.amaas.model.llm)
 
-            for ins in worker.model_instances_obj:
+            for ins in worker.llm_instances_obj:
                 logger.info(ins.name)
                 logger.info(ins.object_id)
                 logger.info(ins)

@@ -5,13 +5,10 @@ logger = LoggingConfig.get_logger()
 
 
 class TestAMaaSModel:
-    def test_list_amaas_models(self):
+    def test_list_amaas_models(self, amaas: AMaaS):
         # TODO 将 amaas 抽出来
         # TODO 标记哪些 tests 是 ci
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
-
-        if models := amaas.models:
+        if models := amaas.model.llm:
             assert models
 
             for model in models:
@@ -20,11 +17,8 @@ class TestAMaaSModel:
                 logger.info(f"backend_parameters: {model.backend_parameters}")
                 logger.info(f"backend_version: {model.backend_version}")
 
-    def test_create_and_delete_replica(self):
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
-
-        if models := amaas.models:
+    def test_create_and_delete_replica(self, amaas: AMaaS):
+        if models := amaas.model.llm:
             assert models
 
             works = amaas.workers
@@ -54,3 +48,59 @@ class TestAMaaSModel:
                     logger.info(f"{ins.name}".center(100, "="))
                     logger.info(f"data: {ins.data}")
                     logger.info(f"object_id: {ins.object_id}")
+
+    def test_stop_all_ins_and_llm_models(self, amaas: AMaaS):
+        for model in amaas.model.llm:
+            for ins in model.instances:
+
+                logger.info(ins.name)
+                logger.info(ins.object_id)
+                logger.info(ins.object_tokens)
+                logger.info(ins.OBJECT_TOKEN)
+                logger.info(ins.model.name)
+
+                ins.stop()
+
+            model.stop()
+
+    def test_stop_all_ins_and_vlm_models(self, amaas: AMaaS):
+        for model in amaas.model.vlm:
+            for ins in model.instances:
+
+                logger.info(ins.name)
+                logger.info(ins.object_id)
+                logger.info(ins.object_tokens)
+                logger.info(ins.OBJECT_TOKEN)
+                logger.info(ins.model.name)
+
+                ins.stop()
+
+            model.stop()
+
+    def test_stop_all_ins_and_embedding_models(self, amaas: AMaaS):
+        for model in amaas.model.embedding:
+            for ins in model.instances:
+
+                logger.info(ins.name)
+                logger.info(ins.object_id)
+                logger.info(ins.object_tokens)
+                logger.info(ins.OBJECT_TOKEN)
+                logger.info(ins.model.name)
+
+                ins.stop()
+
+            model.stop()
+
+    def test_stop_all_ins_and_rerank_models(self, amaas: AMaaS):
+        for model in amaas.model.rerank:
+            for ins in model.instances:
+
+                logger.info(ins.name)
+                logger.info(ins.object_id)
+                logger.info(ins.object_tokens)
+                logger.info(ins.OBJECT_TOKEN)
+                logger.info(ins.model.name)
+
+                ins.stop()
+
+            model.stop()

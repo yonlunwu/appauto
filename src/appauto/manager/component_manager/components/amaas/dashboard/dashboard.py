@@ -4,7 +4,10 @@ from ....base_component import BaseComponent
 class DashBoard(BaseComponent):
     OBJECT_TOKEN = "dashboard_id"
 
-    GET_URL_MAP = dict(get="/v1/kllm/dashboard")
+    GET_URL_MAP = dict(get_self="/v1/kllm/dashboard")
+
+    def refresh(self, alias=None):
+        return super().refresh(alias)
 
     @property
     def resource_counts(self):

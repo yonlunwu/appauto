@@ -5,12 +5,9 @@ logger = LoggingConfig.get_logger()
 
 
 class TestAMaaSWorkerGPU:
-    def test_list_worker_gpus(self):
+    def test_list_worker_gpus(self, amaas: AMaaS):
         # TODO 将 amaas 抽出来
         # TODO 标记哪些 tests 是 ci
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
-
         workers = amaas.workers
         assert workers
 
@@ -21,9 +18,7 @@ class TestAMaaSWorkerGPU:
 
             logger.info(worker.gpus)
 
-    def test_list_gpu_model_instance_ids(self):
-        amaas = AMaaS("120.211.1.45", port=10001, username="admin", passwd="123456")
-        assert amaas
+    def test_list_gpu_model_instance_ids(self, amaas: AMaaS):
 
         for worker in amaas.workers:
             for gpu in worker.gpus:
@@ -35,10 +30,40 @@ class TestAMaaSWorkerGPU:
 
                 logger.info(gpu.model_instances)
 
-                ins_objs = gpu.model_instances_obj
-                logger.info(ins_objs)
+                logger.info("llm".center(100, "="))
+                logger.info(gpu.model_instances)
+                logger.info(gpu.worker.llm_instances_obj)
+                if ins_objs := gpu.llm_instances_obj:
+                    for obj in ins_objs:
+                        logger.info(f"{obj.name}".center(100, "*"))
+                        logger.info(obj.object_id)
 
-                if ins_objs:
+                logger.info("vlm".center(100, "="))
+                if ins_objs := gpu.vlm_instances_obj:
+                    for obj in ins_objs:
+                        logger.info(f"{obj.name}".center(100, "*"))
+                        logger.info(obj.object_id)
+
+                logger.info("embedding".center(100, "="))
+                if ins_objs := gpu.embedding_instances_obj:
+                    for obj in ins_objs:
+                        logger.info(f"{obj.name}".center(100, "*"))
+                        logger.info(obj.object_id)
+
+                logger.info("rerank".center(100, "="))
+                if ins_objs := gpu.rerank_instances_obj:
+                    for obj in ins_objs:
+                        logger.info(f"{obj.name}".center(100, "*"))
+                        logger.info(obj.object_id)
+
+                logger.info("parser".center(100, "="))
+                if ins_objs := gpu.parser_instances_obj:
+                    for obj in ins_objs:
+                        logger.info(f"{obj.name}".center(100, "*"))
+                        logger.info(obj.object_id)
+
+                logger.info("audio".center(100, "="))
+                if ins_objs := gpu.audio_instances_obj:
                     for obj in ins_objs:
                         logger.info(f"{obj.name}".center(100, "*"))
                         logger.info(obj.object_id)

@@ -1,162 +1,78 @@
-"""
-将 ModelStore 作为一个对象, 可能分为多种 Model: ['llm', 'vlm', 'embedding', 'rerank', 'parser', 'audio']
-"""
+from .llm import LLMModelStore
+from .vlm import VLMModelStore
+from .embedding import EmbeddingModelStore
+from .rerank import RerankModelStore
+from .parser import ParserModelStore
+from .audio import AudioModelStore
 
-from functools import cached_property
-from typing import List
-from copy import deepcopy
-from ....base_component import BaseComponent
+from .base import BaseModelStore
+from appauto.manager.utils_manager.custom_list import CustomList
 
 
-class ModelStore(BaseComponent):
-    OBJECT_TOKEN = "model_store_id"
+class ModelStore(BaseModelStore):
 
-    GET_URL_MAP = dict(
-        list_model_stores="/v1/kllm/model-store",
-        aaa="/v1/kllm/model-store/importable",
-        bbb="/v1/kllm/model-store/import",
-        ccc="/v1/kllm/model-store/{model_store_id}",
-    )
-
-    PUT_URL_MAP = dict(
-        aaa="/v1/kllm/models/{model_id}",
-    )
-
-    POST_URL_MAP = dict(
-        check="/v1/kllm/model-store/check",
-        run="/v1/kllm/model-store/run",
-        get_run_rule="/v1/kllm/model-store/get_run_rule",
-    )
-
-    DELETE_URL_MAP = dict(
-        aaa="/v1/kllm/models/{model_id}",
-    )
-
-    def check(
-        self,
-        replicas=1,
-        access_limit=4,
-        max_total_tokens=8194,
-        timeout=None,
-        gpu_ids: List = None,
-        tp: int = None,
-        backend_parameters: List = None,
-        hicache: int = 0,
-        worker_id: int = None,
-    ):
-        # TODO max_token 最好能获取到 self, 因为每个 model 都不一样
-        # TODO 新版本中 replica 只能是 1
-        data = {
-            "id": self.object_id,
-            "replicas": replicas,
-            "access_limit": access_limit,
-            "gpu_ids": gpu_ids,
-            "fixed_backend_parameters": [
-                "--tensor-parallel-size",
-                str(tp),
-                "--max-total-tokens",
-                str(max_total_tokens),
-            ],
-            "backend_parameters": backend_parameters or [],
-        }
-
-        if self.type in ["llm", "vlm"]:
-            data["cache_storage"] = hicache
-
-        if self.type in ["parser"]:
-            fix_b_p = deepcopy(data["fixed_backend_parameters"])
-            idx = fix_b_p.index("--max-total-tokens")
-            fix_b_p.pop(idx)
-            fix_b_p.pop(idx + 1)
-
-        if worker_id is not None:
-            data["worker_id"] = str(worker_id)
-
-        return self.post("check", json_data=data, timeout=timeout)
-
-    def run(
-        self,
-        replicas=1,
-        access_limit=4,
-        max_total_tokens=8194,
-        timeout=None,
-        gpu_ids: List = None,
-        tp: int = None,
-        backend_parameters: List = None,
-        cache_storage: int = 0,
-    ):
-        data = {
-            "id": self.object_id,
-            "replicas": replicas,
-            "access_limit": access_limit,
-            "gpu_ids": gpu_ids,
-            "fixed_backend_parameters": [
-                "--tensor-parallel-size",
-                str(tp),
-                "--max-total-tokens",
-                str(max_total_tokens),
-            ],
-            "backend_parameters": backend_parameters or [],
-            "cache_storage": cache_storage,
-        }
-        return self.post("run", json_data=data, timeout=timeout)
-
-    def get_run_rule(self, timeout=None):
-        data = {"id": self.object_id}
-        return self.post("get_run_rule", json_data=data, timeout=timeout)
-
-    @cached_property
-    def type(self):
-        return self.data.type
-
-    @cached_property
-    def name(self):
-        return self.data.name
+    def refresh(self):
+        params = dict(page=1, perPage=100, source="init")
+        res = self.get("get_self", params)
+        self.data = res.data.get("items")
+        return res
 
     @property
-    def source(self):
-        return self.data.source
+    def llm(self) -> CustomList[LLMModelStore]:
+        return CustomList(
+            [
+                LLMModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                for item in self.data
+                if item["type"] == "llm"
+            ]
+        )
 
     @property
-    def backend_type(self):
-        return self.data.backend_type
+    def vlm(self) -> CustomList[VLMModelStore]:
+        return CustomList(
+            [
+                VLMModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                for item in self.data
+                if item["type"] == "vlm"
+            ]
+        )
 
     @property
-    def local_path(self):
-        return self.data.local_path
+    def embedding(self) -> CustomList[EmbeddingModelStore]:
+        return CustomList(
+            [
+                EmbeddingModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                for item in self.data
+                if item["type"] == "embedding"
+            ]
+        )
 
     @property
-    def dir_path(self):
-        return self.data.dir_path
+    def rerank(self) -> CustomList[RerankModelStore]:
+        return CustomList(
+            [
+                RerankModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                for item in self.data
+                if item["type"] == "rerank"
+            ]
+        )
 
     @property
-    def weight_size(self):
-        return self.data.weight_size
+    def parser(self) -> CustomList[ParserModelStore]:
+        return CustomList(
+            [
+                ParserModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                for item in self.data
+                if item["type"] == "parser"
+            ]
+        )
 
     @property
-    def family(self):
-        return self.data.family
-
-    @property
-    def quanted_type(self):
-        return self.data.quanted_type
-
-    @property
-    def categories(self):
-        return self.data.categories
-
-    @property
-    def required_vram(self):
-        return self.data.required_vram
-
-    @property
-    def required_dram(self):
-        return self.data.required_dram
-
-    @property
-    def required_disk(self):
-        return self.data.required_disk
-
-    @property
-    def worker_name(self):
-        return self.data.worker_name
+    def audio(self) -> CustomList[AudioModelStore]:
+        return CustomList(
+            [
+                AudioModelStore(self.mgt_ip, self.port, object_id=item.id, data=item)
+                for item in self.data
+                if item["type"] == "audio"
+            ]
+        )

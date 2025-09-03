@@ -1,13 +1,8 @@
-from typing import Literal, List, Union
-from ....base_component import BaseComponent
+from typing import List, Union
+from .base import BaseScene
 
 
-class Rerank(BaseComponent):
-    OBJECT_TOKEN = "rerank_id"
-
-    GET_URL_MAP = dict(get_models="/v1/models")
-
-    POST_URL_MAP = dict(chat="/v1/rerank")
+class Rerank(BaseScene):
 
     def talk(
         self,
@@ -28,4 +23,4 @@ class Rerank(BaseComponent):
             "query": query,
         }
 
-        return self.post("chat", json_data=data, timeout=timeout, encode_result=True)
+        return self.post("rerank", json_data=data, timeout=timeout, encode_result=True)

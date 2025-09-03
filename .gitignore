@@ -5,6 +5,7 @@ logging.ini
 pytest.ini
 test_data.ini
 reports/*
+.DS_Store
 
 # log
 *.log

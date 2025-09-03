@@ -20,6 +20,8 @@ class BaseComponent(object):
     POST_URL_MAP = {}
     DELETE_URL_MAP = {}
 
+    REFRESH_ALIAS = "get_self"
+
     def __init__(
         self,
         mgt_ip=None,
@@ -41,6 +43,16 @@ class BaseComponent(object):
         self.ssl_enabled = ssl_enabled
         self.parent_tokens = parent_tokens or {}
         self.amaas = amaas
+
+    def refresh(self, alias=None):
+        endpoint = self.GET_URL_MAP[alias or self.REFRESH_ALIAS]
+
+        res = self.get(endpoint.format(*self.object_tokens))
+
+        if not alias:
+            self.data = res.data
+
+        return res
 
     @cached_property
     def headers(self):

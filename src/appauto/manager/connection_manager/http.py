@@ -189,6 +189,8 @@ class HttpClient:
 
     def process_stream_amaas(self, response: httpx.Response, process_chunk=True):
         """获取 stream chunks 的文本内容"""
+        response.raise_for_status()
+
         full_content = ""
 
         for line in response.iter_lines():
@@ -203,17 +205,19 @@ class HttpClient:
                 data = json.loads(payload)
                 logger.info(f"per stream link payload: {data}")
                 if process_chunk:
-                    if chunk := data["choices"][0]["delta"].get("content"):
-                        full_content += chunk
-                        # 实时输出
-                        logger.debug(chunk)
-                        logger.debug(full_content)
+                    if choices := data["choices"]:
+                        if chunk := choices[0]["delta"].get("content"):
+                            full_content += chunk
+                            # 实时输出
+                            logger.debug(chunk)
+                            logger.debug(full_content)
 
             except Exception as e:
                 logger.error(f"Process stream request failed: {e}, init_payload: {payload}")
                 raise
 
         logger.info(f"full_content: {full_content}")
+        logger.info(f"The last line, which usually contains usage, has some key perf metric: {line}".center(600, "*"))
         return full_content
 
     def process_stream_zhiwen(self, response: httpx.Response) -> Generator[str, None, None]:

@@ -44,29 +44,34 @@ class TestModelsBaseOption:
         timeout_s = 600
 
         # 获取模型中心 llm
-        model_stores = [mod for mod in amaas.llm_model_stores if mod.source == "init"]
-        logger.info(f"total model stores: {len(model_stores)}".center(100, "="))
+        llm_model_store = amaas.init_model_store.llm
+        logger.info(f"total llm model stores: {len(llm_model_store)}".center(100, "="))
 
-        for mod in model_stores:
+        for mod in llm_model_store:
             logger.info(f"model: {mod.name}, begin".center(100, "="))
 
             rule = mod.get_run_rule()
 
             # TODO check 不通过的也应该加入 failed
             logger.info(f"model: {mod.name}, check".center(100, "="))
-            res = mod.check(access_limit=rule.data.access_limit, max_total_tokens=rule.data.max_total_tokens, tp=2)
+            worker_id = amaas.workers[0].object_id
+            res = mod.check(
+                worker_id, access_limit=rule.data.access_limit, max_total_tokens=rule.data.max_total_tokens, tp=2
+            )
             logger.info(f"model: {mod.name}, check result: {res}".center(300, "="))
 
             # TODO run 不通过的也应该加入 failed
             logger.info(f"model: {mod.name}, run".center(100, "="))
-            res = mod.run(access_limit=rule.data.access_limit, max_total_tokens=rule.data.max_total_tokens, tp=2)
+            res = mod.run(
+                worker_id, access_limit=rule.data.access_limit, max_total_tokens=rule.data.max_total_tokens, tp=2
+            )
             logger.info(f"model: {mod.name}, run result: {res}".center(300, "="))
 
             start_time = time()
 
             # 等待成功拉起
             while True:
-                model = [model for model in amaas.models if model.name == mod.name][0]
+                model = [model for model in amaas.model.llm if model.name == mod.name][0]
                 if time() - start_time >= timeout_s:
                     failed_models.append(mod.name)
                     logger.error(f"model: {mod.name}, running failed: timeout".center(100, "="))
@@ -88,7 +93,7 @@ class TestModelsBaseOption:
             sleep(randint(10, 30))
 
             # 拉起后提问
-            chat = [chat for chat in amaas.llm_chats if chat.object_id == mod.name][0]
+            chat = [chat for chat in amaas.scene.llm if chat.object_id == mod.name][0]
 
             logger.info(f"{chat.data}".center(200, "="))
             logger.info(f"{chat.object_id}".center(100, "="))
@@ -109,7 +114,7 @@ class TestModelsBaseOption:
         assert not failed_models
 
     def test_batch_query_llm(self):
-        chat = [chat for chat in amaas.llm_chats if chat.object_id == DP.model_name][0]
+        chat = [chat for chat in amaas.scene_llm if chat.object_id == DP.model_name][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -124,7 +129,7 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_embedding(self):
-        chat = [chat for chat in amaas.embedding_chats if chat.object_id == "bge-m3-FP16"][0]
+        chat = [chat for chat in amaas.scene_embedding if chat.object_id == "bge-m3-FP16"][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -140,7 +145,7 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_rerank(self):
-        chat = [chat for chat in amaas.rerank_chats if chat.object_id == "bge-reranker-v2-m3"][0]
+        chat = [chat for chat in amaas.scene_rerank if chat.object_id == "bge-reranker-v2-m3"][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -155,7 +160,7 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_multi_model(self):
-        chat = [chat for chat in amaas.multi_model_chats if chat.display_model_name == "Qwen2.5-VL-7B-Instruct"][0]
+        chat = [chat for chat in amaas.scene_multi_model if chat.display_model_name == "Qwen2.5-VL-7B-Instruct"][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -181,8 +186,8 @@ class TestModelsBaseOption:
         # r1_0528 = [mod for mod in amaas.models if mod.name == "DeepSeek-R1-0528-GPU-weight"][0]
         # kimi_k2 = [mod for mod in amaas.models if mod.name == "Kimi-K2-1000B-INT4"][0]
 
-        r1_0528 = [mod for mod in amaas.llm_chats if mod.display_model_name == "DeepSeek-R1-0528-GPU-weight"][0]
-        kimi_k2 = [mod for mod in amaas.llm_chats if mod.display_model_name == "Kimi-K2-1000B-INT4"][0]
+        r1_0528 = [mod for mod in amaas.scene_llm if mod.display_model_name == "DeepSeek-R1-0528-GPU-weight"][0]
+        kimi_k2 = [mod for mod in amaas.scene_llm if mod.display_model_name == "Kimi-K2-1000B-INT4"][0]
 
         fus = []
 

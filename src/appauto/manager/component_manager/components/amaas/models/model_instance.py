@@ -1,4 +1,4 @@
-from typing import List, Dict, TYPE_CHECKING, Optional
+from typing import List, Dict, TYPE_CHECKING, Optional, Literal
 from functools import cached_property
 from ....base_component import BaseComponent
 from .....utils_manager.custom_list import CustomList
@@ -52,6 +52,11 @@ class ModelInstance(BaseComponent):
 
     def __contains__(self, items: List["ModelInstance"]):
         return self.object_id in [item.object_id for item in items]
+
+    def refresh(self, alias=None):
+        res = super().refresh(alias)
+        self.data = [item for item in res.data.get("items") if item.id == self.object_id][0]
+        return res
 
     # TODO 要感知所在的 gpu 和 worker
     @cached_property

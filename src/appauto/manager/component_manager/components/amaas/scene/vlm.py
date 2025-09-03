@@ -1,16 +1,12 @@
-from typing import Literal, List, Union
-from ....base_component import BaseComponent
+from typing import Literal
+from .base import BaseScene
 
 
 import base64
 
 
-class MultiModel(BaseComponent):
+class VLM(BaseScene):
     OBJECT_TOKEN = "rerank_id"
-
-    GET_URL_MAP = dict(get_models="/v1/models")
-
-    POST_URL_MAP = dict(chat="/v1/chat/completions")
 
     @classmethod
     def image_to_base64(cls, image_path="/Users/ryanyang/Desktop/WechatIMG1.jpeg"):
@@ -51,7 +47,7 @@ class MultiModel(BaseComponent):
         model: str = None,
         timeout=None,
         encode_result=False,
-        process_stream=False,
+        process_stream=True,
     ):
         assert image_path
 
@@ -81,23 +77,7 @@ class MultiModel(BaseComponent):
         encode_result = False if stream else encode_result
 
         if stream:
-            with self.post("chat", stream=stream, json_data=data, timeout=timeout) as res:
+            with self.post("llm_vlm", stream=True, json_data=data, timeout=timeout) as res:
                 return self.http.process_stream_amaas(res, process_chunk=False) if process_stream else res
 
-        return self.post("chat", json_data=data, timeout=timeout, stream=stream, encode_result=encode_result)
-
-    @property
-    def display_model_name(self):
-        return self.data.display_model_name
-
-    @property
-    def object(self) -> Literal["model"]:
-        return self.data.object
-
-    @property
-    def owned_by(self) -> Literal["AMES"]:
-        return self.data.owned_by
-
-    @property
-    def meta(self) -> Literal[None]:
-        return self.data.meta
+        return self.post("llm_vlm", json_data=data, timeout=timeout, stream=False, encode_result=encode_result)

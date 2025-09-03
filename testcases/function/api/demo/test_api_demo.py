@@ -23,7 +23,7 @@ def test_check_and_run_model_store():
     embedding.check()
     embedding.run()
 
-    models = AMAAS.models
+    models = AMAAS.model
 
     logger.info(f"total models: {models}")
 
@@ -47,7 +47,7 @@ def test_check_and_run_model_store():
 def test_chat_demo():
     """试验场景-对话"""
     # TODO 假设当前是存在的
-    LLM_CHATS = AMAAS.llm_chats
+    LLM_CHATS = AMAAS.scene_llm
     logger.info(f"total llm chats: {len(LLM_CHATS)}")
 
     CHAT = LLM_CHATS[0]

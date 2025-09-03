@@ -20,7 +20,7 @@ class CommonStepModelAction:
         model = None
 
         while time() - start_time <= timeout_s:
-            model = amaas.models[0]
+            model = amaas.model.llm[0]
             if model.status == "running":
                 break
             elif model.status == "error":
@@ -51,7 +51,7 @@ class CommonRunTestAMaaSAPI:
             assert model
 
             # TODO filter correct chat
-            chat = amaas.llm_chats[0]
+            chat = amaas.scene_llm[0]
             chat.talk()
             res = chat.talk("test", process_stream=False)
             logger.info(f"得到了回复: {res}")

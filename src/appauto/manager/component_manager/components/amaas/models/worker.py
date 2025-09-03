@@ -9,17 +9,19 @@ if TYPE_CHECKING:
 
 
 class Worker(BaseComponent):
-    OBJECT_TOKEN = "gpu_device_id"
+    OBJECT_TOKEN = "worker_id"
 
     GET_URL_MAP = dict(
-        get_resource_list="/v1/kllm/workers/get_resource_list",
+        get_self="/v1/kllm/workers/get_resource_list",
     )
 
     def __str__(self):
         return f"Worker(Name: {self.name}, ID: {self.object_id})"
 
-    def get_resource_list(self, timeout=None):
-        return self.get("get_resource_list", timeout=timeout)
+    def refresh(self, alias=None):
+        res = super().refresh(alias)
+        self.data = [item for item in res.data.worker_resource_list if item.id == self.object_id][0]
+        return res
 
     @property
     def gpus(self, timeout=None) -> CustomList[GPU]:
@@ -73,14 +75,49 @@ class Worker(BaseComponent):
         return self.data.model_instances
 
     @property
-    def model_instances_obj(self) -> CustomList["ModelInstance"]:
-        if models := self.amaas.models:
-            if instances := self.model_instances:
+    def llm_instances_obj(self) -> CustomList["ModelInstance"]:
+        if llm_models := self.amaas.model.llm:
+            if llm_instances := [ins for llm in llm_models for ins in llm.instances]:
                 return CustomList(
-                    [
-                        ins
-                        for model in models
-                        for ins in model.instances
-                        if ins.name in [item.name for item in instances]
-                    ]
+                    [ins for ins in llm_instances if ins.name in [item.name for item in self.model_instances]]
+                )
+
+    @property
+    def embedding_instances_obj(self) -> CustomList["ModelInstance"]:
+        if embedding_models := self.amaas.model.embedding:
+            if embedding_instances := [ins for embedding in embedding_models for ins in embedding.instances]:
+                return CustomList(
+                    [ins for ins in embedding_instances if ins.name in [item.name for item in self.model_instances]]
+                )
+
+    @property
+    def rerank_instances_obj(self) -> CustomList["ModelInstance"]:
+        if rerank_models := self.amaas.model.rerank:
+            if rerank_instances := [ins for rerank in rerank_models for ins in rerank.instances]:
+                return CustomList(
+                    [ins for ins in rerank_instances if ins.name in [item.name for item in self.model_instances]]
+                )
+
+    @property
+    def parser_instances_obj(self) -> CustomList["ModelInstance"]:
+        if parser_models := self.amaas.model.parser:
+            if parser_instances := [ins for parser in parser_models for ins in parser.instances]:
+                return CustomList(
+                    [ins for ins in parser_instances if ins.name in [item.name for item in self.model_instances]]
+                )
+
+    @property
+    def vlm_instances_obj(self) -> CustomList["ModelInstance"]:
+        if vlm_models := self.amaas.model.vlm:
+            if vlm_instances := [ins for vlm in vlm_models for ins in vlm.instances]:
+                return CustomList(
+                    [ins for ins in vlm_instances if ins.name in [item.name for item in self.model_instances]]
+                )
+
+    @property
+    def audio_instances_obj(self) -> CustomList["ModelInstance"]:
+        if audio_models := self.amaas.model.audio:
+            if audio_instances := [ins for audio in audio_models for ins in audio.instances]:
+                return CustomList(
+                    [ins for ins in audio_instances if ins.name in [item.name for item in self.model_instances]]
                 )

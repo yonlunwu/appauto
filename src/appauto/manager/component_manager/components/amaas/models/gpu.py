@@ -12,10 +12,6 @@ class GPU(BaseComponent):
 
     OBJECT_TOKEN = "gpu_device_id"
 
-    GET_URL_MAP = dict(
-        get_resource_list="/v1/kllm/workers/get_resource_list",
-    )
-
     POST_URL_MAP = dict(
         detail="/v1/kllm/gpu-devices/detail",
     )
@@ -40,6 +36,11 @@ class GPU(BaseComponent):
 
     def __str__(self):
         return f"GPU(Name: {self.name}, ID: {self.object_id}, worker: {self.worker.name},)"
+
+    def refresh(self, alias=None):
+        res = super().refresh(alias)
+        self.data = [inner_dict for _, inner_dict in res.data.get(self.name).items()][0]
+        return res
 
     @property
     def name(self):
@@ -98,9 +99,39 @@ class GPU(BaseComponent):
         return self.data.model_instances
 
     @property
-    def model_instances_obj(self) -> CustomList["ModelInstance"]:
+    def llm_instances_obj(self) -> CustomList["ModelInstance"]:
         if ins_dict := self.model_instances:
-            if ins_obj := self.worker.model_instances_obj:
+            if ins_obj := self.worker.llm_instances_obj:
+                return CustomList([ins for ins in ins_obj if ins.name in [item.name for item in ins_dict]])
+
+    @property
+    def embedding_instances_obj(self) -> CustomList["ModelInstance"]:
+        if ins_dict := self.model_instances:
+            if ins_obj := self.worker.embedding_instances_obj:
+                return CustomList([ins for ins in ins_obj if ins.name in [item.name for item in ins_dict]])
+
+    @property
+    def rerank_instances_obj(self) -> CustomList["ModelInstance"]:
+        if ins_dict := self.model_instances:
+            if ins_obj := self.worker.rerank_instances_obj:
+                return CustomList([ins for ins in ins_obj if ins.name in [item.name for item in ins_dict]])
+
+    @property
+    def parser_instances_obj(self) -> CustomList["ModelInstance"]:
+        if ins_dict := self.model_instances:
+            if ins_obj := self.worker.parser_instances_obj:
+                return CustomList([ins for ins in ins_obj if ins.name in [item.name for item in ins_dict]])
+
+    @property
+    def vlm_instances_obj(self) -> CustomList["ModelInstance"]:
+        if ins_dict := self.model_instances:
+            if ins_obj := self.worker.vlm_instances_obj:
+                return CustomList([ins for ins in ins_obj if ins.name in [item.name for item in ins_dict]])
+
+    @property
+    def audio_instances_obj(self) -> CustomList["ModelInstance"]:
+        if ins_dict := self.model_instances:
+            if ins_obj := self.worker.audio_instances_obj:
                 return CustomList([ins for ins in ins_obj if ins.name in [item.name for item in ins_dict]])
 
     @property

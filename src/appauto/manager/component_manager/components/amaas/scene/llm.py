@@ -1,17 +1,8 @@
 from typing import Literal
-from ....base_component import BaseComponent
+from .base import BaseScene
 
 
-class Chat(BaseComponent):
-    OBJECT_TOKEN = "chat_id"
-
-    GET_URL_MAP = dict(get_models="/v1/models")
-
-    POST_URL_MAP = dict(
-        chat="/v1/chat/completions",  # 对话
-        # completions = "/v1/completions" #
-    )
-
+class LLM(BaseScene):
     def talk(
         self,
         content: str,
@@ -21,7 +12,7 @@ class Chat(BaseComponent):
         max_tokens=1024,
         top_p=1,
         timeout=None,
-        process_stream=False,
+        process_stream=True,
         encode_result=False,
     ):
         """
@@ -42,23 +33,7 @@ class Chat(BaseComponent):
         encode_result = False if stream else encode_result
 
         if stream:
-            with self.post("chat", stream=stream, json_data=data, timeout=timeout) as res:
+            with self.post("llm_vlm", stream=stream, json_data=data, timeout=timeout) as res:
                 return self.http.process_stream_amaas(res) if process_stream else res
 
-        return self.post("chat", json_data=data, timeout=timeout, stream=stream, encode_result=encode_result)
-
-    @property
-    def display_model_name(self):
-        return self.data.display_model_name
-
-    @property
-    def object(self) -> Literal["model"]:
-        return self.data.object
-
-    @property
-    def owned_by(self) -> Literal["AMES"]:
-        return self.data.owned_by
-
-    @property
-    def meta(self) -> Literal[None]:
-        return self.data.meta
+        return self.post("llm_vlm", json_data=data, timeout=timeout, stream=stream, encode_result=encode_result)

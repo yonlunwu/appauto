@@ -6,10 +6,7 @@ logger = LoggingConfig.get_logger()
 
 
 class TestAMaaS:
-    def test_model_stores(self):
-        amaas = AMaaS("117.133.60.227", port=10001, username="yanlong", passwd="HC!r0cks")
-        assert amaas
-
+    def test_model_stores(self, amaas: AMaaS):
         assert amaas.llm_model_stores
         assert amaas.vlm_model_stores
         assert amaas.embedding_model_stores
