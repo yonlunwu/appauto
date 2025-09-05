@@ -54,7 +54,7 @@ def get_ft_port() -> int | None:
     show_default=True,
     help=(
         'Dataset arguments, in JSON format, enclosed in quotes, e.g., \'{"aime24": '
-        '{"prompt_template": "{query}\nPlease reason step by step and place your final answer within boxed{{}}. '
+        '{"prompt_template": "{question}\nPlease reason step by step and place your final answer within boxed{{}}. '
         "Force Requirement: 1.only the final answer should be wrapped in boxed{{}}; "
         "2.no other numbers or text should be enclosed in boxed{{}}. 3.Answer in English.\"}}'"
     ),
