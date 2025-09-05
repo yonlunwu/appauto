@@ -114,12 +114,18 @@ class TestModelsBaseOption:
         assert not failed_models
 
     def test_batch_query_llm(self):
-        chat = [chat for chat in amaas.scene_llm if chat.object_id == DP.model_name][0]
+        for m in amaas.model.llm:
+            if m.name == DP.model_name:
+                for i in m.instances:
+                    logger.info(i.object_id)
+                    logger.info(i.state)
+                    logger.info(i.worker_name)
+
+        chat = [chat for chat in amaas.scene.llm if chat.object_id == DP.model_name][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
             for i in range(DP.query_count):
-                # fu = executor.submit(chat.talk, "python vs go", stream=False, encode_result=True, max_tokens=128)
                 fu = executor.submit(chat.talk, str(uuid4()), stream=False, encode_result=True, max_tokens=64)
                 fu.add_done_callback(partial(callback, func=self.test_batch_query_llm, raise_exception=True))
                 fus.append(fu)
@@ -129,7 +135,7 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_embedding(self):
-        chat = [chat for chat in amaas.scene_embedding if chat.object_id == "bge-m3-FP16"][0]
+        chat = [chat for chat in amaas.scene.embedding if chat.object_id == "bge-m3-FP16"][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -145,7 +151,7 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_rerank(self):
-        chat = [chat for chat in amaas.scene_rerank if chat.object_id == "bge-reranker-v2-m3"][0]
+        chat = [chat for chat in amaas.scene.rerank if chat.object_id == "bge-reranker-v2-m3"][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -160,7 +166,7 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_multi_model(self):
-        chat = [chat for chat in amaas.scene_multi_model if chat.display_model_name == "Qwen2.5-VL-7B-Instruct"][0]
+        chat = [chat for chat in amaas.scene.vlm if chat.display_model_name == "Qwen2.5-VL-7B-Instruct"][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
@@ -172,8 +178,6 @@ class TestModelsBaseOption:
                     image_path="/Users/ryanyang/Desktop/WechatIMG1.jpeg",
                     stream=True,
                     process_stream=True,
-                    # stream=False,
-                    # encode_result=True,
                 )
                 fu.add_done_callback(partial(callback, func=self.test_batch_query_multi_model, raise_exception=True))
                 fus.append(fu)
@@ -183,11 +187,8 @@ class TestModelsBaseOption:
         check_futures_exception(fus)
 
     def test_batch_query_moe_same_node(self):
-        # r1_0528 = [mod for mod in amaas.models if mod.name == "DeepSeek-R1-0528-GPU-weight"][0]
-        # kimi_k2 = [mod for mod in amaas.models if mod.name == "Kimi-K2-1000B-INT4"][0]
-
-        r1_0528 = [mod for mod in amaas.scene_llm if mod.display_model_name == "DeepSeek-R1-0528-GPU-weight"][0]
-        kimi_k2 = [mod for mod in amaas.scene_llm if mod.display_model_name == "Kimi-K2-1000B-INT4"][0]
+        r1_0528 = [mod for mod in amaas.scene.llm if mod.display_model_name == "DeepSeek-R1-0528-GPU-weight"][0]
+        kimi_k2 = [mod for mod in amaas.scene.llm if mod.display_model_name == "Kimi-K2-1000B-INT4"][0]
 
         fus = []
 
