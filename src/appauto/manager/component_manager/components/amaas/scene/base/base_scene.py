@@ -1,6 +1,6 @@
 import abc
 from typing import Literal
-from .....base_component import BaseComponent
+from ...base_component import BaseComponent
 
 
 class BaseScene(BaseComponent):

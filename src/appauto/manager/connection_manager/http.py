@@ -110,13 +110,13 @@ class HttpClient:
         url: str,
         params: Optional[Dict[str, Any]] = None,
         data: Optional[Union[Dict[str, Any], str]] = None,
-        json: Optional[Dict[str, Any]] = None,
+        json_data: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
         encode_result=True,
         timeout=None,
         **kwargs,
     ) -> Union[addict.Dict, httpx.Response]:
-        return self.request("PUT", url, params, data, json, headers, encode_result, timeout, **kwargs)
+        return self.request("PUT", url, params, data, json_data, headers, encode_result, timeout, **kwargs)
 
     def delete(
         self,
@@ -220,26 +220,62 @@ class HttpClient:
         logger.info(f"The last line, which usually contains usage, has some key perf metric: {line}".center(600, "*"))
         return full_content
 
-    def process_stream_zhiwen(self, response: httpx.Response) -> Generator[str, None, None]:
+    def process_stream_zhiwen_deep_search(self, response: httpx.Response) -> Generator[str, None, None]:
         """
         处理 httpx 的流式响应，逐行读取，提取 data.answer 字段。
         支持 yield 每段 answer，直到结束。
         """
+        response.raise_for_status()
+
         full_content = ""
 
-        if not response.is_success:
-            raise RuntimeError(f"请求失败，状态码: {response.status_code}")
-
         for line in response.iter_lines():
-            logger.debug(line)
-
             if not line or not line.startswith("data:"):
                 continue
-
             payload = line.removeprefix("data:").strip()
-            logger.debug(payload)
 
-            if payload == '{"retcode": 0, "retmsg": "", "data": true}':
+            if payload in [
+                '{"retcode": 0, "retmsg": "", "data": true}',
+                '{"response": "", "current_node": "", "state": 0}',
+            ]:
+                break
+
+            try:
+                data = json.loads(payload)
+                logger.info(f"per stream link payload: {data}")
+
+                if chunk := data.get("response"):
+                    logger.debug(chunk)
+                    if isinstance(chunk, str):
+                        full_content += chunk
+                        # 实时输出
+                        logger.debug(full_content)
+
+            except Exception as e:
+                logger.error(f"Process stream request failed: {e}, init_payload: {payload}")
+                raise
+
+        logger.info(f"full_content: {full_content}")
+        return full_content
+
+    def process_stream_zhiwen_normal_search(self, response: httpx.Response) -> Generator[str, None, None]:
+        """
+        处理 httpx 的流式响应，逐行读取，提取 data.answer 字段。
+        支持 yield 每段 answer，直到结束。
+        """
+        response.raise_for_status()
+
+        full_content = ""
+
+        for line in response.iter_lines():
+            if not line or not line.startswith("data:"):
+                continue
+            payload = line.removeprefix("data:").strip()
+
+            if payload in [
+                '{"retcode": 0, "retmsg": "", "data": true}',
+                '{"response": "", "current_node": "", "state": 0}',
+            ]:
                 break
 
             try:
@@ -247,10 +283,11 @@ class HttpClient:
                 logger.info(f"per stream link payload: {data}")
 
                 if chunk := data.get("data").get("answer"):
-                    full_content += chunk
-                    # 实时输出
                     logger.debug(chunk)
-                    logger.debug(full_content)
+                    if isinstance(chunk, str):
+                        full_content += chunk
+                        # 实时输出
+                        logger.debug(full_content)
 
             except Exception as e:
                 logger.error(f"Process stream request failed: {e}, init_payload: {payload}")

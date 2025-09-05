@@ -1,6 +1,6 @@
 from typing import List, Dict, TYPE_CHECKING
 from .....utils_manager.custom_list import CustomList
-from ....base_component import BaseComponent
+from ..base_component import BaseComponent
 from .gpu import GPU
 
 

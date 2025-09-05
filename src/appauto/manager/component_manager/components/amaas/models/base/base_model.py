@@ -6,7 +6,7 @@ import abc
 from time import time, sleep
 from typing import Literal, Dict, List, TYPE_CHECKING
 from ......utils_manager.custom_list import CustomList
-from .....base_component import BaseComponent
+from ...base_component import BaseComponent
 from ..model_instance import ModelInstance
 from appauto.manager.config_manager.config_logging import LoggingConfig
 

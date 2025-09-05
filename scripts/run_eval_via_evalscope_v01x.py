@@ -1,3 +1,7 @@
+"""
+evalscope = v0.1x.x, 比如 v1.17.0
+"""
+
 import sys
 import click
 import subprocess

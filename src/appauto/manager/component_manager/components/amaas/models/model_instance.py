@@ -1,7 +1,7 @@
 from time import time, sleep
 from typing import List, Dict, TYPE_CHECKING, Optional, Literal
 from functools import cached_property
-from ....base_component import BaseComponent
+from ..base_component import BaseComponent
 from .....utils_manager.custom_list import CustomList
 
 

@@ -1,6 +1,6 @@
 from uuid import uuid4
 from typing import List, Optional
-from ...base_component import BaseComponent
+from .base_component import BaseComponent
 from .models import Worker, ModelStore, Model
 from .scene import Scene
 from .api_key import APIKey

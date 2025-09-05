@@ -1,5 +1,5 @@
 from typing import List, Dict, Literal, TYPE_CHECKING, Optional
-from ....base_component import BaseComponent
+from ..base_component import BaseComponent
 from .....utils_manager.custom_list import CustomList
 
 

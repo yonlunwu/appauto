@@ -1,14 +1,14 @@
 import addict
 from typing import TYPE_CHECKING
 from functools import cached_property
-from ..connection_manager.http import HttpClient
+from ....connection_manager.http import HttpClient
 
-from ..config_manager.config_logging import LoggingConfig
+from ....config_manager.config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
 
 if TYPE_CHECKING:
-    from .components.amaas import AMaaS
+    from . import AMaaS
 
 
 class BaseComponent(object):

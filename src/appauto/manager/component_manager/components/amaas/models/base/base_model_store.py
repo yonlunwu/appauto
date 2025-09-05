@@ -4,7 +4,7 @@
 
 import abc
 from functools import cached_property
-from .....base_component import BaseComponent
+from ...base_component import BaseComponent
 
 
 class BaseModelStore(BaseComponent):
