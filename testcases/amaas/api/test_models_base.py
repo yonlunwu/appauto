@@ -226,10 +226,11 @@ class TestAMaaSModelBaseAction:
         items = []
         item = {}
 
+        tps = [1] if model_store_type in ["parser", "audio"] else [1, 2, 4, 8]
+
         try:
             for m_s in models_store:
-                # cr.check_and_run_default_params_under_diff_tp([1, 2, 4, 8], item, m_s)
-                cr.check_and_run_default_params_under_diff_tp([1], item, m_s)
+                cr.check_and_run_default_params_under_diff_tp(tps, item, m_s)
                 items.append(item)
 
         finally:

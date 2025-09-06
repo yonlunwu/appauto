@@ -1,9 +1,10 @@
-from time import time, sleep
-from typing import Dict, List, TypeVar, Generic, Union, Literal
+import pytest
+from time import sleep
 from enum import Enum
 from uuid import uuid4
 from random import choice
 from tabulate import tabulate
+from typing import Dict, List, TypeVar, Literal, Type
 
 
 from appauto.manager.component_manager.components.amaas.models.model_store import (
@@ -16,11 +17,23 @@ from appauto.manager.component_manager.components.amaas.models.model_store impor
 )
 from appauto.manager.config_manager import LoggingConfig
 
-from testcases.amaas.gen_data import amaas, DefaultParams as DP
+from testcases.amaas.gen_data import amaas
 
 T = TypeVar("T", LLMModelStore, EmbeddingModelStore, VLMModelStore, RerankModelStore, ParserModelStore, AudioModelStore)
 
 logger = LoggingConfig.get_logger()
+
+
+@pytest.fixture(scope="function", autouse=False)
+def global_fixture_for_model_base_test():
+
+    model_store_types: tuple[Type[T], ...] = T.__constraints__
+
+    attributes = ["check_result", "run_result", "query_result"]
+
+    for store_type in model_store_types:
+        for attr in attributes:
+            setattr(store_type, attr, None)
 
 
 class ModelBaseTestResult(Enum):
@@ -93,10 +106,11 @@ class CommonModelBaseStep:
                 if l.display_model_name == model_store.name or l.object_id == model_store.name
             ][0]
             model_store.question = str(uuid4())
-            model_store.answer = scene.talk(model_store.question, stream=True, process_stream=True, max_tokens=None)
+            for _ in range(3):
+                model_store.answer = scene.talk(model_store.question, stream=True, process_stream=True, max_tokens=None)
 
-            item["question"] = model_store.question
-            # item["answer"] = llm.answer
+                item["question"] = model_store.question
+                # item["answer"] = llm.answer
 
         except Exception as e:
             model_store.query_result = ModelBaseTestResult.failed
@@ -116,10 +130,11 @@ class CommonModelBaseStep:
                 if v.display_model_name == model_store.name or v.object_id == model_store.name
             ][0]
             model_store.question = "请解释这张图"
-            model_store.answer = scene.talk(model_store.question, stream=True, max_tokens=None, process_stream=True)
+            for _ in range(3):
+                model_store.answer = scene.talk(model_store.question, stream=True, max_tokens=None, process_stream=True)
 
-            item["question"] = model_store.question
-            # item["answer"] = vlm.answer
+                item["question"] = model_store.question
+                # item["answer"] = vlm.answer
 
         except Exception as e:
             model_store.query_result = ModelBaseTestResult.failed
@@ -139,10 +154,11 @@ class CommonModelBaseStep:
                 if e.display_model_name == model_store.name or e.object_id == model_store.name
             ][0]
             model_store.question = ["苹果", "小米", "香蕉", "公司"]
-            model_store.answer = scene.talk(model_store.question, compute_similarity=True)
+            for _ in range(3):
+                model_store.answer = scene.talk(model_store.question, compute_similarity=True)
 
-            item["question"] = model_store.question
-            # item["answer"] = embedding.answer
+                item["question"] = model_store.question
+                # item["answer"] = embedding.answer
 
         except Exception as e:
             model_store.query_result = ModelBaseTestResult.failed
@@ -162,10 +178,11 @@ class CommonModelBaseStep:
                 if e.display_model_name == model_store.name or e.object_id == model_store.name
             ][0]
             model_store.question = "叶文洁是谁"
-            model_store.answer = scene.talk(model_store.question)
+            for _ in range(3):
+                model_store.answer = scene.talk(model_store.question)
 
-            item["question"] = model_store.question
-            # item["answer"] = rerank.answer
+                item["question"] = model_store.question
+                # item["answer"] = rerank.answer
 
         except Exception as e:
             model_store.query_result = ModelBaseTestResult.failed
@@ -179,14 +196,17 @@ class CommonModelBaseStep:
     @classmethod
     def stop(cls, model_store: T, type_: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]):
 
-        # 查找目标模型
-        target_model = next(
-            m
-            for m in getattr(amaas.model, type_)
-            if m.display_model_name == model_store.name or m.object_id == model_store.name
-        )
+        if model_list := getattr(amaas.model, type_, None):
+            if target_models := [
+                m for m in model_list if m.display_model_name == model_store.name or m.object_id == model_store.name
+            ]:
+                for t_m in target_models:
+                    # TODO 当前存在副本残留的 bug, 后面修复后要删除这里的逻辑, 预期 model.stop 要停止所有的副本
+                    if len(all_ins := t_m.instances) > 1:
+                        for ins in all_ins[:-1]:
+                            ins.stop()
 
-        target_model.stop()
+                    t_m.stop()
 
 
 class CommonModelBaseRunner:

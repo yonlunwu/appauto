@@ -212,6 +212,9 @@ class HttpClient:
                             logger.debug(chunk)
                             logger.debug(full_content)
 
+                        if usage := data.get("usage", None):
+                            logger.info(f"usage_metric: {usage}".center(300, "="))
+
             except Exception as e:
                 logger.error(f"Process stream request failed: {e}, init_payload: {payload}")
                 raise
