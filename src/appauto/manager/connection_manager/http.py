@@ -203,14 +203,18 @@ class HttpClient:
 
             try:
                 data = json.loads(payload)
-                logger.info(f"per stream link payload: {data}")
+                logger.debug(f"per stream link payload: {data}")
+
                 if process_chunk:
-                    if choices := data["choices"]:
+                    if choices := data.get("choices", None):
                         if chunk := choices[0]["delta"].get("content"):
                             full_content += chunk
                             # 实时输出
                             logger.debug(chunk)
                             logger.debug(full_content)
+
+                if usage := data.get("usage", None):
+                    logger.info(f"usage_metric: {usage}")
 
             except Exception as e:
                 logger.error(f"Process stream request failed: {e}, init_payload: {payload}")
@@ -242,7 +246,7 @@ class HttpClient:
 
             try:
                 data = json.loads(payload)
-                logger.info(f"per stream link payload: {data}")
+                logger.debug(f"per stream link payload: {data}")
 
                 if chunk := data.get("response"):
                     logger.debug(chunk)

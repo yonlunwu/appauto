@@ -1,4 +1,3 @@
-from typing import List
 from dataclasses import dataclass
 from appauto.manager.component_manager.components.amaas import AMaaS
 from appauto.manager.config_manager import LoggingConfig
@@ -18,11 +17,11 @@ class DefaultParams:
     wait_model_running_timeout_s: int = int(TEST_DATA_DICT.get("wait_model_running_timeout_s", 600))
     concurrency: int = int(TEST_DATA_DICT.get("concurrency", 2))
     query_count: int = int(TEST_DATA_DICT.get("query_count", 4))
+    prompt_length: int = int(TEST_DATA_DICT.get("prompt_length", 128))
     model_name: str = TEST_DATA_DICT.get("model_name", "Qwen2.5-7B-Instruct")
 
 
 assert DefaultParams.ip
-# assert DefaultParams.name
 
 
 amaas = AMaaS(DefaultParams.ip, DefaultParams.port)

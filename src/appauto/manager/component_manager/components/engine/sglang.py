@@ -1,5 +1,5 @@
 from time import time
-from ...base_component import BaseComponent
+from ..amaas.base_component import BaseComponent
 from ....server_manager import SGLangServer
 from ....config_manager import LoggingConfig
 
@@ -52,6 +52,7 @@ class SGLang(BaseComponent):
             with self.post_without_token(
                 "chat", json_data=payload, timeout=timeout, encode_result=False, stream=True
             ) as res:
+                res.raise_for_status()
                 for line in res.iter_lines():
                     if line:
                         logger.info(f"get res: {line}")
