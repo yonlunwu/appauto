@@ -1,4 +1,3 @@
-from typing import Literal
 from .base import BaseScene
 
 
@@ -68,10 +67,12 @@ class VLM(BaseScene):
             ],
             "model": model or self.object_id,
             "temperature": 1,
-            "max_tokens": max_tokens,
             "top_p": top_p,
             "stream": stream,
         }
+
+        if max_tokens:
+            data["max_tokens"] = max_tokens
 
         process_stream = process_stream if stream else False
         encode_result = False if stream else encode_result

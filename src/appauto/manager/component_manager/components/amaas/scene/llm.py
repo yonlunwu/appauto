@@ -24,10 +24,11 @@ class LLM(BaseScene):
             "messages": [{"content": content, "role": "user"}],
             "model": model or self.object_id,
             "temperature": temperature,
-            "max_tokens": max_tokens,
             "top_p": top_p,
             "stream": stream,
         }
+        if max_tokens:
+            data["max_tokens"] = max_tokens
 
         process_stream = process_stream if stream else False
         encode_result = False if stream else encode_result

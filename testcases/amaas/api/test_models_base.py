@@ -3,9 +3,12 @@
 """
 
 import pytest
+import allure
 from uuid import uuid4
 from time import sleep, time
-from random import randint
+from tabulate import tabulate
+from random import randint, choice
+from typing import Literal
 from concurrent.futures import Future, wait
 from functools import partial
 
@@ -14,12 +17,19 @@ from appauto.manager.utils_manager import CustomThreadPoolExecutor, check_future
 
 from testcases.amaas.gen_data import amaas, DefaultParams as DP
 from testcases.amaas.api.conftest import (
-    CommonRunTestAMaaSAPI as cr,
-    CommonStepModelAction as cs,
-    CommonCheckAMaaSAPI as cc,
+    CommonModelBaseRunner as cr,
+    DoCheck as dc,
+    T,
 )
 
 logger = LoggingConfig.get_logger()
+
+
+"""
+1. check & run
+2. wait_running
+3. scene
+"""
 
 
 def callback(future: Future, func: callable, raise_exception: bool = False):
@@ -200,3 +210,27 @@ class TestModelsBaseOption:
         wait(fus)
 
         check_futures_exception(fus)
+
+
+@allure.epic("TestAMaaSModelBaseAction")
+class TestAMaaSModelBaseAction:
+
+    @pytest.mark.parametrize("model_store_type", DP.init_model_store_type)
+    def test_check_run_and_scene_init_model_store_under_default_params(self, model_store_type):
+        """
+        模型中心: 默认参数检查 -> 运行 -> 试验场景 (试验场的对话内容需要人为查看是否有乱码), \
+            遍历 ["llm", "vlm", "embedding", "rerank", "parser", "audio"]
+        """
+        models_store = getattr(amaas.init_model_store, model_store_type)
+
+        items = []
+        item = {}
+
+        try:
+            for m_s in models_store:
+                # cr.check_and_run_default_params_under_diff_tp([1, 2, 4, 8], item, m_s)
+                cr.check_and_run_default_params_under_diff_tp([1], item, m_s)
+                items.append(item)
+
+        finally:
+            dc.check_default_run_result(models_store, items)

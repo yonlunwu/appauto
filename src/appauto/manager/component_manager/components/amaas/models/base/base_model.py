@@ -48,9 +48,6 @@ class BaseModel(BaseComponent):
         self.data = [item for item in res.data.get("items") if item.id == self.object_id][0]
         return res
 
-    def stop(self, timeout=None):
-        self.delete("stop", timeout=timeout)
-
     @abc.abstractmethod
     def check(self): ...
 
