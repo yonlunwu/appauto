@@ -52,6 +52,13 @@ class BaseComponent(object):
 
         return res
 
+    def refresh_token(self):
+        del self.__dict__["http"]
+        del self.__dict__["headers"]
+        del self.__dict__["token"]
+
+        self.login(refresh=True)
+
     @cached_property
     def headers(self):
         return {
@@ -75,7 +82,7 @@ class BaseComponent(object):
         retry = True
         try:
             if response.status_code == 401:
-                self.login(refresh=True)
+                self.refresh_token()
             elif response.status_code == 200 and response.json().get("ec", "EOK") == "EOK":
                 retry = False
         finally:

@@ -40,3 +40,7 @@ def str_to_list_by_split(content, singleLine=True) -> List:
         return list(filter(None, content.replace("\n", "").split(",")))
     else:
         return list(filter(None, content.split("\n")))
+
+
+def remove_line_break(content: str) -> str:
+    return content.replace("\n", "")

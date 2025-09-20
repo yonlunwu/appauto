@@ -209,7 +209,7 @@ def runner(
             # 如果是自定义数据集，就不能指定输入长度相关参数
             # max_prompt_length=512,
             # min_prompt_length=512,
-            stream=True
+            stream=True,
         )
 
         run_perf_benchmark(task_cfg)

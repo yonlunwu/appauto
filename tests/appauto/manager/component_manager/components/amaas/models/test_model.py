@@ -104,3 +104,31 @@ class TestAMaaSModel:
                 ins.stop()
 
             model.stop()
+
+    def test_stop_all_ins_and_parser_models(self, amaas: AMaaS):
+        for model in amaas.model.parser:
+            for ins in model.instances:
+
+                logger.info(ins.name)
+                logger.info(ins.object_id)
+                logger.info(ins.object_tokens)
+                logger.info(ins.OBJECT_TOKEN)
+                logger.info(ins.model.name)
+
+                ins.stop()
+
+            model.stop()
+
+    def test_stop_all_ins_and_audio_models(self, amaas: AMaaS):
+        for model in amaas.model.audio:
+            for ins in model.instances:
+
+                logger.info(ins.name)
+                logger.info(ins.object_id)
+                logger.info(ins.object_tokens)
+                logger.info(ins.OBJECT_TOKEN)
+                logger.info(ins.model.name)
+
+                ins.stop()
+
+            model.stop()

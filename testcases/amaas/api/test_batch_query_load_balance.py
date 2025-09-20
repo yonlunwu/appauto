@@ -5,14 +5,17 @@
 import allure
 from functools import partial
 from concurrent.futures import Future, wait
+from uuid import uuid4
 
 from appauto.manager.config_manager import LoggingConfig
+from appauto.manager.utils_manager import Requires
 from appauto.manager.utils_manager.custom_thread_pool_executor import CustomThreadPoolExecutor, check_futures_exception
+
 
 from testcases.amaas.gen_data import amaas, DefaultParams as DP
 from testcases.amaas.api.conftest import CommonModelPerformenceStep as cps
 
-logger = LoggingConfig.config_logging()
+logger = LoggingConfig.get_logger()
 
 
 def callback(future: Future, func: callable, raise_exception: bool = False):
@@ -28,18 +31,19 @@ def callback(future: Future, func: callable, raise_exception: bool = False):
 
 @allure.epic("TestAMaaSModelBatchQuery")
 class TestAMaaSModelBatchQuery:
+    @Requires.need_have(amaas, ["llm"])
     def test_batch_query_llm(self):
         """
         并发 query llm. 当前无法到对应主机查看引擎日志, 需要人为查看
         TODO 可以加上去 supervisor 节点查看 backend/server.log
         """
-        scene = [chat for chat in amaas.scene.llm if chat.object_id == DP.model_name][0]
+        llm = [chat for chat in amaas.scene.llm if chat.object_id == DP.model_name][0]
         fus = []
 
         with CustomThreadPoolExecutor(max_workers=DP.concurrency) as executor:
-            for i in range(DP.query_count):
-                # fu = executor.submit(scene.talk, str(uuid4()), max_tokens=128)
-                fu = executor.submit(scene.talk, cps.gen_text_with_length(DP.prompt_length), max_tokens=128)
+            for _ in range(DP.query_count):
+                fu = executor.submit(llm.talk, str(uuid4()), max_tokens=128)
+                # fu = executor.submit(llm.talk, cps.gen_text_with_length(int(DP.prompt_length)), max_tokens=128)
                 fu.add_done_callback(partial(callback, func=self.test_batch_query_llm, raise_exception=True))
                 fus.append(fu)
 
@@ -47,6 +51,7 @@ class TestAMaaSModelBatchQuery:
 
         check_futures_exception(fus)
 
+    @Requires.need_have(amaas, ["embedding"])
     def test_batch_query_embedding(self):
         """
         并发 query embedding. 当前无法到对应主机查看引擎日志, 需要人为查看
@@ -66,6 +71,7 @@ class TestAMaaSModelBatchQuery:
 
         check_futures_exception(fus)
 
+    @Requires.need_have(amaas, ["rerank"])
     def test_batch_query_rerank(self):
         """
         并发 query rerank. 当前无法到对应主机查看引擎日志, 需要人为查看
@@ -85,6 +91,7 @@ class TestAMaaSModelBatchQuery:
 
         check_futures_exception(fus)
 
+    @Requires.need_have(amaas, ["vlm"])
     def test_batch_query_vlm(self):
         """
         并发 query vlm. 当前无法到对应主机查看引擎日志, 需要人为查看

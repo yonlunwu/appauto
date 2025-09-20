@@ -187,7 +187,7 @@ def runner(
             seed=int(seed),
             name=f"{name}-{i}",
             debug=debug,
-            stream=True
+            stream=True,
         )
 
         # len(number) != 1: ./outputs/20250709_142517/{name}/parallel_x_number_x/benchmark_summary.json

@@ -52,6 +52,7 @@ markers =
     ci: marks tests as ci
     smoke: marks tests as smoke
     night: marks tests as night
+    dev: marks tests as dev
 
 """
         with open(cls.PYTEST_INI, "w", encoding="utf-8") as file:
