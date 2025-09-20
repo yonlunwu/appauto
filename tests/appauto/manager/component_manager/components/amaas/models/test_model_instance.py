@@ -7,6 +7,12 @@ logger = LoggingConfig.get_logger()
 
 
 class TestAMaaSLLMModelInstance:
+    def test_get_llm_instance_pid(self, amaas: AMaaS):
+        for llm in amaas.model.llm:
+            if inss := llm.instances:
+                for ins in inss:
+                    logger.info(ins.pid)
+
     def test_llm_instance(self, amaas: AMaaS):
         # TODO 将 amaas 抽出来
         # TODO 标记哪些 tests 是 ci

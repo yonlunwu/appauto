@@ -15,17 +15,19 @@ from appauto.manager.component_manager.components.amaas.models.model_store impor
     RerankModelStore,
     AudioModelStore,
     ParserModelStore,
+    BaseModelStore,
 )
 from appauto.manager.config_manager import LoggingConfig
+from appauto.manager.error_manager import ModelStoreCheckError, ModelStoreRunError
 
-from testcases.amaas.gen_data import amaas
+from testcases.amaas.gen_data import amaas, DefaultParams as DP
 
 T = TypeVar("T", LLMModelStore, EmbeddingModelStore, VLMModelStore, RerankModelStore, ParserModelStore, AudioModelStore)
 
 logger = LoggingConfig.get_logger()
 
 
-@pytest.fixture(scope="function", autouse=False)
+@pytest.fixture(autouse=True)
 def global_fixture_for_model_base_test():
 
     model_store_types: tuple[Type[T], ...] = T.__constraints__
@@ -58,24 +60,24 @@ class CommonModelPerformenceStep:
         fake = Faker(language)
 
         text = ""
-        length = length * 1.2
 
         while len(text) < length:
             # 每次生成一段文本，每次最多 512 个字符
-            text += fake.text(max_nb_chars=512) + ""
+            text += fake.text(max_nb_chars=DP.max_nb_chars) + ""
 
-        return text[:length]
+        return text
 
 
 class CommonModelBaseStep:
 
     @classmethod
-    def gen_params(cls, item: Dict, model_store: T, tp: int) -> Dict:
-        item["tp"] = tp
+    def gen_params(cls, result_item: Dict, model_store: T, tp: int) -> Dict:
+        result_item["name"] = model_store.name
+        result_item["tp"] = tp
         rule: Dict = model_store.get_run_rule()
 
         worker = choice(amaas.workers)
-        item["worker"] = f"{worker.name}/{worker.object_id}"
+        result_item["worker"] = f"{worker.name}/{worker.object_id}"
 
         params = dict(
             worker_id=worker.object_id,
@@ -90,71 +92,71 @@ class CommonModelBaseStep:
         return params
 
     @classmethod
-    def model_store_check(cls, item: Dict, model_store: T, params: Dict) -> Dict:
+    def model_store_check(cls, result_item: Dict, model_store: T, params: Dict) -> Dict:
         res = model_store.check(**params)
 
         model_store.check_result = ModelBaseTestResult.passed
-        item["check_result"] = model_store.check_result
+        result_item["check_result"] = model_store.check_result
 
         if res.data.messages:
             model_store.check_result = ModelBaseTestResult.failed
             model_store.run_result = ModelBaseTestResult.skipped
-            item["check_result"] = model_store.check_result
-            item["run_result"] = model_store.run_result
+            result_item["check_result"] = model_store.check_result
+            result_item["run_result"] = model_store.run_result
 
         return res
 
     @classmethod
-    def model_store_run(cls, item: Dict, model_store: T, params: Dict):
+    def model_store_run(cls, result_item: Dict, model_store: T, params: Dict):
         try:
-            model_store.run(wait_for_running=True, running_timeout_s=900, **params)
+            model_store.run(wait_for_running=True, running_timeout_s=DP.wait_model_running_timeout_s, **params)
 
-        except RuntimeError or TimeoutError as e:
+        except (RuntimeError, TimeoutError) as e:
             model_store.run_result = ModelBaseTestResult.failed
 
         else:
             model_store.run_result = ModelBaseTestResult.passed
 
         finally:
-            item["run_result"] = model_store.run_result
+            result_item["run_result"] = model_store.run_result
 
     @classmethod
-    def scene_and_stop(cls, model_store: T, item: Dict, skip_scene=False):
+    def scene_and_stop(cls, model_store: T, result_item: Dict, skip_scene=False):
         """有些模型有试验场景, 有些没有"""
         match model_store:
             case LLMModelStore():
                 if not skip_scene:
-                    CommonModelBaseStep._scene_llm(item, model_store)
+                    CommonModelBaseStep._scene_llm(result_item, model_store)
                 CommonModelBaseStep.stop(model_store, "llm")
 
             case VLMModelStore():
                 if not skip_scene:
-                    CommonModelBaseStep._scene_vlm(item, model_store)
+                    CommonModelBaseStep._scene_vlm(result_item, model_store)
                 CommonModelBaseStep.stop(model_store, "vlm")
 
             case EmbeddingModelStore():
                 if not skip_scene:
-                    CommonModelBaseStep._scene_embedding(item, model_store)
+                    CommonModelBaseStep._scene_embedding(result_item, model_store)
                 CommonModelBaseStep.stop(model_store, "embedding")
 
             case RerankModelStore():
                 if not skip_scene:
-                    CommonModelBaseStep._scene_rerank(item, model_store)
+                    CommonModelBaseStep._scene_rerank(result_item, model_store)
                 CommonModelBaseStep.stop(model_store, "rerank")
 
             case ParserModelStore():
-                CommonModelBaseStep._scene_parser(item, model_store)
+                CommonModelBaseStep._scene_parser(result_item, model_store)
                 CommonModelBaseStep.stop(model_store, "parser")
 
             case AudioModelStore():
-                CommonModelBaseStep._scene_audio(item, model_store)
+                CommonModelBaseStep._scene_audio(result_item, model_store)
                 CommonModelBaseStep.stop(model_store, "audio")
 
             case _:
                 logger.error(f"不支持的模型类型: {type(model_store)}, 跳过处理")
 
     @classmethod
-    def _scene_llm(cls, item: Dict, model_store: LLMModelStore):
+    def _scene_llm(cls, result_item: Dict, model_store: LLMModelStore):
         try:
             scene = [
                 l
@@ -162,10 +164,10 @@ class CommonModelBaseStep:
                 if l.display_model_name == model_store.name or l.object_id == model_store.name
             ][0]
             model_store.question = str(uuid4())
-            for _ in range(3):
+            for _ in range(DP.scene_loop):
                 model_store.answer = scene.talk(model_store.question, stream=True, process_stream=True, max_tokens=None)
 
-                item["question"] = model_store.question
+                result_item["question"] = model_store.question
                 # item["answer"] = llm.answer
 
         except Exception as e:
@@ -176,10 +178,10 @@ class CommonModelBaseStep:
             model_store.query_result = ModelBaseTestResult.passed
 
         finally:
-            item["query_result"] = model_store.query_result
+            result_item["query_result"] = model_store.query_result
 
     @classmethod
-    def _scene_vlm(cls, item: Dict, model_store: VLMModelStore):
+    def _scene_vlm(cls, result_item: Dict, model_store: VLMModelStore):
         try:
             scene = [
                 v
@@ -190,7 +192,7 @@ class CommonModelBaseStep:
             for _ in range(3):
                 model_store.answer = scene.talk(model_store.question, stream=True, max_tokens=None, process_stream=True)
 
-                item["question"] = model_store.question
+                result_item["question"] = model_store.question
                 # item["answer"] = vlm.answer
 
         except Exception as e:
@@ -201,10 +203,10 @@ class CommonModelBaseStep:
             model_store.query_result = ModelBaseTestResult.passed
 
         finally:
-            item["query_result"] = model_store.query_result
+            result_item["query_result"] = model_store.query_result
 
     @classmethod
-    def _scene_embedding(cls, item: Dict, model_store: EmbeddingModelStore):
+    def _scene_embedding(cls, result_item: Dict, model_store: EmbeddingModelStore):
         try:
             scene = [
                 e
@@ -215,7 +217,7 @@ class CommonModelBaseStep:
             for _ in range(3):
                 model_store.answer = scene.talk(model_store.question, compute_similarity=True)
 
-                item["question"] = model_store.question
+                result_item["question"] = model_store.question
                 # item["answer"] = embedding.answer
 
         except Exception as e:
@@ -226,10 +228,10 @@ class CommonModelBaseStep:
             model_store.query_result = ModelBaseTestResult.passed
 
         finally:
-            item["query_result"] = model_store.query_result
+            result_item["query_result"] = model_store.query_result
 
     @classmethod
-    def _scene_rerank(cls, item: Dict, model_store: RerankModelStore):
+    def _scene_rerank(cls, result_item: Dict, model_store: RerankModelStore):
         try:
             scene = [
                 e
@@ -240,7 +242,7 @@ class CommonModelBaseStep:
             for _ in range(3):
                 model_store.answer = scene.talk(model_store.question)
 
-                item["question"] = model_store.question
+                result_item["question"] = model_store.question
                 # item["answer"] = rerank.answer
 
         except Exception as e:
@@ -251,17 +253,17 @@ class CommonModelBaseStep:
             model_store.query_result = ModelBaseTestResult.passed
 
         finally:
-            item["query_result"] = model_store.query_result
+            result_item["query_result"] = model_store.query_result
 
     @classmethod
-    def _scene_parser(cls, item: Dict, model_store: ParserModelStore):
+    def _scene_parser(cls, result_item: Dict, model_store: ParserModelStore):
         model_store.query_result = ModelBaseTestResult.skipped
-        item["query_result"] = model_store.query_result
+        result_item["query_result"] = model_store.query_result
 
     @classmethod
-    def _scene_audio(cls, item: Dict, model_store: AudioModelStore):
+    def _scene_audio(cls, result_item: Dict, model_store: AudioModelStore):
         model_store.query_result = ModelBaseTestResult.skipped
-        item["query_result"] = model_store.query_result
+        result_item["query_result"] = model_store.query_result
 
     @classmethod
     def stop(cls, model_store: T, type_: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]):
@@ -281,77 +283,65 @@ class CommonModelBaseStep:
 
 class CommonModelBaseRunner:
     @classmethod
-    def check_and_run_default_params_under_diff_tp(cls, tps: List[int], items: List[Dict], item: Dict, model_store: T):
+    def get_models_store(
+        cls, model_store_type: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]
+    ) -> List[BaseModelStore]:
+        return getattr(amaas.init_model_store, model_store_type)
+
+    @classmethod
+    def run_with_default(cls, tp: Literal[1, 2, 4, 8], model_store: T):
         """
-        不同 tp 情况下, 均按照默认参数检测 -> 拉起 -> 试验场景
+        默认参数检测 -> 拉起 -> 试验场景
         """
-        item["name"] = model_store.name
+        result_item = {}
 
-        for tp in tps:
+        try:
 
-            try:
+            logger.info(f"test model store: {model_store.name}, tp: {tp}, id: {model_store.object_id}".center(150, "="))
+            params = CommonModelBaseStep.gen_params(result_item, model_store, tp)
 
-                logger.info(
-                    f"test model store: {model_store.name}, tp: {tp}, id: {model_store.object_id}".center(150, "=")
-                )
-                params = CommonModelBaseStep.gen_params(item, model_store, tp)
+            # check 失败后直接记录结果
+            res = CommonModelBaseStep.model_store_check(result_item, model_store, params)
+            if res.data.messages:
+                raise ModelStoreCheckError(f"model store: {model_store.name}, tp: {tp}, check failed")
 
-                res = CommonModelBaseStep.model_store_check(item, model_store, params)
-                # check 失败
-                if res.data.messages:
-                    logger.info(f"model store: {model_store.name}, tp: {tp}, check failed")
-                    continue
+            # run 失败了要主动 stop，不要影响其他的
+            CommonModelBaseStep.model_store_run(result_item, model_store, params)
+            if model_store.run_result == ModelBaseTestResult.failed:
+                raise ModelStoreRunError(f"model store: {model_store.name}, tp: {tp}, run failed")
 
-                CommonModelBaseStep.model_store_run(item, model_store, params)
-                # run 失败
-                if model_store.run_result == ModelBaseTestResult.failed:
-                    logger.info(f"model store: {model_store.name}, tp: {tp}, run failed")
-                    # run 失败了要 stop 掉，不要影响其他的
-                    CommonModelBaseStep.scene_and_stop(model_store, item, skip_scene=True)
-                    continue
+            CommonModelBaseStep.scene_and_stop(model_store, result_item)
 
-                CommonModelBaseStep.scene_and_stop(model_store, item)
+            sleep(5)
 
-                sleep(5)
+        except ModelStoreCheckError:
+            logger.error(f"model store: {model_store.name}, tp: {tp}, check failed")
 
-            except Exception as e:
-                logger.error(
-                    f"error occurred in check_and_run_default_params_under_diff_tp, "
-                    f"model: {model_store.name} tp: {tp}, error: {e}"
-                )
-                raise e
+        except ModelStoreRunError:
+            logger.error(f"model store: {model_store.name}, tp: {tp}, run failed")
+            CommonModelBaseStep.scene_and_stop(model_store, result_item, skip_scene=True)
 
-            # # TODO 这里 assert 后中间的失败了，后面还没被 for 的就测不上了，因此这里不再 check 了，而是放在最后统一 check items
-            finally:
-                # DoCheck.check_default_run_result(model_store, [item])
-                items.append(item)
+        except Exception as e:
+            logger.error(
+                f"error occurred in check_and_run_default_params_under_diff_tp, "
+                f"model: {model_store.name} tp: {tp}, error: {e}"
+            )
+            raise e
+
+        finally:
+            return result_item
 
 
 class DoCheck:
     @classmethod
-    def check_default_run_result(cls, model_store: T, item: List[Dict]):
-        """
-        模型的每个 tp 都需要 check.
-        """
-        logger.info(tabulate(item, headers="keys", tablefmt="github"))
-
-        assert model_store.check_result == ModelBaseTestResult.passed
-        assert model_store.run_result == ModelBaseTestResult.passed
-
-        match model_store:
-            case LLMModelStore() | VLMModelStore() | EmbeddingModelStore() | RerankModelStore():
-                assert model_store.query_result == ModelBaseTestResult.passed
-
-    @classmethod
-    def check_final_items(cls, items: List[Dict]):
+    def check_final_item(cls, item: Dict):
         """
         测试结束后统一检查是否存在 failed item.
         """
 
-        logger.info(tabulate(item, headers="keys", tablefmt="github"))
+        logger.info(tabulate([item], headers="keys", tablefmt="github"))
 
-        for item in items:
-            assert item["check_result"] == ModelBaseTestResult.passed
-            assert item["run_result"] == ModelBaseTestResult.passed
+        assert item["check_result"] == ModelBaseTestResult.passed
+        assert item["run_result"] == ModelBaseTestResult.passed
 
-            assert item["query_result"] in [ModelBaseTestResult.passed, ModelBaseTestResult.skipped]
+        assert item["query_result"] in [ModelBaseTestResult.passed, ModelBaseTestResult.skipped]

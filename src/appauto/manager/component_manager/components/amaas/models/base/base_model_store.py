@@ -41,6 +41,16 @@ class BaseModelStore(BaseComponent):
         data = {"id": self.object_id}
         return self.post("get_run_rule", json_data=data, timeout=timeout)
 
+    def get_min_hicache(self, total_tokens: int, tp: int, timeout=None):
+        """
+        根据 total_tokens 和 tp 获取最小 hicache
+        """
+        assert all([total_tokens, tp])
+
+        data = {"id": self.object_id, "total_tokens": total_tokens, "tp_size": tp}
+
+        return self.post("get_run_rule", json_data=data, timeout=timeout)
+
     @cached_property
     def type(self):
         return self.data.type
