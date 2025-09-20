@@ -83,6 +83,7 @@ class BaseModel(BaseComponent):
                 sleep(interval_s)
                 continue
 
+        logger.error(f"Timeout while waiting for {self.name} running.")
         raise TimeoutError(f"Timeout while waiting for {self.name} running.")
 
     @property

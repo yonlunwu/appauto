@@ -1,5 +1,5 @@
 """
-evalscope = v1.0.0
+evalscope = v1.0.x
 """
 
 import sys
