@@ -1,1 +1,1 @@
-from .docker import AMaaSDocker
+from .docker_ctn_factory import DockerContainerFactory

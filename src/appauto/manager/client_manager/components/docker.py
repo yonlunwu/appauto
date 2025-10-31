@@ -1,22 +1,21 @@
 from typing import Literal, Optional, Dict, List
-from appauto.manager.client_manager import BaseLinux
-from appauto.manager.utils_manager.format_output import remove_line_break
-from appauto.manager.config_manager.config_logging import LoggingConfig
+from ..linux import BaseLinux
+from ...utils_manager.format_output import remove_line_break
+from ...config_manager.config_logging import LoggingConfig
+
+from typing import List, Optional, Dict
 
 logger = LoggingConfig.get_logger()
 
 
-# TODO wuhao 帮忙补充完整
-class AMaaSDocker(BaseLinux):
-    def __init__(self, mgt_ip, ssh_user="qujing", ssh_password="madsys123", ssh_port=22):
-        super().__init__(mgt_ip, ssh_user, ssh_password, ssh_port)
+# 工具类，封装常用的 docker 命令行操作
+class BaseDockerTool:
+    def __init__(self, node: BaseLinux):
+        self.node = node
 
-    def stop(self, ctn_name):
-        self.run(f"docker stop {ctn_name}")
-
-    def get_ctn_id_by_name(self, ctn_name="zhiwen-ft") -> Optional[str]:
+    def get_ctn_id_by_name(self, ctn_name: str = None) -> Optional[str]:
         cmd = f'docker ps -a --filter "name=^/{ctn_name}$" --format {"{{.ID}}"}'
-        rc, res, _ = self.run(cmd)
+        rc, res, _ = self.node.run(cmd)
         if rc == 0:
             return remove_line_break(res)
 
@@ -27,7 +26,7 @@ class AMaaSDocker(BaseLinux):
         ctn_names_set = set(ctn_names)
 
         cmd = 'docker ps -a --format "{{.ID}}:{{.Names}}"'
-        rc, res, _ = self.run(cmd)
+        rc, res, _ = self.node.run(cmd)
 
         if rc != 0:
             return {name: None for name in ctn_names}
@@ -60,7 +59,7 @@ class AMaaSDocker(BaseLinux):
 
     def is_running(self, ctn_id) -> Literal["yes", "no", "unknown"]:
         cmd = f"docker inspect -f {'{{.State.Running}}'} {ctn_id}"
-        rc, res, _ = self.run(cmd)
+        rc, res, _ = self.node.run(cmd)
         if rc == 0:
             if "true" in res:
                 return "yes"
@@ -80,7 +79,7 @@ class AMaaSDocker(BaseLinux):
 
         elif is_running == "unknown":
             logger.info(f"ctn {ctn_id} status is unknown, but try to stop it.")
-            self.run(f"docker stop {ctn_id}")
+            self.node.run(f"docker stop {ctn_id}")
 
         assert self.is_running(ctn_id) == "no"
 
@@ -88,31 +87,14 @@ class AMaaSDocker(BaseLinux):
 
     def rm_ctn(self, ctn_id):
         cmd = f"docker rm {ctn_id}"
-        self.run_with_check(cmd)
+        self.node.run_with_check(cmd)
 
         logger.info(f"{ctn_id} has been removed.")
 
     def restart_ctn(self, ctn_id):
         cmd = f"docker restart {ctn_id}"
-        self.run_with_check(cmd)
+        self.node.run_with_check(cmd)
 
     def prune(self, resource: Literal["network", "image", "container", "system"]):
-        cmd = f"sudo docker {resource} prune -f"
-        self.run(cmd, sudo=False)
-
-    def decompress(self, tar_name: str):
-        cmd = f"cd {self.deploy_path} && sudo tar -zxvf {tar_name}"
-        self.run(cmd, sudo=False)
-
-    def have_tar(self, tar_name: str) -> Literal["yes", "no", "unknown"]:
-        try:
-            cmd = f"test -f {self.deploy_path}{tar_name}"
-            rc, _, _ = self.run(cmd)
-
-            if rc == 0:
-                return "yes"
-
-            return "no"
-
-        except Exception as e:
-            return "unknown"
+        cmd = f"docker {resource} prune -f"
+        self.node.run(cmd, sudo=False)

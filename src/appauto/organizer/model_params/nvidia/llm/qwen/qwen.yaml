@@ -1,0 +1,47 @@
+common:
+  model-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-GPU-weight
+  served-model-name: Qwen3-Coder-480B-A35B-Instruct-GPU-weight 
+  chunked-prefill-size: 4096 
+  trust-remote-code : true
+  enable-p2p-check: true 
+  disable-shared-experts-fusion: true
+  enable-mixed-chunk: true
+  tensor-parallel-size 8 
+  amx-method: AMXINT8 
+  subpool-count:2 
+  amx-weight-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-CPU-weight 
+  attention-backend: flashinfer 
+  mem-fraction-static: 0.98
+  tool-call-parser: qwen3_coder
+
+dynamic:
+  # 根据环境调整
+  cpuinfer: 80
+
+
+correct_common:
+  max-running-requests: 50
+  max-total-tokens: 50000
+  dp: 1
+
+
+correct:
+  8:
+    tensor-parallel-size: 8
+    enable-p2p-check: true
+    num-gpu-experts: 103
+
+
+perf_common:
+  max-total-tokens: 37000
+  max-running-requests: 37
+  cpu-embed: "True" # 表示需要传值，而不是 flag
+  enable-defer: true
+
+perf:
+  8:
+    tensor-parallel-size: 8
+    num-gpu-experts: 240
+
+
+

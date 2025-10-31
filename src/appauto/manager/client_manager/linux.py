@@ -1,10 +1,8 @@
-from appauto.manager.connection_manager.ssh import SSHClient
-from appauto.manager.config_manager import LoggingConfig
-from appauto.manager.utils_manager.format_output import str_to_list_by_split
-from tenacity import retry, stop_after_attempt, wait_fixed, wait_chain
+import os
 from time import sleep, time
 from queue import Queue
 from threading import Thread
+from functools import cached_property
 from paramiko.ssh_exception import (
     NoValidConnectionsError,
     ChannelException,
@@ -14,7 +12,15 @@ from paramiko.ssh_exception import (
     SSHException,
     ProxyCommandFailure,
 )
-from typing import Tuple, Optional, Literal, List
+from typing import Tuple, Optional, Literal, List, TYPE_CHECKING
+from tenacity import retry, stop_after_attempt, wait_fixed, wait_chain
+
+from ..connection_manager.ssh import SSHClient
+from ..config_manager import LoggingConfig
+from ..utils_manager.format_output import str_to_list_by_split, remove_line_break
+
+if TYPE_CHECKING:
+    from .components.docker import BaseDockerTool
 
 logger = LoggingConfig.get_logger()
 
@@ -29,6 +35,10 @@ class BaseLinux(object):
 
     def __str__(self):
         return self.mgt_ip
+
+    @cached_property
+    def docker_tool(self) -> "BaseDockerTool":
+        return BaseDockerTool(self)
 
     @retry(
         stop=stop_after_attempt(10),
@@ -141,6 +151,52 @@ class BaseLinux(object):
             self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_passwd)
             raise e
 
+    def run_in_docker(
+        self, ctn_name: str, cmd: str, print_screen=False, timeout=None
+    ) -> Tuple[int, Optional[str], Optional[str]]:
+        """
+        需要提前将当前的 ssh_user 加入到 docker 组，否则会报权限错误
+        """
+        try:
+            cmd = f"docker exec {ctn_name} bash -c '{cmd}'"
+
+            logger.info(f"running {cmd} on {self}")
+            _, stdout, stderr = self.ssh.exec_command(cmd, timeout=timeout)
+
+            if print_screen:
+                while not stdout.channel.exit_status_ready():
+                    if stdout.channel.recv_ready():
+                        line = stdout.channel.recv(4096).decode("utf-8")
+                        logger.info(f"STDOUT: {line.strip()}")
+                    if stderr.channel.recv_ready():
+                        line = stderr.channel.recv(4096).decode("utf-8")
+                        logger.info(f"STDERR: {line.strip()}")
+
+            stdouts = stdout.read().decode("utf-8")
+            logger.info(f"STDOUT: {stdouts}")
+            stderrs = stderr.read().decode("utf-8")
+            if stderrs != "":
+                logger.info(f"STDERR: {stderrs}")
+
+            rc = stdout.channel.recv_exit_status()
+            return rc, stdouts, stderrs
+
+        except (
+            AuthenticationException,
+            BadAuthenticationType,
+            BadHostKeyException,
+        ) as e:
+            logger.error(f"Error occurred that will not be retried: {e}")
+        except (
+            NoValidConnectionsError,
+            ChannelException,
+            SSHException,
+            ProxyCommandFailure,
+        ) as e:
+            logger.error(f"Error occurred that will be retried: {e}")
+            self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_passwd)
+            raise e
+
     def install_conda(self, type: Literal["miniconda", "anaconda"]):
         """安装 conda"""
         ...
@@ -175,15 +231,67 @@ class BaseLinux(object):
 
         return th, q
 
+    def _grant_dir_permission(self, dir: str):
+        """
+        为 self.ssh_user 授予远程目录的读写权限
+
+        :param remote_dir: 远程目录路径（如 /mnt/data/deploy）
+        """
+        try:
+            # If the directory belongs to a group, add the user to the group and grant write permission to the group
+            rc, group, stderr = self.run_with_check(f"stat -c '%G' {dir}")
+            group = remove_line_break(group)
+
+            # Add the user to the directory's group if not already a member
+            rc, _, stderr = self.run(f"groups {self.ssh_user} | grep -w {group}")
+            assert not stderr
+            in_group = rc == 0
+
+            if not in_group:  # User not in the group
+                self.run(f"usermod -aG {group} {self.ssh_user}")
+
+            # Grant write permission to the group
+            self.run_with_check(f"chmod g+w {dir}")
+
+            logger.info(f"Granted write permission for {dir} to user {self.ssh_user}")
+
+        except Exception as e:
+            raise Exception(f"Failed to set permissions: {str(e)}")
+
     def download(self, remote_path: str, local_path: str):
         sftp = self.ssh.open_sftp()
         sftp.get(remote_path, local_path)
         sftp.close()
 
-    def upload(self, remote_path: str, local_path: str):
-        sftp = self.ssh.open_sftp()
-        sftp.put(local_path, remote_path)
-        sftp.close()
+    def upload(self, remote_path: str, local_path: str, auto_fix_permission: bool = True):
+        """
+        上传文件到目标路径，支持自动修复目录权限
+
+        :param remote_path: 远程目标文件路径（如 /mnt/data/deploy/file.txt)
+        :param local_path: 本地文件路径
+        :param auto_fix_permission: 是否自动修复目录权限（默认开启）
+        """
+        try:
+            # Check local file existence
+            if not os.path.exists(local_path):
+                raise FileNotFoundError(f"Local file does not exist: {local_path}")
+
+            remote_dir = os.path.dirname(remote_path)
+
+            # Automatically fix permissions if enabled
+            if auto_fix_permission:
+                self._grant_dir_permission(remote_dir)
+
+            # Directly upload to final directory (permissions should be sufficient now)
+            sftp = self.ssh.open_sftp()
+            sftp.put(local_path, remote_path)
+            sftp.close()
+            logger.info(f"File uploaded directly to target path: {remote_path}")
+
+        except SSHException as e:
+            raise Exception(f"SSH command execution failed: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Upload failed: {str(e)}")
 
     def cpu_core(self):
         cmd = "lscpu | grep \"CPU(s)\" | head -n 1 | awk '{print $NF}'"
