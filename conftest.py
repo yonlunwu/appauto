@@ -60,7 +60,7 @@ def gen_report_and_send_lark(
 
     lark = LarkClient()
 
-    if no_report is True or no_report.lower() == "true":
+    if no_report is True or isinstance(no_report, str) and no_report.lower() == "true":
         test_report = None
 
     else:
