@@ -96,6 +96,10 @@ class BaseComponent(object):
     def http(self):
         return HttpClient(headers=self.headers)
 
+    @cached_property
+    def http_with_file(self):
+        return HttpClient(headers={"Authorization": f"Bearer {self.token}", "Cookie": f"AMES_session={self.token}"})
+
     # 测试 sglang 不需要带前端
     @cached_property
     def http_without_token(self):
@@ -104,6 +108,10 @@ class BaseComponent(object):
     @cached_property
     def url_prefix(self):
         return f"{'https' if self.ssl_enabled else 'http'}://{self.mgt_ip}:{self.port}"
+
+    def full_url(self, url_map, alias):
+        url = url_map[alias]
+        return f"{self.url_prefix}/api{url.format(**self.object_tokens)}"
 
     @property
     def current_object_token(self):
@@ -118,10 +126,9 @@ class BaseComponent(object):
 
     def get(self, alias, params=None, url_map=None, timeout=None, headers=None, encode_result=True, **kwargs):
         url_map = url_map or self.GET_URL_MAP
-        url = url_map[alias]
         # TODO 完善 self.object_tokens
         return self.http.get(
-            f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
+            self.full_url(url_map, alias),
             params,
             headers,
             encode_result,
@@ -146,29 +153,16 @@ class BaseComponent(object):
         encode_result 只在 stream=False 时才生效;
         """
         url_map = url_map or self.POST_URL_MAP
-        url = url_map[alias]
-        if not stream:
-            return self.http.post(
-                f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
-                params,
-                data,
-                json_data=json_data,
-                headers=headers,
-                encode_result=encode_result,
-                timeout=timeout,
-                **kwargs,
-            )
+        url = self.full_url(url_map, alias)
+        # 合并 headers：优先使用外部传入的 headers，否则使用默认 headers
+        hdrs = dict(self.headers) if headers is None else dict(headers)
 
-        return self.http.stream_request(
-            "POST",
-            f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
-            params,
-            data,
-            json_data=json_data,
-            headers=headers,
-            timeout=timeout,
-            **kwargs,
-        )
+        if not stream:
+            if kwargs.get("files"):
+                hdrs.pop("Content-Type", None)
+            return self.http_with_file.post(url, params, data, json_data, hdrs, encode_result, timeout, **kwargs)
+
+        return self.http.stream_request("POST", url, params, data, json_data, hdrs, timeout, **kwargs)
 
     # 测试 sglang 不需要带前端
     def post_without_token(
@@ -186,27 +180,12 @@ class BaseComponent(object):
     ):
         url_map = url_map or self.POST_URL_MAP
         url = url_map[alias]
+        url = f"{self.url_prefix}/{url.format(**self.object_tokens)}"
         if not stream:
-            return self.http_without_token.post(
-                f"{self.url_prefix}/{url.format(**self.object_tokens)}",
-                params,
-                data,
-                json_data=json_data,
-                headers=headers,
-                encode_result=encode_result,
-                timeout=timeout,
-                **kwargs,
-            )
+            return self.http_without_token.post(url, params, data, json_data, headers, encode_result, timeout, **kwargs)
 
         return self.http_without_token.stream_request(
-            "POST",
-            f"{self.url_prefix}/{url.format(**self.object_tokens)}",
-            params,
-            data,
-            json_data=json_data,
-            headers=headers,
-            timeout=timeout,
-            **kwargs,
+            "POST", url, params, data, json_data=json_data, headers=headers, timeout=timeout, **kwargs
         )
 
     def delete(
@@ -222,10 +201,9 @@ class BaseComponent(object):
         **kwargs,
     ):
         url_map = url_map or self.DELETE_URL_MAP
-        url = url_map[alias]
         # TODO 完善 self.object_tokens
         return self.http.delete(
-            f"{self.url_prefix}/api{url.format(**self.object_tokens)}",
+            self.full_url(url_map, alias),
             params,
             data,
             json_data=json_data,
