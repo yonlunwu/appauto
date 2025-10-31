@@ -22,6 +22,7 @@ class ModelParams:
         model_name: str,
         tp: int,
         mode: Literal["correct", "perf", "mtp_correct", "mtp_perf"] = "correct",
+        port: int = 30000,
     ):
         """
         - correct: 即 default, sanity_check 和 正确性测试模式;
@@ -34,6 +35,7 @@ class ModelParams:
         self.model_name = model_name
         self.tp = tp
         self.mode = mode
+        self.port = port
 
     @cached_property
     def prefix(self):
@@ -41,11 +43,11 @@ class ModelParams:
         if self.engine == "sglang":
             from .model_params.common import SGLANG_PREFIX
 
-            return SGLANG_PREFIX + " "
+            return SGLANG_PREFIX.format(self.port) + " "
         elif self.engine == "ft":
             from .model_params.common import FT_PREFIX
 
-            return FT_PREFIX + " "
+            return FT_PREFIX.format(self.port) + " "
 
         return ""
 

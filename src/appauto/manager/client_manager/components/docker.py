@@ -19,6 +19,14 @@ class BaseDockerTool:
         if rc == 0:
             return remove_line_break(res)
 
+    def get_ctn_ip(self, ctn_id: str = None, ctn_name=None, sudo=False) -> Optional[str]:
+        assert ctn_id or ctn_name, "Either ctn_id or ctn_name must be provided."
+        tgt = ctn_id or ctn_name
+        cmd = f"docker inspect -f '{'{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'}' {tgt}"
+        rc, res, _ = self.node.run(cmd, sudo)
+        if rc == 0:
+            return remove_line_break(res)
+
     # 一次性查询获取所有 map
     def get_ctn_names_ids_map(self, ctn_names: List = None) -> Dict[str, Optional[str]]:
         assert ctn_names and isinstance(ctn_names, list)

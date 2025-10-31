@@ -8,7 +8,7 @@ linux = BaseLinux("192.168.110.4", "qujing", "zkyd@12#$")
 
 class TestBaseLinux:
     def test_grep_pid(self):
-        pids = linux.grep_pid("sglang.launch_server")
+        pids = linux.grep_pid("ftransformers.launch_server")
         logger.info(pids)
         assert pids
 

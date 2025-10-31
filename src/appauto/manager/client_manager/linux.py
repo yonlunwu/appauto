@@ -1,4 +1,5 @@
 import os
+import shlex
 from time import sleep, time
 from queue import Queue
 from threading import Thread
@@ -310,11 +311,29 @@ class BaseLinux(object):
         if rc == 0:
             return res
 
-    def grep_pid(self, keyword) -> List:
+    def grep_pid(self, *keywords: str) -> List:
         """
         ps aux | grep sglang.launch_server | grep -v grep | awk '{print $2}'
         """
-        _, res, _ = self.run(f"ps aux | grep {keyword} | grep -v grep | awk '{{print $2}}'")
+        if not keywords:
+            return []
+
+        # 构建 grep 管道（支持多关键字，且忽略大小写）
+        grep_cmds = []
+        for kw in keywords:
+            escaped_kw = shlex.quote(kw)
+            grep_cmds.append(f"grep -i {escaped_kw}")
+
+        cmd = (
+            "ps aux "
+            f"| {' | '.join(grep_cmds)} "  # 拼接多关键字grep
+            "| grep -v grep "  # 排除自身grep进程
+            "| awk '{print $2}'"  # 提取PID列
+        )
+
+        # cmd = f"ps aux | grep {keyword} | grep -v grep | awk '{{print $2}}'"
+
+        _, res, _ = self.run(cmd)
         return str_to_list_by_split(res, singleLine=False)
 
     def stop_process_by_name(self, process_name: str, interval_s: int = 15, timeout_s: int = 180, force=False):
@@ -335,21 +354,21 @@ class BaseLinux(object):
 
             sleep(interval_s)
 
-    def stop_process_by_keyword(self, keyword, interval_s: int = 15, timeout_s: int = 180, force=False):
+    def stop_process_by_keyword(self, *keywords, interval_s: int = 15, timeout_s: int = 180, force=False):
         """停止进程. force 表示 -9, 否则 ctrl+c"""
         start_time = time()
         sig = "-9" if force else "-2"
         while True:
-            if pids := self.grep_pid(keyword):
+            if pids := self.grep_pid(*keywords):
                 for pid in pids:
                     self.run(f"kill {sig} {pid}")
                 sleep(3)
 
-            if not self.grep_pid(keyword):
-                logger.info(f"kill {sig} {keyword} succeed.")
+            if not self.grep_pid(*keywords):
+                logger.info(f"kill {sig} {keywords} succeed.")
                 return
 
             if time() - start_time >= timeout_s:
-                raise TimeoutError(f"Timeout while waiting for kill {sig} {keyword} done.")
+                raise TimeoutError(f"Timeout while waiting for kill {sig} {keywords} done.")
 
             sleep(interval_s)
