@@ -6,9 +6,13 @@ import os
 import csv
 import json
 import click
+import requests
 from glob import glob
 from uuid import uuid4
 from datetime import datetime
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 from evalscope.perf.main import run_perf_benchmark
 from evalscope.perf.arguments import Arguments
@@ -71,9 +75,6 @@ def extract_json_to_csv(input_dir, output_csv, input_length, output_length, loop
 
 
 def parse_csv_to_xlsx(in_csv, out_xlsx):
-    import pandas as pd
-    from openpyxl import Workbook
-    from openpyxl.utils.dataframe import dataframe_to_rows
 
     # 1. 读数据
     df = pd.read_csv(in_csv)
@@ -112,11 +113,19 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
     print("Save the xlsx result to: ", out_xlsx)
 
 
+def flush_cache(ft_ip, ft_port):
+    """清理缓存, 避免影响性能测试结果."""
+    flush_cache_url = f"http://{ft_ip}:{ft_port}/flush_cache"
+    requests.post(flush_cache_url)
+
+
 @click.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
 @click.option("--ip", required=True, help="AMaaS 管理 IP")
-@click.option("--port", type=str, default=10011, show_default=True)
+@click.option("--port", type=str, default=10011, show_default=True, help="AMaaS API 端口")
+@click.option("--ft-ip", type=str, default=None, show_default=True, help="FT Flush Cache IP (每个 loop 会 flush 一次.)")
+@click.option("--ft-port", type=str, default=None, show_default=True, help="FT Flush Cache 端口")
 @click.option("--parallel", type=str, default="1 4", show_default=True, help="并发数, 请用引号引起来, 如 '1 4'")
 @click.option("--number", type=str, default="1 4", show_default=True, help="请求数, 请用引号引起来, 如 '1 4'")
 @click.option("--model", type=str, default="DeepSeek-R1", show_default=True, help="模型名称")
@@ -135,11 +144,14 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 @click.option("--loop", type=int, default=1, show_default=True)
 @click.option("--name", type=str, default="appauto-bench", show_default=True, help="任务名称")
 @click.option("--debug", is_flag=True, show_default=True)
+@click.option("--disable-flush-cache", is_flag=True, show_default=True)
 @click.option("--output-csv", type=str, default=None, show_default=True, help="输出 csv 文件名称, 不填写会默认填充")
 @click.option("--output-xlsx", type=str, default=None, show_default=True, help="同时输出一份 xlsx 文件")
 def runner(
     ip,
     port,
+    ft_ip,
+    ft_port,
     parallel,
     number,
     model,
@@ -152,6 +164,7 @@ def runner(
     loop,
     name,
     debug,
+    disable_flush_cache,
     output_csv,
     output_xlsx,
 ):
@@ -166,6 +179,9 @@ def runner(
 
     for i in range(0, int(loop)):
         print(f" loop {i} ".center(100, "*"))
+
+        if not disable_flush_cache:
+            flush_cache(ft_ip, ft_port)
 
         task_cfg = Arguments(
             parallel=parallel,
