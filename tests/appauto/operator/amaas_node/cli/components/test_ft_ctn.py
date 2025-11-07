@@ -20,7 +20,7 @@ class TestAMaasNodeFtContainer:
     def test_ft_launch_model(self):
         ft_ctn = amaas.cli.docker_ctn_factory.ft
         ft_ctn.launch_model("DeepSeek-V3-0324-GPU-weight", tp=2, mode="correct", port=30011)
-        
+
         # 获取模型 pid
         pids = ft_ctn.get_running_model_pids(ft_ctn.engine, "DeepSeek-V3-0324-GPU-weight")
         logger.info(pids)
@@ -34,8 +34,6 @@ class TestAMaasNodeFtContainer:
         pids = ft_ctn.get_running_model_pids(ft_ctn.engine, "DeepSeek-V3-0324-GPU-weight")
         logger.info(pids)
         assert not pids
-        
-        
 
     def test_ft_launch_model_in_thread(self):
         ft_ctn = amaas.cli.docker_ctn_factory.ft
