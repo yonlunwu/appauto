@@ -1,5 +1,5 @@
 """
-通过 evalscope 跑 perf 测试并生成 csv & xlsx.
+通过 evalscope 跑 vlm 的 perf 测试.
 """
 
 import os
@@ -116,21 +116,24 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
 @click.option("--ip", required=True, help="AMaaS 管理 IP")
-@click.option("--port", type=str, default=10011, show_default=True, help="AMaaS API 端口")
+@click.option("--port", type=str, default=10011, show_default=True)
 @click.option("--parallel", type=str, default="1 4", show_default=True, help="并发数, 请用引号引起来, 如 '1 4'")
 @click.option("--number", type=str, default="1 4", show_default=True, help="请求数, 请用引号引起来, 如 '1 4'")
-@click.option("--model", type=str, default="DeepSeek-R1", show_default=True, help="模型名称")
-@click.option("--tokenizer-path", type=str, default="/mnt/data/models/DeepSeek-R1-GPTQ4-experts", show_default=True)
+@click.option(
+    "--model", type=str, default="Qwen3-235B-A22B-Instruct-2507-GPU-weight", show_default=True, help="模型名称"
+)
+@click.option(
+    "--tokenizer-path", type=str, default="/mnt/data/models/Qwen3-235B-A22B-Instruct-2507-GPU-weight", show_default=True
+)
 @click.option(
     "--api-key",
     type=str,
-    default="AMES_89c2bb9cfba90d8b_5d7e9cc1d9f412b038bd11d7b559fd47",
+    default="AMES_70ab24a591b45e42_154e64b7ac8c624bcddb3f7fccd2125b",
     show_default=True,
     help="API Key, 从 AMaaS 上创建.",
 )
 @click.option("--input-length", type=int, default=128, show_default=True)
 @click.option("--output-length", type=int, default=512, show_default=True)
-@click.option("--read-timeout", type=int, default=600, show_default=True)
 @click.option("--seed", type=int, default=42, show_default=True)
 @click.option("--loop", type=int, default=1, show_default=True)
 @click.option("--name", type=str, default="appauto-bench", show_default=True, help="任务名称")
@@ -146,7 +149,6 @@ def runner(
     api_key,
     input_length,
     output_length,
-    read_timeout,
     tokenizer_path,
     seed,
     loop,
@@ -174,15 +176,20 @@ def runner(
             url=f"http://{ip}:{int(port)}/v1/chat/completions",
             api_key=api_key,
             api="openai",
-            dataset="random",
+            dataset="random_vl",
             min_tokens=int(output_length),
             max_tokens=int(output_length),
-            read_timeout=int(read_timeout),
             prefix_length=0,
             min_prompt_length=int(input_length),
             max_prompt_length=int(input_length),
             tokenizer_path=tokenizer_path,
-            extra_args={"ignore_eos": True},
+            extra_args={
+                "ignore_eos": True,
+                "image_width": 128,
+                "image_height": 128,
+                "image_format": "RGB",
+                "image_num": 1,
+            },
             # swanlab_api_key="local",
             seed=int(seed),
             name=f"{name}-{i}",
@@ -198,13 +205,15 @@ def runner(
         if len(number) == 1:
             # 读 json TODO 如何感知 timestamp? -> args.outputs_dir 可以感知到
             json_dir = task_cfg.outputs_dir  # 已经包括了 name
+            extract_json_to_csv(
+                json_dir, output_csv, input_length, output_length, i, None if len(parallel) > 1 else parallel[0]
+            )
 
         elif len(number) > 1:
             json_dir = "/".join(task_cfg.outputs_dir.split("/")[:-2])
-
-        extract_json_to_csv(
-            json_dir, output_csv, input_length, output_length, i, None if len(parallel) > 1 else parallel[0]
-        )
+            extract_json_to_csv(
+                json_dir, output_csv, input_length, output_length, i, None if len(parallel) > 1 else parallel[0]
+            )
 
     print(f"Save the csv result to: {output_csv}")
 

@@ -6,6 +6,7 @@ from .scene import Scene
 from .api_key import APIKey
 from .dashboard import DashBoard
 from .users import AMaaSUser
+from .license import License
 from ....config_manager.config_logging import LoggingConfig
 from ....utils_manager.custom_list import CustomList
 
@@ -17,6 +18,11 @@ class AMaaS(BaseComponent):
 
     def __str__(self):
         return self.mgt_ip
+
+    def license(self) -> License:
+        """许可证管理"""
+        res = self.get("get_self", url_map=License.GET_URL_MAP)
+        return License(self.mgt_ip, self.port, data=res.data, amaas=self)
 
     @property
     def init_model_store(self) -> ModelStore:

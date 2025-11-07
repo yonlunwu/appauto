@@ -1,0 +1,97 @@
+"""
+基于 ft container 做测试, name 固定为 zhiwen-ft
+"""
+
+import time
+from queue import Queue
+from threading import Thread
+from typing import TYPE_CHECKING, Literal, Tuple
+from appauto.organizer.constructor import ModelParams
+from appauto.manager.client_manager import BaseDockerContainer
+from appauto.manager.config_manager.config_logging import LoggingConfig
+
+logger = LoggingConfig.get_logger()
+
+if TYPE_CHECKING:
+    from ..amaas_node_cli import AMaaSNodeCli
+
+
+class FTContainer(BaseDockerContainer):
+    def __init__(
+        self,
+        node: "AMaaSNodeCli",
+        name: str = "zhiwen-ft",
+        conda_path="/root/miniforge3/bin/conda",
+        conda_env="ftransformers",
+        engine="ftransformers",
+    ):
+        super().__init__(node, name)
+        self.conda_path = conda_path
+        self.conda_env = conda_env
+        self.engine = engine
+
+    # TODO 待测试
+    def launch_model(
+        self,
+        model_name: str,
+        tp: int,
+        mode: Literal["correct", "perf", "mtp_correct", "mtp_perf"] = "correct",
+        port=30000,
+        sudo=False,
+        wait_for_running=True,
+        interval_s=20,
+        timeout_s=900,
+        print_screen=True,
+    ):
+        """
+        阻塞方式启动模型
+        """
+        cmd = (
+            f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && "
+            f"{ModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
+        )
+        timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'
+
+        logger.info(f"[{self.engine}] launch model: {model_name}, log: /tmp/{model_name}_{timestamp}.log")
+        rc, res, err = self.run(nohup_cmd, sudo, print_screen)
+
+        if wait_for_running:
+            self.wait_model_to_running(port, interval_s, timeout_s)
+
+        return rc, res, err
+
+    def launch_model_in_thread(
+        self,
+        model_name: str,
+        tp: int,
+        mode: Literal["correct", "perf", "mtp_correct", "mtp_perf"] = "correct",
+        port=30000,
+        wait_for_running=True,
+        interval_s=20,
+        timeout_s=900,
+        sudo=False,
+    ) -> Tuple[Queue, Thread]:
+
+        cmd = (
+            f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && "
+            f"{ModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
+        )
+        timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+        nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'
+
+        logger.info(f"[{self.engine}] launch model: {model_name}, log: /tmp/{model_name}_{timestamp}.log")
+
+        th, q = self.run_in_thread(nohup_cmd, sudo, True, True)
+
+        if wait_for_running:
+            self.wait_model_to_running(port, interval_s, timeout_s)
+
+        return th, q
+
+    def stop_model(self, model_name) -> bool:
+        """
+        主动停止指定模型
+        """
+        logger.info(f"stop model: {model_name}")
+        self.node.stop_process_by_keyword(self.engine, model_name, force=True)

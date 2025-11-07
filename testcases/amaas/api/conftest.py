@@ -270,12 +270,13 @@ class CommonModelBaseStep:
 
         if model_list := getattr(amaas.model, type_, None):
             if target_models := [
-                m for m in model_list if m.display_model_name == model_store.name or m.object_id == model_store.name
+                m for m in model_list if m.display_model_name == model_store.name or m.name == model_store.name
             ]:
                 for t_m in target_models:
                     # TODO 当前存在副本残留的 bug, 后面修复后要删除这里的逻辑, 预期 model.stop 要停止所有的副本
                     if len(all_ins := t_m.instances) > 1:
                         for ins in all_ins[:-1]:
+                            logger.info(f"instance_name: {ins}")
                             ins.stop()
 
                     t_m.stop()
