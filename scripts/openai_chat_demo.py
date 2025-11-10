@@ -8,7 +8,7 @@ from openai import OpenAI
 @click.command()
 @click.option("--ip", default="127.0.0.1", show_default=True, help="API服务器IP地址，默认值: 127.0.0.1")
 @click.option("--port", required=True, type=int)
-@click.option("--api-key", type=int, default=None, show_default=True, help="API-Key")
+@click.option("--api-key", type=str, default=None, show_default=True, help="API-Key")
 @click.option("--model", required=True, help="要使用的模型名称")
 @click.option(
     "--max-tokens", required=True, show_default=True, type=int, default=1024, help="允许最大 token 数：输入 + 输出"
