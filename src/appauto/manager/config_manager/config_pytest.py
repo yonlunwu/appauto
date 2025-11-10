@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional
-from ..file_manager.handle_ini import HandleIni
+from ..file_manager.handle_ini import IniHandler
 from .config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
@@ -60,7 +60,7 @@ markers =
 
     def _reconfig(self):
         """根据用户配置重新设置 pytest.ini"""
-        pytest_ini = HandleIni(Path(self.PYTEST_INI))
+        pytest_ini = IniHandler(Path(self.PYTEST_INI))
 
         # 读取现有配置
         if not pytest_ini.config.has_section("pytest"):

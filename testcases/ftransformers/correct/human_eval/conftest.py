@@ -11,7 +11,7 @@ from concurrent.futures import as_completed, wait
 from human_eval.evaluation import evaluate_functional_correctness
 from human_eval.data import write_jsonl, read_problems, HUMAN_EVAL
 
-from appauto.manager.file_manager import HandleJsonl
+from appauto.manager.file_manager import JsonlHandler
 from appauto.manager.utils_manager.custom_thread_pool_executor import (
     CustomThreadPoolExecutor,
     check_futures_exception,
@@ -198,7 +198,7 @@ class CommonCheckHumanEval:
         passed_ids, failed_ids = [], []
 
         try:
-            jsonl = HandleJsonl(res_jsonl_path)
+            jsonl = JsonlHandler(res_jsonl_path)
             for idx, inner_dict in enumerate(jsonl.data):
                 if inner_dict and isinstance(inner_dict, dict):
                     if inner_dict.result != "passed" or inner_dict.passed is not True:

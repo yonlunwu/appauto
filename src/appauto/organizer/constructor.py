@@ -6,7 +6,7 @@ Module for constructing model parameters.
 
 from typing import Literal
 from functools import cached_property
-from ..manager.file_manager.handle_yml import HandleYML
+from ..manager.file_manager.handle_yml import YMLHandler
 from ..manager.client_manager import BaseLinux
 from ..manager.config_manager.config_logging import LoggingConfig
 
@@ -67,11 +67,11 @@ class ModelParams:
         return "deepseek"
 
     @cached_property
-    def handler(self) -> HandleYML:
+    def handler(self) -> YMLHandler:
         # 根据 model_name, tp, mode 返回对应的 yaml 路径
         # TODO 1. 根据 self.node 获取卡类型
         yml_path = f"src/appauto/organizer/model_params/{self.gpu_type}/{self.model_type}/{self.model_family}/{self.model_name}.yaml"
-        return HandleYML(yml_path)
+        return YMLHandler(yml_path)
 
     @cached_property
     def as_cmd(self):

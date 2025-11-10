@@ -1,2 +1,2 @@
-from .handle_ini import HandleIni
-from .handle_jsonl import HandleJsonl
+from .handle_ini import IniHandler
+from .handle_jsonl import JsonlHandler

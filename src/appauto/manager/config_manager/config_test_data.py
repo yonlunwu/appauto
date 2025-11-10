@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from typing import Dict
-from ..file_manager.handle_ini import HandleIni
+from ..file_manager.handle_ini import IniHandler
 from .config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
@@ -13,7 +13,7 @@ class TestDataConfig:
     TEST_DATA_INI = "test_data.ini"
 
     def __init__(self):
-        self.config = HandleIni(Path(self.TEST_DATA_INI))
+        self.config = IniHandler(Path(self.TEST_DATA_INI))
 
     @classmethod
     def generate_testdata_ini(cls):
