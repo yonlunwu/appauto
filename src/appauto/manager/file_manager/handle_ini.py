@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 
-class HandleIni(object):
+class IniHandler(object):
     """INI 文件处理类"""
 
     def __init__(self, file_path: Optional[Path] = None):

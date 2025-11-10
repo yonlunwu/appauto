@@ -1,5 +1,5 @@
 import pytest
-from appauto.manager.file_manager import HandleJsonl
+from appauto.manager.file_manager import JsonlHandler
 from appauto.manager.config_manager import LoggingConfig
 
 logger = LoggingConfig.get_logger()
@@ -11,7 +11,7 @@ jsonl_path = "tests/appauto/manager/file_manager/humaneval_sample_file.jsonl_res
 @pytest.mark.ci
 class TestHandleJsonl:
     def test_load_jsonl(self):
-        jsonl = HandleJsonl(jsonl_path)
+        jsonl = JsonlHandler(jsonl_path)
         logger.info(jsonl.data)
         assert isinstance(jsonl.data, list)
 

@@ -5,7 +5,7 @@ from addict import Dict as ADDict
 from typing import Optional, Union, Dict, Any
 
 
-class HandleYML:
+class YMLHandler:
     """YAML / Jinja2-YAML 文件操作类"""
 
     def __init__(self, file_path: Union[str, Path], variables: Optional[Dict[str, Any]] = None):

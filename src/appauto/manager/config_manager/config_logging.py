@@ -2,7 +2,7 @@ import logging.config
 import os
 import time
 from pathlib import Path
-from ..file_manager.handle_ini import HandleIni
+from ..file_manager.handle_ini import IniHandler
 
 
 class LoggingConfig:
@@ -67,7 +67,7 @@ format=%(asctime)s|%(process)d:%(threadName)s:%(thread)d|%(name)s|%(levelname)-4
     def config_logging(
         cls, log_level: str = "INFO", file_size: int = 10485760, file_count: int = 200, timestamp: str = None
     ):
-        log_ini = HandleIni(Path(cls.LOGGING_INI))
+        log_ini = IniHandler(Path(cls.LOGGING_INI))
         timestamp = timestamp or time.strftime("%Y%m%d_%H%M%S", time.localtime())
 
         # 读取现有配置

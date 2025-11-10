@@ -4,7 +4,7 @@ from typing import Union, List
 from addict import Dict as ADDict
 
 
-class HandleJsonl:
+class JsonlHandler:
     """JSONL 文件加载类"""
 
     def __init__(self, file_path: Union[str, Path]):
