@@ -89,7 +89,13 @@ class LarkClient(HttpClient):
         )
 
     def construct_msg_payload(
-        self, receive_id: str, result_summary: Dict, env_summary: Dict, link: str = None, topic: str = None
+        self,
+        receive_id: str,
+        result_summary: Dict,
+        env_summary: Dict,
+        link: str = None,
+        topic: str = None,
+        report_card=True,
     ):
         """
         发 dm 用 open_id; 发 group 用 chat_id(并且机器人要在 group 中)
@@ -97,8 +103,9 @@ class LarkClient(HttpClient):
         elements = [
             self.msg_env_card(env_summary),
             self.msg_summary_card(result_summary),
-            self.msg_report_card(link),
         ]
+        if report_card:
+            elements.append(self.msg_report_card(link))
         if topic:
             elements.insert(0, self.msg_topic_card(topic))
 

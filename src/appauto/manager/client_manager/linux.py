@@ -20,9 +20,6 @@ from ..connection_manager.ssh import SSHClient
 from ..config_manager import LoggingConfig
 from ..utils_manager.format_output import str_to_list_by_split, remove_line_break
 
-if TYPE_CHECKING:
-    from .components.docker import BaseDockerTool
-
 logger = LoggingConfig.get_logger()
 
 
@@ -38,7 +35,9 @@ class BaseLinux(object):
         return self.mgt_ip
 
     @cached_property
-    def docker_tool(self) -> "BaseDockerTool":
+    def docker_tool(self):
+        from .components.docker import BaseDockerTool
+
         return BaseDockerTool(self)
 
     @retry(
@@ -306,7 +305,7 @@ class BaseLinux(object):
         # _, res, _ = self.run(f"{conda_path or 'conda'} env list | tail -n +3 | awk '{{print $1}}' | head -n -1", sudo=sudo)
         # return str_to_list_by_split(res, singleLine=False)
 
-    def get_process_id(self, process_name):
+    def get_pid_by_pname(self, process_name):
         rc, res, _ = self.run(f"pidof {process_name}", verbose=True)
         if rc == 0:
             return res
@@ -327,11 +326,9 @@ class BaseLinux(object):
         cmd = (
             "ps aux "
             f"| {' | '.join(grep_cmds)} "  # 拼接多关键字grep
-            "| grep -v grep "  # 排除自身grep进程
-            "| awk '{print $2}'"  # 提取PID列
+            "| grep -v grep "
+            "| awk '{print $2}'"
         )
-
-        # cmd = f"ps aux | grep {keyword} | grep -v grep | awk '{{print $2}}'"
 
         _, res, _ = self.run(cmd)
         return str_to_list_by_split(res, singleLine=False)
@@ -341,11 +338,11 @@ class BaseLinux(object):
         start_time = time()
         sig = "-9" if force else "-2"
         while True:
-            if pid := self.get_process_id(process_name):
+            if pid := self.get_pid_by_pname(process_name):
                 self.run(f"kill {sig} {pid}")
                 sleep(3)
 
-            if not self.get_process_id(process_name):
+            if not self.get_pid_by_pname(process_name):
                 logger.info(f"kill {sig} {process_name} succeed.")
                 return
 
@@ -372,3 +369,27 @@ class BaseLinux(object):
                 raise TimeoutError(f"Timeout while waiting for kill {sig} {keywords} done.")
 
             sleep(interval_s)
+
+    @cached_property
+    def nic_mac_addr(self) -> str:
+        cmd = (
+            'ip link show | awk \'/^[0-9]+: / { dev = $2; sub(/:/, "", dev); next; } '
+            "/link\/ether/ && dev !~ /^(lo|docker|veth)/ { print toupper($2); exit; }'"
+        )
+        _, res, _ = self.run(cmd)
+
+        return remove_line_break(res)
+
+    def have_file(self, file_full_path: str) -> Literal["yes", "no", "unknown"]:
+        try:
+            cmd = f"test -f {file_full_path}"
+            rc, _, _ = self.run(cmd)
+
+            if rc == 0:
+                return "yes"
+
+            return "no"
+
+        except Exception as e:
+            logger.error(f"error occurred when detect if file exist: {str(e)}")
+            return "unknown"

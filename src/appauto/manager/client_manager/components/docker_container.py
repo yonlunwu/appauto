@@ -1,3 +1,4 @@
+import shlex
 import threading
 from time import time, sleep
 from queue import Queue
@@ -45,7 +46,9 @@ class BaseDockerContainer:
             sleep(interval_s)
 
     def run(self, cmd: str, sudo=False, print_screen=False, timeout=None):
-        full_cmd = f"docker exec {self.name} bash -c '{cmd}'"
+        # full_cmd = f"docker exec {self.name} bash -c '{cmd}'"
+        quoted_cmd = shlex.quote(cmd)
+        full_cmd = f"docker exec {self.name} bash -c {quoted_cmd}"
         return self.node.run(full_cmd, sudo, False, False, print_screen, timeout)
 
     def run_in_thread(

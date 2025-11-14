@@ -27,6 +27,10 @@ class BaseDockerTool:
         if rc == 0:
             return remove_line_break(res)
 
+    def load_image(self, full_tar_path: str):
+        cmd = f"docker load -i {full_tar_path}"
+        self.node.run_with_check(cmd)
+
     # 一次性查询获取所有 map
     def get_ctn_names_ids_map(self, ctn_names: List = None) -> Dict[str, Optional[str]]:
         assert ctn_names and isinstance(ctn_names, list)
@@ -65,7 +69,7 @@ class BaseDockerTool:
 
         return ctn_id_map
 
-    def is_running(self, ctn_id) -> Literal["yes", "no", "unknown"]:
+    def is_running(self, ctn_id: str) -> Literal["yes", "no", "unknown"]:
         cmd = f"docker inspect -f {'{{.State.Running}}'} {ctn_id}"
         rc, res, _ = self.node.run(cmd)
         if rc == 0:
@@ -76,11 +80,11 @@ class BaseDockerTool:
 
         return "unknown"
 
-    def stop_ctn(self, ctn_id):
+    def stop_ctn(self, ctn_id: str):
         is_running = self.is_running(ctn_id)
 
         if is_running == "yes":
-            self.run_with_check(f"docker stop {ctn_id}")
+            self.node.run_with_check(f"docker stop {ctn_id}")
 
         elif is_running == "no":
             return
@@ -93,16 +97,46 @@ class BaseDockerTool:
 
         logger.info(f"{ctn_id} has been stopped.")
 
-    def rm_ctn(self, ctn_id):
-        cmd = f"docker rm {ctn_id}"
-        self.node.run_with_check(cmd)
+    def have_resource(self, type_: Literal["image", "container"], id_: str) -> Literal["yes", "no", "unknown"]:
+        try:
+            cmd = f"docker inspect --type={type_} {id_} > /dev/null 2>&1; echo $?"
+            rc, _, _ = self.node.run(cmd)
 
-        logger.info(f"{ctn_id} has been removed.")
+            if rc == 0:
+                return "yes"
 
-    def restart_ctn(self, ctn_id):
+            return "no"
+
+        except Exception as e:
+            logger.error(f"error occurred when detect if image exist: {str(e)}")
+            return "unknown"
+
+    def rm_ctn(self, ctn_id: str):
+        if self.have_resource("container", ctn_id):
+            cmd = f"docker rm {ctn_id}"
+            self.node.run_with_check(cmd)
+
+            logger.info(f"{ctn_id} has been removed.")
+
+    def rm_image_by_id(self, image_id: str, force=False):
+        if self.have_resource("image", image_id):
+            cmd = f"docker rmi {image_id} {'-f' if force else ''}"
+            self.node.run_with_check(cmd)
+
+            logger.info(f"{image_id} has been removed.")
+
+    def rm_image_by_tag(self, image_name: str, tag: str, force=False):
+        cmd = f"docker rmi {image_name}:{tag} {'-f' if force else ''}"
+        self.node.run(cmd)
+
+    def restart_ctn(self, ctn_id: str):
         cmd = f"docker restart {ctn_id}"
         self.node.run_with_check(cmd)
 
     def prune(self, resource: Literal["network", "image", "container", "system"]):
         cmd = f"docker {resource} prune -f"
         self.node.run(cmd, sudo=False)
+
+    def up_ctn_from_compose(self, path: str, compose_file: str):
+        cmd = f"cd {path} && sudo docker compose -f {compose_file} up -d"
+        self.node.run_with_check(cmd, sudo=False)

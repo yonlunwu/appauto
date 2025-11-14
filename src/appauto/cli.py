@@ -143,16 +143,71 @@ def run(
         logger.error("Unsupported test type.")
 
 
-@env.command(
+@env.group()
+def deploy():
+    """通过 appauto 执行部署任务"""
+    pass
+
+
+@deploy.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
-@click.option("--host", required=True, help="远程主机 IP")
-@click.option("--user", default="root", help="SSH 用户名")
-@click.option("--password", help="SSH 密码")
-@click.option("--component", required=True, help="部署组件名，例如: sg-server")
-def deploy(host, user, password, component):
-    """部署远程环境"""
-    print("deploy_demo")
+@click.option("--ip", required=True, help="远程主机 IP")
+@click.option("--ssh-user", default="qujing", required=True, show_default=True, help="SSH 用户名")
+@click.option("--ssh-password", default="qujing@$#21", show_default=True, help="SSH 密码")
+@click.option("--ssh-port", default=22, show_default=True, help="SSH 端口")
+@click.option("--tag", required=True, show_default=True, help="目标 tag, 比如: v3.3.1")
+@click.option(
+    "--tar-name", required=True, show_default=True, help="tar 包名, 默认在 /mnt/data/deploy/ 下, 需要自行上传."
+)
+def amaas(ip, ssh_user, ssh_password, ssh_port, tar_name, tag):
+    """在远程服务器部署 amaas"""
+    from appauto.env import DeployAmaaS
+    from appauto.manager.notify_manager import LarkClient
+
+    deploy = DeployAmaaS(ip, ssh_user, ssh_password, ssh_port)
+    result = deploy.deploy(tar_name, tag, force_load=True)
+
+    result_summary = {"PASSED": "yes"} if result == "succeed" else {"FAILED": "yes"}
+
+    lark = LarkClient()
+    payload = lark.construct_msg_payload(
+        "oc_23c12f5d099f09675a7d6e18d873230f", result_summary, {"ip": ip}, topic="appauto 部署 amaas", report_card=False
+    )
+    lark.send_msg(payload, "group")
+
+
+@deploy.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
+)
+@click.option("--ip", required=True, help="远程主机 IP")
+@click.option("--ssh-user", default="qujing", required=True, show_default=True, help="SSH 用户名")
+@click.option("--ssh-password", default="qujing@$#21", show_default=True, help="SSH 密码")
+@click.option("--ssh-port", default=22, show_default=True, help="SSH 端口")
+@click.option("--tag", required=True, show_default=True, help="目标 tag, 比如: 3.3.2rc1.post1")
+@click.option(
+    "--tar-name", required=True, show_default=True, help="tar 包名, 默认在 /mnt/data/deploy/ 下, 需要自行上传."
+)
+@click.option("--server-port", default=30000, show_default=True, help="映射端口")
+def ft(ip, ssh_user, ssh_password, ssh_port, tar_name, tag, server_port):
+    """在远程服务器部署 zhiwen-ft"""
+    from appauto.env import DeployFT
+    from appauto.manager.notify_manager import LarkClient
+
+    deploy = DeployFT(ip, ssh_user, ssh_password, ssh_port)
+    result = deploy.deploy(tar_name, tag=tag, host_port=server_port, ctn_port=server_port)
+
+    result_summary = {"PASSED": "yes"} if result == "succeed" else {"FAILED": "yes"}
+
+    lark = LarkClient()
+    payload = lark.construct_msg_payload(
+        "oc_23c12f5d099f09675a7d6e18d873230f",
+        result_summary,
+        {"ip": ip},
+        topic="appauto 部署 zhiwen-ft",
+        report_card=False,
+    )
+    lark.send_msg(payload, "group")
 
 
 @evalscope.command(
