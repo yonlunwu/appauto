@@ -10,16 +10,6 @@ class AMaaSNodeCli(BaseLinux):
         super().__init__(mgt_ip, ssh_user, ssh_password, ssh_port)
         self.docker_ctn_factory = DockerContainerFactory(self)
 
-    @cached_property
-    def nic_mac_addr(self) -> str:
-        cmd = (
-            'ip link show | awk \'/^[0-9]+: / { dev = $2; sub(/:/, "", dev); next; } '
-            "/link\/ether/ && dev !~ /^(lo|docker|veth)/ { print toupper($2); exit; }'"
-        )
-        _, res, _ = self.run(cmd)
-
-        return remove_line_break(res)
-
     def have_pid(self, pid: int) -> bool:
         cmd = f"docker exec zhiwen-ames ps -p {pid} "
         rc, _, _ = self.run(cmd)

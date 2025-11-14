@@ -3,11 +3,9 @@
 """
 
 import os
-from typing import Tuple
+from typing import Literal
 from string import Template
-from appauto.operator.amaas_node import AMaaSNode
 from appauto.manager.config_manager.config_logging import LoggingConfig
-from appauto.manager.utils_manager.format_output import remove_line_break
 
 from ..base_deploy import BaseDeploy
 
@@ -15,10 +13,16 @@ logger = LoggingConfig.get_logger()
 
 
 class DeployFT(BaseDeploy):
-    deploy_path = "/mnt/data/deploy/"
-
-    def __init__(self, amaas, deploy_path="/mnt/data/deploy/", ctn_name="zhiwen-ft"):
-        super().__init__(amaas, deploy_path)
+    def __init__(
+        self,
+        mgt_ip,
+        ssh_user="qujing",
+        ssh_password="madsys123",
+        ssh_port=22,
+        deploy_path="/mnt/data/deploy/",
+        ctn_name="zhiwen-ft",
+    ):
+        super().__init__(mgt_ip, ssh_user, ssh_password, ssh_port, deploy_path)
         self.ctn_names = ctn_name
 
     def gen_docker_compose(
@@ -70,7 +74,7 @@ class DeployFT(BaseDeploy):
 
         config_content = template.substitute(
             ctn_name=self.ctn_names,
-            mac_address=self.amaas.cli.nic_mac_addr,
+            mac_address=self.nic_mac_addr,
             image=image,
             tag=tag,
             host_port=host_port,
@@ -85,17 +89,6 @@ class DeployFT(BaseDeploy):
 
         return output
 
-    def load_tar(self, tar_name: str):
-        """
-        tar_name: 包名, 如: zhiwen-ftransformers-v3.3.0-test2.tar
-        """
-        cmd = f"docker load -i {self.deploy_path}{tar_name}"
-        self.amaas.cli.run_with_check(cmd)
-
-    def up_ctn_from_compose(self, compose_file: str):
-        cmd = f"cd {self.deploy_path} && sudo docker compose -f {compose_file} up -d"
-        self.amaas.cli.run_with_check(cmd, sudo=False)
-
     def deploy(
         self,
         tar_name,
@@ -104,8 +97,8 @@ class DeployFT(BaseDeploy):
         host_port=30000,
         ctn_port=30000,
         output="ft-docker-compose",
-        stop_old=False,
-    ) -> str:
+        stop_old=True,
+    ) -> Literal["succeed", "failed"]:
         """
         部署 ft 镜像, 请先在 cls.deploy_path(默认 /mnt/data/deploy) 下传新的 image, 如果需要停止旧的, 也请传入旧容器和旧 tag.
 
@@ -126,27 +119,35 @@ class DeployFT(BaseDeploy):
             2. load 镜像并部署新容器
         """
 
-        # 检查是否有 image
-        assert self.have_tar(tar_name) == "yes"
+        try:
+            # 检查是否有 image
+            assert self.have_tar(tar_name) == "yes"
 
-        cur_ctn_id = self.get_ctn_id_by_name(self.ctn_names)
+            if cur_ctn_id := self.docker_tool.get_ctn_id_by_name(self.ctn_names):
+                # 停止旧容器
+                if stop_old:
+                    self.docker_tool.stop_ctn(cur_ctn_id)
 
-        # 停止旧容器
-        if stop_old:
-            self.stop_ctn(cur_ctn_id)
+                self.docker_tool.rm_ctn(cur_ctn_id)
 
-        self.rm_ctn(cur_ctn_id)
+            self.docker_tool.rm_image_by_tag(image, tag, force=True)
 
-        # 部署新容器
-        docker_compose = self.gen_docker_compose(image, tag, host_port, ctn_port, output)
+            # 部署新容器
+            docker_compose = self.gen_docker_compose(image, tag, host_port, ctn_port, output)
 
-        self.amaas.cli.upload(f"{self.deploy_path}{docker_compose}", docker_compose)
+            self.upload(f"{self.deploy_path}{docker_compose}", docker_compose)
 
-        self.load_tar(tar_name)
+            self.docker_tool.load_image(f"{self.deploy_path}{tar_name}")
 
-        self.up_ctn_from_compose(docker_compose)
+            self.docker_tool.up_ctn_from_compose(self.deploy_path, docker_compose)
 
-        ctn_id = self.get_ctn_id_by_name(self.ctn_names)
-        assert self.is_running(ctn_id) == "yes"
+            ctn_id = self.docker_tool.get_ctn_id_by_name(self.ctn_names)
+            assert self.docker_tool.is_running(ctn_id) == "yes"
 
-        logger.info(f"{self.ctn_names}:{tag} has been deployed.")
+            logger.info(f"{self.ctn_names}:{tag} has been deployed.")
+
+            return "succeed"
+
+        except Exception as e:
+            logger.error(f"error occurred while deploying zhiwen-ft: {str(e)}")
+            return "failed"
