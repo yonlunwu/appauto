@@ -1,0 +1,34 @@
+pipeline {
+    agent { label 'slave-1' }
+
+    options {
+        timeout(time: "${timeoutHours}", unit: 'HOURS')
+    }
+
+    stages {
+        stage('Download Source Code') {
+            steps {
+                sh "sudo rm -rf appauto; git clone -b main git@github.com:kvcache-ai/appauto.git"
+                dir('./appauto') {
+                    sh 'pip install --upgrade pip'
+                    sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
+                }
+            }
+        }
+
+        stage("Exec Deploy") {
+            steps {
+                script {
+                    def buildNumber = env.BUILD_NUMBER
+                    def job_name_list = env.JOB_NAME.split('/')
+                    echo "job_name_list: ${job_name_list}"
+                    echo "buildNumber: ${buildNumber}"
+
+                    dir('./appauto') {
+                        sh "appauto env deploy ft --ip '${ip}' --ssh-user '${ssh_user}' --tag '${tag}' --tar-name '${tar_name}' --server-port '${server_port}'"
+                    }
+                }
+            }
+        }
+    }
+}
