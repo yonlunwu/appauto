@@ -1,7 +1,6 @@
 import pytest
 from time import sleep
 from enum import Enum
-from uuid import uuid4
 from faker import Faker
 from openai import OpenAI
 from random import choice
@@ -77,7 +76,7 @@ class CommonModelBaseStep:
         result_item["tp"] = tp
         rule: Dict = model_store.get_run_rule()
 
-        worker = choice(amaas.workers)
+        worker = choice(amaas.api.workers)
         result_item["worker"] = f"{worker.name}/{worker.object_id}"
 
         params = dict(
@@ -161,7 +160,7 @@ class CommonModelBaseStep:
         try:
             scene = [
                 l
-                for l in amaas.scene.llm
+                for l in amaas.api.scene.llm
                 if l.display_model_name == model_store.name or l.object_id == model_store.name
             ][0]
             # model_store.question = str(uuid4())
@@ -198,7 +197,7 @@ class CommonModelBaseStep:
         try:
             scene = [
                 v
-                for v in amaas.scene.vlm
+                for v in amaas.api.scene.vlm
                 if v.display_model_name == model_store.name or v.object_id == model_store.name
             ][0]
             model_store.question = "请解释这张图"
@@ -223,7 +222,7 @@ class CommonModelBaseStep:
         try:
             scene = [
                 e
-                for e in amaas.scene.embedding
+                for e in amaas.api.scene.embedding
                 if e.display_model_name == model_store.name or e.object_id == model_store.name
             ][0]
             model_store.question = ["苹果", "小米", "香蕉", "公司"]
@@ -248,7 +247,7 @@ class CommonModelBaseStep:
         try:
             scene = [
                 e
-                for e in amaas.scene.rerank
+                for e in amaas.api.scene.rerank
                 if e.display_model_name == model_store.name or e.object_id == model_store.name
             ][0]
             model_store.question = "叶文洁是谁"
@@ -281,7 +280,7 @@ class CommonModelBaseStep:
     @classmethod
     def stop(cls, model_store: T, type_: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]):
 
-        if model_list := getattr(amaas.model, type_, None):
+        if model_list := getattr(amaas.api.model, type_, None):
             if target_models := [
                 m for m in model_list if m.display_model_name == model_store.name or m.name == model_store.name
             ]:
@@ -300,7 +299,7 @@ class CommonModelBaseRunner:
     def get_models_store(
         cls, model_store_type: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]
     ) -> List[BaseModelStore]:
-        return getattr(amaas.init_model_store, model_store_type)
+        return getattr(amaas.api.init_model_store, model_store_type)
 
     @classmethod
     def run_with_default(cls, tp: Literal[1, 2, 4, 8], model_store: T):
