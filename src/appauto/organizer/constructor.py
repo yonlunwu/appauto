@@ -62,9 +62,15 @@ class ModelParams:
         return "llm"
 
     @cached_property
-    def model_family(self) -> str:
-        # TODO 根据 self.model_name 获取实际模型家族
-        return "deepseek"
+    def model_family(self) -> Literal["deepseek", "qwen", "glm", "kimi"]:
+        if self.model_name.startswith("DeepSeek"):
+            return "deepseek"
+        elif self.model_name.startswith("GLM"):
+            return "glm"
+        elif self.model_name.startswith("Qwen"):
+            return "qwen"
+        elif self.model_name.startswith("Kimi"):
+            return "kimi"
 
     @cached_property
     def handler(self) -> YMLHandler:
@@ -93,7 +99,10 @@ class ModelParams:
             mode_common = yml_data.correct_common
             mode_spec = yml_data.correct.get(self.tp, {})
 
-        # 合并
+        # 存在指定的 tp 说明支持该 tp, 否则说明是不支持的
+        # 如果支持该 tp 则进行 cmd 合并拼接
+        assert mode_spec, f"{self.model_name} doesn't support tp {self.tp}, mode: {self.mode}"
+
         final_params = {**common, **dynamic, **mode_common, **mode_spec}
 
         # 生成命令行参数字符串

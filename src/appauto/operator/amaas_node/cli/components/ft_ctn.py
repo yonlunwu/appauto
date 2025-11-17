@@ -5,7 +5,7 @@
 import time
 from queue import Queue
 from threading import Thread
-from typing import TYPE_CHECKING, Literal, Tuple
+from typing import TYPE_CHECKING, Literal, Tuple, Dict
 from appauto.organizer.constructor import ModelParams
 from appauto.manager.client_manager import BaseDockerContainer
 from appauto.manager.config_manager.config_logging import LoggingConfig
@@ -30,7 +30,6 @@ class FTContainer(BaseDockerContainer):
         self.conda_env = conda_env
         self.engine = engine
 
-    # TODO 待测试
     def launch_model(
         self,
         model_name: str,
@@ -44,7 +43,7 @@ class FTContainer(BaseDockerContainer):
         print_screen=True,
     ):
         """
-        阻塞方式启动模型
+        nohup 启动模型并将模型日志重定向至指定路径。
         """
         cmd = (
             f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && "
@@ -70,7 +69,7 @@ class FTContainer(BaseDockerContainer):
         wait_for_running=True,
         interval_s=20,
         timeout_s=900,
-        sudo=False,
+        sudo=True,
     ) -> Tuple[Queue, Thread]:
 
         cmd = (
@@ -95,3 +94,75 @@ class FTContainer(BaseDockerContainer):
         """
         logger.info(f"stop model: {model_name}")
         self.node.stop_process_by_keyword(self.engine, model_name, force=True)
+
+    def run_eval_via_evalscope(
+        self,
+        port: int,
+        model: str,
+        dataset: str,
+        max_tokens: int = 50000,
+        concurrency: int = 4,
+        limit: int = None,
+        dataset_args: Dict = None,
+        temperature: float = 0.6,
+        enable_thinking: bool = True,
+        debug: bool = True,
+        timeout_s: int = 6000,
+    ):
+        from appauto.tool.evalscope.eval import EvalscopeEval
+
+        evalscope = EvalscopeEval(
+            self.node,
+            model,
+            self.ip,
+            port,
+            dataset,
+            max_tokens,
+            concurrency,
+            limit,
+            dataset_args,
+            temperature,
+            enable_thinking,
+            debug,
+            timeout_s,
+            ft=self,
+        )
+        evalscope.run_eval()
+        logger.info(f"score: {evalscope.score}")
+        return evalscope.score
+
+    def run_perf_via_evalscope(
+        self,
+        port: int,
+        model: str,
+        parallel: str = "1 4",
+        number: str = "1 4",
+        input_length=128,
+        output_length=512,
+        read_timeout=600,
+        seed=42,
+        loop=1,
+        name="appauto-bench",
+        debug=False,
+    ):
+        from appauto.tool.evalscope.perf import EvalscopePerf
+
+        evalscope = EvalscopePerf(
+            self.node,
+            model,
+            self.ip,
+            port,
+            parallel,
+            number,
+            f"/mnt/data/models/{model}",
+            "EMPTY",
+            input_length,
+            output_length,
+            read_timeout,
+            seed,
+            loop,
+            name,
+            debug,
+            self,
+        )
+        evalscope.run_perf()

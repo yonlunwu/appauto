@@ -52,11 +52,11 @@ class SSHClient(object):
         ),
         reraise=True,
     )
-    def ssh(cls, mgt_ip, cmds, ssh_user="root", ssh_passwd="HC!r0cks"):
+    def ssh(cls, mgt_ip, cmds, ssh_user="root", ssh_password="HC!r0cks"):
         sshClient = paramiko.SSHClient()
         sshClient.load_system_host_keys()
         sshClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        sshClient.connect(mgt_ip, port=22, username=ssh_user, password=ssh_passwd)
+        sshClient.connect(mgt_ip, port=22, username=ssh_user, password=ssh_password)
         try:
             logging.info(f"running cmd: {cmds} on host {mgt_ip}")
             _, stdout, stderr = sshClient.exec_command(cmds)
@@ -66,7 +66,7 @@ class SSHClient(object):
                 logging.error(f"the return stderr: \n{res_err}")
             return res_out, res_err
         except Exception as e:
-            logging.error(f"error:{e}, ssh {mgt_ip} failed with {ssh_user}, {ssh_passwd} ".center(100, "-"))
+            logging.error(f"error:{e}, ssh {mgt_ip} failed with {ssh_user}, {ssh_password} ".center(100, "-"))
             raise e
         finally:
             sshClient.close()

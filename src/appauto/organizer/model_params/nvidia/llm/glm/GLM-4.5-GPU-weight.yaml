@@ -1,15 +1,18 @@
-# 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
+# 基于引擎测试: 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
 common:
-  model-path: /mnt/data/models/DeepSeek-R1-0528-GPU-weight
-  served-model-name: DeepSeek-R1-0528-GPU-weight
+  model-path: /mnt/data/models/GLM-4.5-GPU-weight
+  served-model-name: GLM-4.5-GPU-weight
   chunked-prefill-size: 4096
   trust-remote-code: true
   enable-nan-detection: true
   disable-shared-experts-fusion: true
   enable-mixed-chunk: true
-  amx-weight-path: /mnt/data/models/DeepSeek-R1-0528-CPU-weight
-  attention-backend: flashinfer
-  mem-fraction-static: 0.98
+  amx-weight-path: /mnt/data/models/GLM-4.5-CPU-weight
+  attention-backend: triton
+  mem-fraction-static: 0.9
+  amx-method: AMXINT4
+  subpool-count: 2
+  tool-call-parser: glm45
 
 
 dynamic:
@@ -30,46 +33,48 @@ correct:
   2:
     tensor-parallel-size: 2
     enable-p2p-check: true
-    num-gpu-experts: 43
+    num-gpu-experts: 38
 
   4:
     tensor-parallel-size: 4
     enable-p2p-check: true
-    num-gpu-experts: 100
+    num-gpu-experts: 126
 
   8:
     tensor-parallel-size: 8
     enable-p2p-check: true
-    num-gpu-experts: 215
+    num-gpu-experts: 160
 
 
 perf_common:
   max-total-tokens: 37000
   max-running-requests: 37
-  # cpu-embed: "True" # 表示需要传值，而不是 flag
+  cpu-embed: "True" # 表示需要传值，而不是 flag
   enable-defer: true
+  cpuinfer: 90
+  disable-radix-cache: true
+  disable-chunked-prefix-cache: true
 
 
 perf:
   1:
     tensor-parallel-size: 1
-    num-gpu-experts: 10
+    num-gpu-experts: 5
 
   2:
     tensor-parallel-size: 2
-    num-gpu-experts: 30
-    # dp: 2
-    # enable-dp-attention: true
-
-  4:
-    tensor-parallel-size: 4
-    num-gpu-experts: 120
+    num-gpu-experts: 10
     dp: 2
     enable-dp-attention: true
 
+  4:
+    tensor-parallel-size: 4
+    num-gpu-experts: 90
+    dp: 2
+    enable-dp-attention: true
 
   8:
     tensor-parallel-size: 8
-    num-gpu-experts: 240
+    num-gpu-experts: 160
     dp: 2
     enable-dp-attention: true

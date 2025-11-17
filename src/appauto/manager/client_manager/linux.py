@@ -92,7 +92,7 @@ class BaseLinux(object):
             ProxyCommandFailure,
         ) as e:
             logger.error(f"Error occurred that will be retried: {e}")
-            self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_passwd)
+            self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_password)
             raise e
 
     @retry(
@@ -148,7 +148,7 @@ class BaseLinux(object):
             ProxyCommandFailure,
         ) as e:
             logger.error(f"Error occurred that will be retried: {e}")
-            self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_passwd)
+            self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_password)
             raise e
 
     def run_in_docker(
@@ -194,7 +194,7 @@ class BaseLinux(object):
             ProxyCommandFailure,
         ) as e:
             logger.error(f"Error occurred that will be retried: {e}")
-            self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_passwd)
+            self.ssh = SSHClient.estab_connect(self.mgt_ip, self.ssh_user, self.ssh_password)
             raise e
 
     def install_conda(self, type: Literal["miniconda", "anaconda"]):

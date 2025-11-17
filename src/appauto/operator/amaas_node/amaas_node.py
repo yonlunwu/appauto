@@ -7,7 +7,7 @@ class AMaaSNode:
         self,
         mgt_ip=None,
         ssh_user="qujing",
-        ssh_passwd="madsys123",
+        ssh_password="madsys123",
         ssh_port=22,
         api_port=10001,
         api_user="admin",
@@ -25,4 +25,4 @@ class AMaaSNode:
             if not skip_api
             else None
         )
-        self.cli = AMaaSNodeCli(mgt_ip, ssh_user, ssh_passwd, ssh_port) if not skip_cli else None
+        self.cli = AMaaSNodeCli(mgt_ip, ssh_user, ssh_password, ssh_port) if not skip_cli else None
