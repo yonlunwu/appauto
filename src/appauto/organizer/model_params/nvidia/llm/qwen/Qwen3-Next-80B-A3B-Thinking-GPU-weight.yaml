@@ -1,19 +1,18 @@
-# 结构：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
-engine:
+# 参数结构：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
+engine:  
   common:
-    model-path: /mnt/data/models/GLM-4.5-GPU-weight
-    served-model-name: GLM-4.5-GPU-weight
+    model-path: /mnt/data/models/Qwen3-Next-80B-A3B-Thinking-GPU-weight
+    served-model-name: Qwen3-Next-80B-A3B-Thinking-GPU-weight
     trust-remote-code: true
     disable-shared-experts-fusion: true
-    enable-p2p-check: true
-    kt-weight-path: /mnt/data/models/GLM-4.5-CPU-weight
+    kt-weight-path: /mnt/data/models/Qwen3-Next-80B-A3B-Thinking-CPU-weight
     kt-method: AMXINT4
     kt-threadpool-count: 2
-    mem-fraction-static: 0.9
+    mem-fraction-static: 0.98
 
 
   dynamic:
-    # correct = 80；perf = 会被 perf_common 覆盖为 90
+    # correct = 80；perf 会被 perf_common 覆盖成 90
     kt-cpuinfer: 80
 
 
@@ -33,15 +32,11 @@ engine:
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 38
+      kt-num-gpu-experts: 512
 
     4:
       tensor-parallel-size: 4
-      kt-num-gpu-experts: 126
-
-    8:
-      tensor-parallel-size: 8
-      kt-num-gpu-experts: 160
+      kt-num-gpu-experts: 512
 
 
 
@@ -64,29 +59,20 @@ engine:
   perf:
     1:
       tensor-parallel-size: 1
-      kt-num-gpu-experts: 10
+      kt-num-gpu-experts: 500
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 40
+      kt-num-gpu-experts: 512
       dp: 2
       enable-dp-attention: true
 
     4:
       tensor-parallel-size: 4
-      kt-num-gpu-experts: 130
+      kt-num-gpu-experts: 512
       dp: 2
       enable-dp-attention: true
-
-    8:
-      tensor-parallel-size: 8
-      kt-num-gpu-experts: 160
-      dp: 2
-      enable-dp-attention: true
-
-# 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
   1: default
   2: default
   4: default
-  8: default

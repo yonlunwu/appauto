@@ -1,19 +1,19 @@
 # 结构：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
 engine:
   common:
-    model-path: /mnt/data/models/GLM-4.5-GPU-weight
-    served-model-name: GLM-4.5-GPU-weight
+    model-path: /mnt/data/models/GLM-4.5-Air-GPU-weight
+    served-model-name: GLM-4.5-Air-GPU-weight
     trust-remote-code: true
     disable-shared-experts-fusion: true
     enable-p2p-check: true
-    kt-weight-path: /mnt/data/models/GLM-4.5-CPU-weight
-    kt-method: AMXINT4
+    kt-weight-path: /mnt/data/models/GLM-4.5-Air-CPU-weight
+    kt-method: AMXINT8
     kt-threadpool-count: 2
     mem-fraction-static: 0.9
 
 
   dynamic:
-    # correct = 80；perf = 会被 perf_common 覆盖为 90
+    # correct = 80；perf 会被 perf_common 覆盖为 90
     kt-cpuinfer: 80
 
 
@@ -33,15 +33,7 @@ engine:
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 38
-
-    4:
-      tensor-parallel-size: 4
-      kt-num-gpu-experts: 126
-
-    8:
-      tensor-parallel-size: 8
-      kt-num-gpu-experts: 160
+      kt-num-gpu-experts: 81
 
 
 
@@ -54,9 +46,9 @@ engine:
     max-total-tokens: 37000
     kt-cpuinfer: 90                           # 覆盖 dynamic 的 80
     kt-max-deferred-experts-per-token: 2
+    attention-backend: flashinfer
     chunked-prefill-size: 4096
     enable-mixed-chunk: true
-    attention-backend: flashinfer
     disable-radix-cache: true
     disable-chunked-prefix-cache: true
 
@@ -64,23 +56,11 @@ engine:
   perf:
     1:
       tensor-parallel-size: 1
-      kt-num-gpu-experts: 10
+      kt-num-gpu-experts: 30
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 40
-      dp: 2
-      enable-dp-attention: true
-
-    4:
-      tensor-parallel-size: 4
-      kt-num-gpu-experts: 130
-      dp: 2
-      enable-dp-attention: true
-
-    8:
-      tensor-parallel-size: 8
-      kt-num-gpu-experts: 160
+      kt-num-gpu-experts: 90
       dp: 2
       enable-dp-attention: true
 
@@ -88,5 +68,3 @@ engine:
 amaas:
   1: default
   2: default
-  4: default
-  8: default
