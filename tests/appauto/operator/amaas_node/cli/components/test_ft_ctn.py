@@ -1,4 +1,3 @@
-import threading
 from time import sleep
 from appauto.operator.amaas_node import AMaaSNode
 from appauto.manager.config_manager.config_logging import LoggingConfig
@@ -7,7 +6,8 @@ from appauto.manager.config_manager.config_logging import LoggingConfig
 logger = LoggingConfig.get_logger()
 
 
-amaas = AMaaSNode("192.168.110.4", ssh_user="qujing", skip_api=True)
+# amaas = AMaaSNode("192.168.111.10", ssh_user="qujing", skip_api=True)
+amaas = AMaaSNode("27.0.166.176", ssh_user="qujing", skip_api=True, ssh_port=15017)
 
 
 class TestAMaasNodeFtContainer:
@@ -56,5 +56,60 @@ class TestAMaasNodeFtContainer:
         ft_ctn.stop_model("DeepSeek-V3-0324-GPU-weight")
 
         pids = ft_ctn.get_running_model_pids(ft_ctn.engine, "DeepSeek-V3-0324-GPU-weight")
+        logger.info(pids)
+        assert not pids
+
+    def test_ft_launch_model_and_run_eval(self):
+        ft_ctn = amaas.cli.docker_ctn_factory.ft
+        # model = "GLM-4.5-GPU-weight"
+        model = "DeepSeek-R1-0528-GPU-weight"
+        port = 30012
+
+        # 拉模型
+        ft_ctn.launch_model_in_thread(model, tp=1, mode="correct", port=port, wait_for_running=True)
+
+        sleep(5)
+
+        # 获取模型 pid
+        pids = ft_ctn.get_running_model_pids(ft_ctn.engine, model)
+        logger.info(pids)
+        assert pids
+
+        sleep(5)
+
+        # 跑 evalscope
+        ft_ctn.run_eval_via_evalscope(port, model, "aime24", concurrency=4, limit=4)
+
+        # 停模型
+        ft_ctn.stop_model(model)
+
+        pids = ft_ctn.get_running_model_pids(ft_ctn.engine, model)
+        logger.info(pids)
+        assert not pids
+
+    def test_ft_launch_model_and_run_perf(self):
+        ft_ctn = amaas.cli.docker_ctn_factory.ft
+        model = "DeepSeek-R1-0528-GPU-weight"
+        port = 30013
+
+        # 拉模型
+        ft_ctn.launch_model_in_thread(model, 2, "perf", port, wait_for_running=True)
+
+        sleep(5)
+
+        # 获取模型 pid
+        pids = ft_ctn.get_running_model_pids(ft_ctn.engine, model)
+        logger.info(pids)
+        assert pids
+
+        sleep(5)
+
+        # 跑 evalscope
+        ft_ctn.run_perf_via_evalscope(port, model, "1 4", "1 4", 128, 512)
+
+        # 停模型
+        ft_ctn.stop_model(model)
+
+        pids = ft_ctn.get_running_model_pids(ft_ctn.engine, model)
         logger.info(pids)
         assert not pids

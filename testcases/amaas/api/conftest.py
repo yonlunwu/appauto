@@ -1,8 +1,8 @@
 import pytest
 from time import sleep
 from enum import Enum
-from uuid import uuid4
 from faker import Faker
+from openai import OpenAI
 from random import choice
 from tabulate import tabulate
 from typing import Dict, List, TypeVar, Literal, Type
@@ -76,7 +76,7 @@ class CommonModelBaseStep:
         result_item["tp"] = tp
         rule: Dict = model_store.get_run_rule()
 
-        worker = choice(amaas.workers)
+        worker = choice(amaas.api.workers)
         result_item["worker"] = f"{worker.name}/{worker.object_id}"
 
         params = dict(
@@ -160,18 +160,30 @@ class CommonModelBaseStep:
         try:
             scene = [
                 l
-                for l in amaas.scene.llm
+                for l in amaas.api.scene.llm
                 if l.display_model_name == model_store.name or l.object_id == model_store.name
             ][0]
-            model_store.question = str(uuid4())
-            for _ in range(DP.scene_loop):
-                model_store.answer = scene.talk(model_store.question, stream=True, process_stream=True, max_tokens=None)
+            # model_store.question = str(uuid4())
+            questions = [
+                "35+25+10=60，对吗？",
+                "天空为什么是蓝色的？",
+                "Wish you happiness each day and all the best in everything",
+                "用python写冒泡排序的代码，关键处请添加注释",
+                "写愤怒的小鸟的代码",
+                "请给我一份周末北京旅游攻略，去什么景点吃什么走什么路线有什么注意事项都写的详细一些",
+            ]
+
+            for q in questions:
+                model_store.question = q
+                model_store.answer = scene.talk(model_store.question, stream=True, process_stream=True, max_tokens=2048)
 
                 result_item["question"] = model_store.question
                 # item["answer"] = llm.answer
 
+                assert DoCheck.check_gibberish(model_store.answer) == "no"
+
         except Exception as e:
-            logger.info(f"model store: {model_store.name}, scene failed")
+            logger.info(f"model store: {model_store.name}, scene failed, error: {str(e)}")
             model_store.query_result = ModelBaseTestResult.failed
 
         else:
@@ -185,7 +197,7 @@ class CommonModelBaseStep:
         try:
             scene = [
                 v
-                for v in amaas.scene.vlm
+                for v in amaas.api.scene.vlm
                 if v.display_model_name == model_store.name or v.object_id == model_store.name
             ][0]
             model_store.question = "请解释这张图"
@@ -210,7 +222,7 @@ class CommonModelBaseStep:
         try:
             scene = [
                 e
-                for e in amaas.scene.embedding
+                for e in amaas.api.scene.embedding
                 if e.display_model_name == model_store.name or e.object_id == model_store.name
             ][0]
             model_store.question = ["苹果", "小米", "香蕉", "公司"]
@@ -235,7 +247,7 @@ class CommonModelBaseStep:
         try:
             scene = [
                 e
-                for e in amaas.scene.rerank
+                for e in amaas.api.scene.rerank
                 if e.display_model_name == model_store.name or e.object_id == model_store.name
             ][0]
             model_store.question = "叶文洁是谁"
@@ -268,7 +280,7 @@ class CommonModelBaseStep:
     @classmethod
     def stop(cls, model_store: T, type_: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]):
 
-        if model_list := getattr(amaas.model, type_, None):
+        if model_list := getattr(amaas.api.model, type_, None):
             if target_models := [
                 m for m in model_list if m.display_model_name == model_store.name or m.name == model_store.name
             ]:
@@ -287,7 +299,7 @@ class CommonModelBaseRunner:
     def get_models_store(
         cls, model_store_type: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]
     ) -> List[BaseModelStore]:
-        return getattr(amaas.init_model_store, model_store_type)
+        return getattr(amaas.api.init_model_store, model_store_type)
 
     @classmethod
     def run_with_default(cls, tp: Literal[1, 2, 4, 8], model_store: T):
@@ -346,3 +358,45 @@ class DoCheck:
         assert item["run_result"] == ModelBaseTestResult.passed
 
         assert item["query_result"] in [ModelBaseTestResult.passed, ModelBaseTestResult.skipped]
+
+    @classmethod
+    def check_gibberish(cls, content) -> Literal["yes", "no"]:
+        client = OpenAI(
+            api_key="sk-lkxrwoxzkvjottwyuhxnosmivpxjnzhvlgpanemmmwlxpscw", base_url="https://api.siliconflow.cn/v1"
+        )
+        response = client.chat.completions.create(
+            model="Qwen/Qwen2.5-72B-Instruct",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+    你是人类读者，完全从人类直观阅读感受出发，检测 3 类问题：
+    1. 语义连贯性：是否存在上下文逻辑断裂、话题突兀跳转、前后表述矛盾, 导致读不懂或理解卡顿；
+    2. 表达通顺度：是否存在句子结构生硬、语序混乱、读起来拗口、用词搭配不当，导致阅读不顺畅；
+    3. 内容有效性：是否存在乱码符号、无意义字符、与文本核心无关的杂乱信息，影响阅读体验（一些合理的表情或 markdown 格式除外）。
+
+    要求:
+    1. 无需额外解释，仅回复「有」或「没有」
+    2. 请你检测的内容来自 AI 大模型，可能有一些 markdown 格式或 think 标签之类的思考内容，这些都是合理情况
+    3. 如果是数学题之类的，也不用做过多检测，只需要检测语义即可
+    4. 如果内容为纯数字, 有可能是 ID 也有可能是乱码，需要自行判断是否为常见的 ID
+    5. 由于用户提问时可能设置了 max-tokens, 因此如果内容戛然而止，此时应该不是问题，属于被合理截断。
+    6. 如果内容反复重复，大概率是模型回答陷入死循环，此时也是有问题的。
+                    """,
+                },
+                {"role": "user", "content": content},
+            ],
+            stream=True,
+        )
+
+        res = None
+        for chunk in response:
+            if not chunk.choices:
+                continue
+            if chunk.choices[0].delta.content:
+                res = chunk.choices[0].delta.content
+
+        if "没有" in res:
+            return "no"
+        else:
+            return "yes"

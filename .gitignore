@@ -41,3 +41,7 @@ test_notify*
 
 sample*.jsonl
 problem*.jsonl
+
+ft-docker-compose*.yaml
+
+*.xlsx

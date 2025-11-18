@@ -52,7 +52,7 @@ class BaseDockerContainer:
         return self.node.run(full_cmd, sudo, False, False, print_screen, timeout)
 
     def run_in_thread(
-        self, cmd: str, sudo=False, start=True, print_screen=False, timeout=None
+        self, cmd: str, sudo=True, start=True, print_screen=False, timeout=None
     ) -> Tuple[threading.Thread, Queue]:
 
         def _worker(q: Queue):

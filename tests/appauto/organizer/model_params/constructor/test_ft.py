@@ -1,4 +1,4 @@
-from appauto.organizer.constructor import ModelParams
+from appauto.organizer.model_params.constructor import FTModelParams
 from appauto.manager.config_manager.config_logging import LoggingConfig
 
 
@@ -7,7 +7,7 @@ logger = LoggingConfig.get_logger()
 
 class TestModelParams:
     def test_nvidia_deepseek_r1_0528_correct_2tp_cmd(self):
-        model_params = ModelParams(
+        model_params = FTModelParams(
             node="node1", engine="ft", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="correct"
         )
         cmd = model_params.as_cmd
@@ -21,7 +21,7 @@ class TestModelParams:
         assert "--max-total-tokens 50000" in cmd
 
     def test_nvidia_deepseek_r1_0528_perf_1tp_cmd(self):
-        model_params = ModelParams(
+        model_params = FTModelParams(
             node="node1", engine="sglang", model_name="DeepSeek-R1-0528-GPU-weight", tp=1, mode="perf"
         )
         cmd = model_params.as_cmd

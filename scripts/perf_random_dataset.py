@@ -115,7 +115,7 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 @click.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
-@click.option("--ip", required=True, help="AMaaS 管理 IP")
+@click.option("--ip", type=str, default="127.0.0.1", show_default=True, help="AMaaS 管理 IP")
 @click.option("--port", type=str, default=10011, show_default=True, help="AMaaS API 端口")
 @click.option("--parallel", type=str, default="1 4", show_default=True, help="并发数, 请用引号引起来, 如 '1 4'")
 @click.option("--number", type=str, default="1 4", show_default=True, help="请求数, 请用引号引起来, 如 '1 4'")
@@ -156,9 +156,7 @@ def runner(
     output_xlsx,
 ):
     start_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_csv = (
-        f"{output_csv}_{start_time}.csv" if output_csv else f"{start_time}.csv" or f"{start_time}_{str(uuid4)}.csv"
-    )
+    output_csv = f"{output_csv}.csv" if output_csv else f"{start_time}.csv"
     output_xlsx = output_csv.replace(".csv", ".xlsx")
 
     number = [int(n) for n in number.split()]

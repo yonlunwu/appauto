@@ -3,6 +3,7 @@ evalscope = v1.0.x
 """
 
 import sys
+import time
 import click
 import subprocess
 from evalscope.run import run_task
@@ -66,6 +67,7 @@ def get_ft_port() -> int | None:
 @click.option("--timeout", type=int, default=6000, show_default=True, help="Timeout duration, unit: seconds")
 @click.option("--max-tokens", type=int, default=None, show_default=True, help="Maximum tokens for input + output")
 @click.option("--disable-debug", is_flag=True, show_default=True, help="Disable debug mode")
+@click.option("--work-dir", type=str, default=None, show_default=True, help="Disable debug mode")
 def runner(
     ip,
     port,
@@ -78,7 +80,9 @@ def runner(
     concurrency,
     max_tokens,
     dataset_args,
+    work_dir,
 ):
+    work_dir = work_dir or time.strftime("%Y%m%d_%H%M%S", time.localtime())
     dataset_names = datasets.strip().split()
 
     port = port or get_ft_port()
@@ -106,6 +110,7 @@ def runner(
             "temperature": 0.6,
             "chat_template_kwargs": {"enable_thinking": False},
         },
+        work_dir=work_dir,
     )
 
     if limit and isinstance(limit, int):

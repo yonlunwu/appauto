@@ -6,14 +6,14 @@ Module for constructing model parameters.
 
 from typing import Literal
 from functools import cached_property
-from ..manager.file_manager.handle_yml import YMLHandler
-from ..manager.client_manager import BaseLinux
-from ..manager.config_manager.config_logging import LoggingConfig
+from ....manager.file_manager.handle_yml import YMLHandler
+from ....manager.client_manager import BaseLinux
+from ....manager.config_manager.config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
 
 
-class ModelParams:
+class FTModelParams:
     # TODO 支持更多 engine
     def __init__(
         self,
@@ -41,11 +41,11 @@ class ModelParams:
     def prefix(self):
         # TODO  根据 engine 返回对应前缀
         if self.engine == "sglang":
-            from .model_params.common import SGLANG_PREFIX
+            from ...model_params.common import SGLANG_PREFIX
 
             return SGLANG_PREFIX.format(self.port) + " "
         elif self.engine == "ft":
-            from .model_params.common import FT_PREFIX
+            from ...model_params.common import FT_PREFIX
 
             return FT_PREFIX.format(self.port) + " "
 
@@ -62,9 +62,15 @@ class ModelParams:
         return "llm"
 
     @cached_property
-    def model_family(self) -> str:
-        # TODO 根据 self.model_name 获取实际模型家族
-        return "deepseek"
+    def model_family(self) -> Literal["deepseek", "qwen", "glm", "kimi"]:
+        if self.model_name.startswith("DeepSeek"):
+            return "deepseek"
+        elif self.model_name.startswith("GLM"):
+            return "glm"
+        elif self.model_name.startswith("Qwen"):
+            return "qwen"
+        elif self.model_name.startswith("Kimi"):
+            return "kimi"
 
     @cached_property
     def handler(self) -> YMLHandler:
@@ -79,7 +85,7 @@ class ModelParams:
         根据 tp 和 mode 生成最终的命令行参数字符串
         规则: common + dynamic + (perf_common + perf) 或者 (correct_common + correct)
         """
-        yml_data = self.handler.data
+        yml_data = self.handler.data.engine
         common = yml_data.common
         dynamic = yml_data.dynamic
 
@@ -93,7 +99,10 @@ class ModelParams:
             mode_common = yml_data.correct_common
             mode_spec = yml_data.correct.get(self.tp, {})
 
-        # 合并
+        # 存在指定的 tp 说明支持该 tp, 否则说明是不支持的
+        # 如果支持该 tp 则进行 cmd 合并拼接
+        assert mode_spec, f"{self.model_name} doesn't support tp {self.tp}, mode: {self.mode}"
+
         final_params = {**common, **dynamic, **mode_common, **mode_spec}
 
         # 生成命令行参数字符串
