@@ -92,7 +92,7 @@ class FTModelParams:
         common = yml_data.common
         dynamic = yml_data.dynamic
 
-        mode_common, mode_spec = {}, {}
+        mode_common, mode_spec, params = {}, {}, {}
 
         # TODO 补全更多 mode 以及考虑当不存在指定 mode 时的处理
         if self.mode == "perf":
@@ -106,11 +106,15 @@ class FTModelParams:
         # 如果支持该 tp 则进行 cmd 合并拼接
         if mode_spec:
 
-            final_params = {**common, **dynamic, **mode_common, **mode_spec}
+            # final_params = {**common, **dynamic, **mode_common, **mode_spec}
+            params.update(common)
+            params.update(dynamic)
+            params.update(mode_common)
+            params.update(mode_spec)
 
             # 生成命令行参数字符串
             cmd_parts = []
-            for key, value in final_params.items():
+            for key, value in params.items():
                 if isinstance(value, bool):
                     if value:
                         cmd_parts.append(f"--{key}")
