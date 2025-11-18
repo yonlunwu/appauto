@@ -16,6 +16,8 @@ from ....manager.component_manager.components.amaas.models.model_store import (
     AudioModelStore,
     ParserModelStore,
 )
+from ....manager.error_manager.errors import OperationNotSupported
+
 
 if TYPE_CHECKING:
     from ....operator.amaas_node import AMaaSNodeApi
@@ -89,7 +91,7 @@ class AMaaSModelParams:
         yml_data = self.handler.data.amaas
 
         # 存在指定的 tp 说明支持该 tp, 否则说明是不支持的
-        # 如果支持该 tp 则进行 cmd 合并拼接
+        # 如果支持该 tp 则按需生成 params
 
         params = ADDict()
 
@@ -102,6 +104,8 @@ class AMaaSModelParams:
             if spt_tp_params != "default":
                 params.update(spt_tp_params)
 
-        logger.info(f"params: {params}")
+            logger.info(f"params: {params}")
 
-        return params
+            return params
+
+        raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp}.")
