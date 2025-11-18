@@ -1,4 +1,4 @@
-from random import choice
+from time import time, sleep
 from typing import Dict, TypeVar, Literal, TYPE_CHECKING
 
 from appauto.manager.component_manager.components.amaas import AMaaS
@@ -70,3 +70,17 @@ class AMaaSNodeApi(AMaaS):
 
         self.model_store_check(model_store, params)
         self.model_store_run(model_store, params, timeout_s)
+
+    def wait_gpu_release(self, interval_s: int = 20, timeout_s: int = 180):
+        start_time = time()
+
+        while time() - start_time <= timeout_s:
+            worker = self.workers[0]
+            if worker.gpu_empty_count == worker.gpu_sum:
+                return
+
+            sleep(interval_s)
+
+        raise TimeoutError(
+            f"timeout while waiting for gpu released. total: {worker.gpu_sum}, empty: {worker.gpu_empty_count}"
+        )
