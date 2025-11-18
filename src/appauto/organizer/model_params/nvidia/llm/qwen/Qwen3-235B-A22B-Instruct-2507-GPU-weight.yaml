@@ -1,12 +1,12 @@
-# 参数组合方式：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
+# 由：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
 engine:  
   common:
-    model-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-GPU-weight
-    served-model-name: Qwen3-Coder-480B-A35B-Instruct-GPU-weight
+    model-path: /mnt/data/models/Qwen3-235B-A22B-Instruct-2507-GPU-weight
+    served-model-name: Qwen3-235B-A22B-Instruct-2507-GPU-weight
     trust-remote-code: true
     enable-p2p-check: true
     disable-shared-experts-fusion: true
-    kt-weight-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-CPU-weight
+    kt-weight-path: /mnt/data/models/Qwen3-235B-A22B-Instruct-2507-CPU-weight
     kt-method: AMXINT8
     mem-fraction-static: 0.98
 
@@ -17,7 +17,7 @@ engine:
 
 
   ##############################################
-  #             正确性优先版（correct）        #
+  #               正确性优先版（correct）       #
   ##############################################
 
   correct_common:
@@ -28,31 +28,31 @@ engine:
   correct:
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 103
-
+      kt-num-gpu-experts: 128
 
 
   ##############################################
-  #              性能优化版（perf）            #
+  #               性能优化版（perf）           #
   ##############################################
 
   perf_common:
     max-running-requests: 37
     max-total-tokens: 37000
-    kt-cpuinfer: 90                      # 覆盖 dynamic 的 80
+    kt-cpuinfer: 90
     kt-max-deferred-experts-per-token: 2
     enable-mixed-chunk: true
-    attention-backend: flashinfer
     disable-radix-cache: true
     disable-chunked-prefix-cache: true
+    attention-backend: flashinfer
 
 
   perf:
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 105
+      kt-num-gpu-experts: 128
       dp: 2
       enable-dp-attention: true
+
 
 amaas:
   8: default

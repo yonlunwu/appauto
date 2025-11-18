@@ -1,0 +1,30 @@
+engine:    
+  common:
+    model-path: /mnt/data/models/Qwen2.5-VL-32B-Instruct-AWQ
+    served-model-name: Qwen2.5-VL-32B-Instruct-AWQ
+    trust-remote-code: true
+    enable-p2p-check: true
+    mem-fraction-static: 0.85
+
+  correct:
+    1:
+      tensor-parallel-size: 1
+      max-total-tokens: 50000
+
+    2:
+      tensor-parallel-size: 2
+      max-total-tokens: 128000
+
+    4:
+      tensor-parallel-size: 4
+      max-total-tokens: 128000
+
+    8:
+      tensor-parallel-size: 8
+      max-total-tokens: 128000
+amaas:
+  1: 
+    max-total-tokens: 50000
+  2: default
+  4: default
+  8: default

@@ -1,25 +1,25 @@
-# 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
+# 参数组合：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
 engine:
   common:
-    model-path: /mnt/data/models/DeepSeek-V3-0324-GPU-weight
-    served-model-name: DeepSeek-V3-0324-GPU-weight
+    model-path: /mnt/data/models/Kimi-K2-Instruct-GPU-weight
+    served-model-name: Kimi-K2-Instruct-GPU-weight
     trust-remote-code: true
     disable-shared-experts-fusion: true
-    enable-p2p-check: true          # 全部 CLI 都有
-    kt-weight-path: /mnt/data/models/DeepSeek-V3-0324-CPU-weight
+    enable-p2p-check: true
+    kt-weight-path: /mnt/data/models/Kimi-K2-Instruct-CPU-weight
     kt-method: AMXINT4
     kt-threadpool-count: 2
     mem-fraction-static: 0.98
 
 
   dynamic:
-    # correct = 80   /   perf = 会被 perf_common 覆盖成 90
+    # correct = 80；perf 会被 perf_common 覆盖为 90
     kt-cpuinfer: 80
 
 
-  ##############################################
-  #                 正确性优先版                #
-  ##############################################
+##############################################
+#             正确性优先版（correct）        #
+##############################################
 
   correct_common:
     max-running-requests: 50
@@ -33,42 +33,42 @@ engine:
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 43
+      kt-num-gpu-experts: 45
 
     4:
       tensor-parallel-size: 4
-      kt-num-gpu-experts: 100
+      kt-num-gpu-experts: 101
 
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 215
+      kt-num-gpu-experts: 212
 
 
 
   ##############################################
-  #                 性能优化版                  #
+  #              性能优化版（perf）            #
   ##############################################
 
   perf_common:
-    max-total-tokens: 37000
     max-running-requests: 37
+    max-total-tokens: 37000
+    kt-cpuinfer: 90                    # 覆盖 dynamic
     kt-max-deferred-experts-per-token: 2
-    disable-chunked-prefix-cache: true
-    disable-radix-cache: true
-    attention-backend: flashinfer
-    kt-cpuinfer: 90
     chunked-prefill-size: 4096
     enable-mixed-chunk: true
+    attention-backend: flashinfer
+    disable-radix-cache: true
+    disable-chunked-prefix-cache: true
 
 
   perf:
     1:
       tensor-parallel-size: 1
-      kt-num-gpu-experts: 15
+      kt-num-gpu-experts: 10
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 50
+      kt-num-gpu-experts: 45
       dp: 2
       enable-dp-attention: true
 
@@ -80,9 +80,10 @@ engine:
 
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 230
+      kt-num-gpu-experts: 235
       dp: 2
       enable-dp-attention: true
+
 
 # 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:

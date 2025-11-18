@@ -1,21 +1,20 @@
+# 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
 engine:
-  # 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
   common:
     model-path: /mnt/data/models/DeepSeek-R1-0528-GPU-weight
     served-model-name: DeepSeek-R1-0528-GPU-weight
-    chunked-prefill-size: 4096
     trust-remote-code: true
-    enable-nan-detection: true
     disable-shared-experts-fusion: true
-    enable-mixed-chunk: true
-    amx-weight-path: /mnt/data/models/DeepSeek-R1-0528-CPU-weight
-    attention-backend: flashinfer
+    enable-p2p-check: true
+    kt-weight-path: /mnt/data/models/DeepSeek-R1-0528-CPU-weight
+    kt-method: AMXINT4
+    kt-threadpool-count: 2
     mem-fraction-static: 0.98
 
 
   dynamic:
     # 根据 cpu 和 mode 调整
-    cpuinfer: 80
+    kt-cpuinfer: 80
 
 
   correct_common:
@@ -26,63 +25,61 @@ engine:
   correct:
     1:
       tensor-parallel-size: 1
-      num-gpu-experts: 1
+      kt-num-gpu-experts: 1
 
     2:
       tensor-parallel-size: 2
-      enable-p2p-check: true
-      num-gpu-experts: 43
+      kt-num-gpu-experts: 43
 
     4:
       tensor-parallel-size: 4
-      enable-p2p-check: true
-      num-gpu-experts: 100
+      kt-num-gpu-experts: 100
 
     8:
       tensor-parallel-size: 8
-      enable-p2p-check: true
-      num-gpu-experts: 215
+      kt-num-gpu-experts: 215
 
 
   perf_common:
     max-total-tokens: 37000
     max-running-requests: 37
-    # cpu-embed: "True" # 表示需要传值，而不是 flag
-    enable-defer: true
+    kt-max-deferred-experts-per-token: 2
+    disable-chunked-prefix-cache: true
+    disable-radix-cache: true
+    attention-backend: flashinfer
+    kt-cpuinfer: 90
+    chunked-prefill-size: 4096
+    enable-mixed-chunk: true
 
 
   perf:
     1:
       tensor-parallel-size: 1
-      num-gpu-experts: 10
+      kt-num-gpu-experts: 10
 
     2:
       tensor-parallel-size: 2
-      num-gpu-experts: 30
-      # dp: 2
-      # enable-dp-attention: true
+      kt-num-gpu-experts: 50
+      dp: 2
+      enable-dp-attention: true
 
     4:
       tensor-parallel-size: 4
-      num-gpu-experts: 120
+      kt-num-gpu-experts: 110
       dp: 2
       enable-dp-attention: true
 
 
     8:
       tensor-parallel-size: 8
-      num-gpu-experts: 240
+      kt-num-gpu-experts: 230
       dp: 2
       enable-dp-attention: true
 
 
-
 # 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
-  # 该 tp 需要变更默认参数, 且预期是个字典, 通常是 max_total_tokens 字段
-  1:
-    max_total_tokens: 1024
-  # default 表示使用默认参数，无需更改，从 get_run_rule 中获取即可
+  1: default
   2: default
   4: default
   8: default

@@ -1,0 +1,25 @@
+# 参数结构：common + correct[n]
+engine:  
+  common:
+    model-path: /mnt/data/models/Qwen2.5-VL-72B-Instruct
+    served-model-name: Qwen2.5-VL-72B-Instruct
+    trust-remote-code: true
+    enable-p2p-check: true
+    mem-fraction-static: 0.85
+
+
+  correct_common:
+    max-total-tokens: 128000
+
+  correct:
+    4:
+      tensor-parallel-size: 4
+
+
+    8:
+      tensor-parallel-size: 8
+
+
+amaas:
+  4: default
+  8: default

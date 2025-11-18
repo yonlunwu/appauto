@@ -1,18 +1,19 @@
-# 参数组合方式：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
+# 结构：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
 engine:  
   common:
-    model-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-GPU-weight
-    served-model-name: Qwen3-Coder-480B-A35B-Instruct-GPU-weight
+    model-path: /mnt/data/models/GLM-4.5V-GPU-weight
+    served-model-name: GLM-4.5V-GPU-weight
     trust-remote-code: true
-    enable-p2p-check: true
     disable-shared-experts-fusion: true
-    kt-weight-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-CPU-weight
+    enable-p2p-check: true
+    kt-weight-path: /mnt/data/models/GLM-4.5V-CPU-weight
     kt-method: AMXINT8
-    mem-fraction-static: 0.98
+    kt-threadpool-count: 2
+    mem-fraction-static: 0.9
 
 
   dynamic:
-    # correct = 80；perf = 会被 perf_common 覆盖为 90
+    # correct 模式用 80；perf 会被 perf_common 覆盖为 90
     kt-cpuinfer: 80
 
 
@@ -26,9 +27,13 @@ engine:
 
 
   correct:
-    8:
-      tensor-parallel-size: 8
-      kt-num-gpu-experts: 103
+    1:
+      tensor-parallel-size: 1
+      kt-num-gpu-experts: 1
+
+    2:
+      tensor-parallel-size: 2
+      kt-num-gpu-experts: 79
 
 
 
@@ -39,8 +44,9 @@ engine:
   perf_common:
     max-running-requests: 37
     max-total-tokens: 37000
-    kt-cpuinfer: 90                      # 覆盖 dynamic 的 80
+    kt-cpuinfer: 90                           # 覆盖 dynamic 的 80
     kt-max-deferred-experts-per-token: 2
+    chunked-prefill-size: 4096
     enable-mixed-chunk: true
     attention-backend: flashinfer
     disable-radix-cache: true
@@ -48,11 +54,15 @@ engine:
 
 
   perf:
-    8:
-      tensor-parallel-size: 8
-      kt-num-gpu-experts: 105
+    1:
+      tensor-parallel-size: 1
+      kt-num-gpu-experts: 40
+
+    2:
+      tensor-parallel-size: 2
+      kt-num-gpu-experts: 100
       dp: 2
       enable-dp-attention: true
-
 amaas:
-  8: default
+  1: default
+  2: default
