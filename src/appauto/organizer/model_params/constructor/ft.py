@@ -6,14 +6,14 @@ Module for constructing model parameters.
 
 from typing import Literal
 from functools import cached_property
-from ..manager.file_manager.handle_yml import YMLHandler
-from ..manager.client_manager import BaseLinux
-from ..manager.config_manager.config_logging import LoggingConfig
+from ....manager.file_manager.handle_yml import YMLHandler
+from ....manager.client_manager import BaseLinux
+from ....manager.config_manager.config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
 
 
-class ModelParams:
+class FTModelParams:
     # TODO 支持更多 engine
     def __init__(
         self,
@@ -41,11 +41,11 @@ class ModelParams:
     def prefix(self):
         # TODO  根据 engine 返回对应前缀
         if self.engine == "sglang":
-            from .model_params.common import SGLANG_PREFIX
+            from ...model_params.common import SGLANG_PREFIX
 
             return SGLANG_PREFIX.format(self.port) + " "
         elif self.engine == "ft":
-            from .model_params.common import FT_PREFIX
+            from ...model_params.common import FT_PREFIX
 
             return FT_PREFIX.format(self.port) + " "
 
@@ -85,7 +85,7 @@ class ModelParams:
         根据 tp 和 mode 生成最终的命令行参数字符串
         规则: common + dynamic + (perf_common + perf) 或者 (correct_common + correct)
         """
-        yml_data = self.handler.data
+        yml_data = self.handler.data.engine
         common = yml_data.common
         dynamic = yml_data.dynamic
 

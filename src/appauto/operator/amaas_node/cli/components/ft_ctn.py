@@ -6,7 +6,7 @@ import time
 from queue import Queue
 from threading import Thread
 from typing import TYPE_CHECKING, Literal, Tuple, Dict
-from appauto.organizer.constructor import ModelParams
+from appauto.organizer.model_params.constructor import FTModelParams
 from appauto.manager.client_manager import BaseDockerContainer
 from appauto.manager.config_manager.config_logging import LoggingConfig
 
@@ -47,7 +47,7 @@ class FTContainer(BaseDockerContainer):
         """
         cmd = (
             f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && "
-            f"{ModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
+            f"{FTModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
         )
         timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'
@@ -74,7 +74,7 @@ class FTContainer(BaseDockerContainer):
 
         cmd = (
             f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && "
-            f"{ModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
+            f"{FTModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
         )
         timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'
