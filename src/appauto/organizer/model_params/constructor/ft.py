@@ -9,6 +9,7 @@ from functools import cached_property
 from ....manager.file_manager.handle_yml import YMLHandler
 from ....manager.client_manager import BaseLinux
 from ....manager.config_manager.config_logging import LoggingConfig
+from ....manager.error_manager.errors import OperationNotSupported
 
 logger = LoggingConfig.get_logger()
 
@@ -84,6 +85,8 @@ class FTModelParams:
         """
         根据 tp 和 mode 生成最终的命令行参数字符串
         规则: common + dynamic + (perf_common + perf) 或者 (correct_common + correct)
+
+        如果模型 yml 中没有声明 perf, 则 perf 直接采用 correct 即可.
         """
         yml_data = self.handler.data.engine
         common = yml_data.common
@@ -91,28 +94,30 @@ class FTModelParams:
 
         mode_common, mode_spec = {}, {}
 
-        # TODO 补全更多 mode
+        # TODO 补全更多 mode 以及考虑当不存在指定 mode 时的处理
         if self.mode == "perf":
-            mode_common = yml_data.perf_common
-            mode_spec = yml_data.perf.get(self.tp, {})
+            mode_common = yml_data.perf_common or yml_data.correct_common or {}
+            mode_spec = yml_data.perf.get(self.tp, {}) or yml_data.correct.get(self.tp, {})
         elif self.mode == "correct":
-            mode_common = yml_data.correct_common
+            mode_common = yml_data.correct_common or {}
             mode_spec = yml_data.correct.get(self.tp, {})
 
         # 存在指定的 tp 说明支持该 tp, 否则说明是不支持的
         # 如果支持该 tp 则进行 cmd 合并拼接
-        assert mode_spec, f"{self.model_name} doesn't support tp {self.tp}, mode: {self.mode}"
+        if mode_spec:
 
-        final_params = {**common, **dynamic, **mode_common, **mode_spec}
+            final_params = {**common, **dynamic, **mode_common, **mode_spec}
 
-        # 生成命令行参数字符串
-        cmd_parts = []
-        for key, value in final_params.items():
-            if isinstance(value, bool):
-                if value:
-                    cmd_parts.append(f"--{key}")
-            else:
-                cmd_parts.append(f"--{key} {value}")
+            # 生成命令行参数字符串
+            cmd_parts = []
+            for key, value in final_params.items():
+                if isinstance(value, bool):
+                    if value:
+                        cmd_parts.append(f"--{key}")
+                else:
+                    cmd_parts.append(f"--{key} {value}")
 
-        cmd_str = " ".join(cmd_parts)
-        return self.prefix + cmd_str
+            cmd_str = " ".join(cmd_parts)
+            return self.prefix + cmd_str
+
+        raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp}, mode: {self.mode}")
