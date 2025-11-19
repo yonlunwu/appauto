@@ -17,18 +17,19 @@ from ....manager.component_manager.components.amaas.models.model_store import (
     ParserModelStore,
 )
 from ....manager.error_manager.errors import OperationNotSupported
+from .base_model_config import BaseModelConfig
 
 
 if TYPE_CHECKING:
-    from ....operator.amaas_node import AMaaSNodeApi
+    from ....operator.amaas_node import AMaaSNode
 
 logger = LoggingConfig.get_logger()
 
 T = TypeVar("T", LLMModelStore, EmbeddingModelStore, VLMModelStore, RerankModelStore, ParserModelStore, AudioModelStore)
 
 
-class AMaaSModelParams:
-    def __init__(self, amaas: "AMaaSNodeApi", model_store: T, tp: int, model_name: str = None):
+class AMaaSModelParams(BaseModelConfig):
+    def __init__(self, amaas: "AMaaSNode", model_store: T, tp: int, model_name: str = None):
         """
         model_name 默认是 model_store.name, 但存在某些情况 model_store.name 与 model_name 并不一致.
         """
@@ -38,44 +39,24 @@ class AMaaSModelParams:
         self.model_name = model_name or model_store.name
 
     @cached_property
-    def gpu_type(self) -> str:
-        # TODO 根据 self.node 获取实际 GPU 类型
-        return "nvidia"
-
-    @cached_property
-    def model_type(self) -> str:
-        # TODO 根据 self.model_name 获取实际模型类型
-        return "llm"
-
-    @cached_property
-    def model_family(self) -> Literal["deepseek", "qwen", "glm", "kimi"]:
-        if self.model_name.startswith("DeepSeek"):
-            return "deepseek"
-        elif self.model_name.startswith("GLM"):
-            return "glm"
-        elif self.model_name.startswith("Qwen"):
-            return "qwen"
-        elif self.model_name.startswith("Kimi"):
-            return "kimi"
-
-    @cached_property
     def handler(self) -> YMLHandler:
-        # 根据 model_name, tp, mode 返回对应的 yaml 路径
-        # TODO 1. 根据 self.node 获取卡类型
-        yml_path = f"src/appauto/organizer/model_params/{self.gpu_type}/{self.model_type}/{self.model_family}/{self.model_name}.yaml"
+        yml_path = (
+            f"src/appauto/organizer/model_params/{self.amaas.cli.gpu_type}/"
+            f"{self.model_type}/{self.model_family}/{self.model_name}.yaml"
+        )
         return YMLHandler(yml_path)
 
-    def __gen_params_from_rule(self, tp: int) -> ADDict:
+    def __gen_params_from_rule(self) -> ADDict:
         """
         获取 model_store 中对应模型的默认参数
         """
         rule: ADDict = self.model_store.get_run_rule()
 
-        worker = choice(self.amaas.workers)
+        worker = choice(self.amaas.api.workers)
 
         params = ADDict(
             worker_id=worker.object_id,
-            tp=tp,
+            tp=self.tp,
             access_limit=rule.data.access_limit,
         )
 
@@ -100,7 +81,7 @@ class AMaaSModelParams:
             # default 表示直接从 get_run_rule 中获取默认参数
             # 非 default 表示 yaml 中该 tp 的配置需要与 get_run_rule 的结果做组合
 
-            params = self.__gen_params_from_rule(self.tp)
+            params = self.__gen_params_from_rule()
             if spt_tp_params != "default":
                 params.update(spt_tp_params)
 

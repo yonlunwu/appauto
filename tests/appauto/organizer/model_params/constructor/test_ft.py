@@ -1,14 +1,17 @@
 from appauto.organizer.model_params.constructor import FTModelParams
+from appauto.operator.amaas_node import AMaaSNode
 from appauto.manager.config_manager.config_logging import LoggingConfig
 
-
 logger = LoggingConfig.get_logger()
+
+
+amaas = AMaaSNode("192.168.110.4").cli
 
 
 class TestModelParams:
     def test_nvidia_deepseek_r1_0528_correct_2tp_cmd(self):
         correct_model_params = FTModelParams(
-            node="node1", engine="ft", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="correct"
+            node=amaas, engine="ft", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="correct"
         )
         cmd = correct_model_params.as_cmd
         logger.info(cmd)
@@ -22,7 +25,7 @@ class TestModelParams:
         assert "--max-total-tokens 50000" in cmd
 
         perf_model_params = FTModelParams(
-            node="node1", engine="ft", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="perf"
+            node=amaas, engine="ft", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="perf"
         )
         cmd = perf_model_params.as_cmd
         logger.info(cmd)
@@ -38,7 +41,7 @@ class TestModelParams:
 
     def test_nvidia_deepseek_r1_0528_perf_1tp_cmd(self):
         model_params = FTModelParams(
-            node="node1", engine="sglang", model_name="DeepSeek-R1-0528-GPU-weight", tp=1, mode="perf"
+            node=amaas, engine="sglang", model_name="DeepSeek-R1-0528-GPU-weight", tp=1, mode="perf"
         )
         cmd = model_params.as_cmd
         logger.info(cmd)

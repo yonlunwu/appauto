@@ -2,6 +2,7 @@ import json
 import httpx
 import addict
 from appauto.manager.config_manager import LoggingConfig
+from appauto.manager.error_manager.errors import NeedRetryOnHttpRC401
 from typing import Optional, Dict, Any, Union, Generator
 from functools import cached_property
 
@@ -70,12 +71,22 @@ class HttpClient:
             )
             self._log_response(response)
             # TODO 除了 verify_rc 是否需要 verify_msg
+
+            # 如果状态码是 401, 需要进行 retry
+            if response.status_code == 401:
+                raise NeedRetryOnHttpRC401(f"http.response.status_code: {response.status_code}")
+
             response.raise_for_status()
 
             if check:
                 self.validate_return_msg(response.text)
 
             return self.encode_result(response.text) if encode_result else response
+
+        except NeedRetryOnHttpRC401 as e:
+            logger.error(f"HTTP {method.upper()} {url} failed: {str(e)}, need retry.")
+            raise e
+
         except httpx.HTTPError as e:
             logger.error(f"HTTP {method.upper()} {url} failed: {e}")
             raise

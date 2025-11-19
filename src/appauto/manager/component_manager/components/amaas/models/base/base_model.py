@@ -9,6 +9,7 @@ from ......utils_manager.custom_list import CustomList
 from ...base_component import BaseComponent
 from ..model_instance import ModelInstance
 from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.manager.error_manager.model_store import ModelStoreRunError
 
 logger = LoggingConfig.get_logger()
 
@@ -76,7 +77,7 @@ class BaseModel(BaseComponent):
 
             elif self.status == "error":
                 logger.info(f"model: {self.name}, running failed: error".center(100, "="))
-                raise RuntimeError(f"{self.name} running failed, status is error.")
+                raise ModelStoreRunError(f"{self.name} running failed, status is error.")
 
             elif self.status in ["loading", "pending", "analyzing"]:
                 logger.info(f"model: {self.name}, still loading".center(100, "="))
