@@ -1,6 +1,4 @@
-from functools import cached_property
 from appauto.manager.client_manager import BaseLinux
-from appauto.manager.utils_manager.format_output import remove_line_break
 
 from .components.docker_ctn_factory import DockerContainerFactory
 

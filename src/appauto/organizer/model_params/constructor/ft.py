@@ -4,21 +4,24 @@ Module for constructing model parameters.
     2. load_yaml 并根据 tp 和 mode 获取对应的启动命令
 """
 
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 from functools import cached_property
 from ....manager.file_manager.handle_yml import YMLHandler
-from ....manager.client_manager import BaseLinux
 from ....manager.config_manager.config_logging import LoggingConfig
 from ....manager.error_manager.errors import OperationNotSupported
+from .base_model_config import BaseModelConfig
+
+if TYPE_CHECKING:
+    from ....operator.amaas_node import AMaaSNodeCli
 
 logger = LoggingConfig.get_logger()
 
 
-class FTModelParams:
+class FTModelParams(BaseModelConfig):
     # TODO 支持更多 engine
     def __init__(
         self,
-        node: BaseLinux,
+        node: "AMaaSNodeCli",
         engine: Literal["sglang", "ft"],
         model_name: str,
         tp: int,
@@ -39,6 +42,14 @@ class FTModelParams:
         self.port = port
 
     @cached_property
+    def handler(self) -> YMLHandler:
+        yml_path = (
+            f"src/appauto/organizer/model_params/{self.node.gpu_type}/"
+            f"{self.model_type}/{self.model_family}/{self.model_name}.yaml"
+        )
+        return YMLHandler(yml_path)
+
+    @cached_property
     def prefix(self):
         # TODO  根据 engine 返回对应前缀
         if self.engine == "sglang":
@@ -51,34 +62,6 @@ class FTModelParams:
             return FT_PREFIX.format(self.port) + " "
 
         return ""
-
-    @cached_property
-    def gpu_type(self) -> str:
-        # TODO 根据 self.node 获取实际 GPU 类型
-        return "nvidia"
-
-    @cached_property
-    def model_type(self) -> str:
-        # TODO 根据 self.model_name 获取实际模型类型
-        return "llm"
-
-    @cached_property
-    def model_family(self) -> Literal["deepseek", "qwen", "glm", "kimi"]:
-        if self.model_name.startswith("DeepSeek"):
-            return "deepseek"
-        elif self.model_name.startswith("GLM"):
-            return "glm"
-        elif self.model_name.startswith("Qwen"):
-            return "qwen"
-        elif self.model_name.startswith("Kimi"):
-            return "kimi"
-
-    @cached_property
-    def handler(self) -> YMLHandler:
-        # 根据 model_name, tp, mode 返回对应的 yaml 路径
-        # TODO 1. 根据 self.node 获取卡类型
-        yml_path = f"src/appauto/organizer/model_params/{self.gpu_type}/{self.model_type}/{self.model_family}/{self.model_name}.yaml"
-        return YMLHandler(yml_path)
 
     @cached_property
     def as_cmd(self):

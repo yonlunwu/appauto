@@ -9,7 +9,7 @@ logger = LoggingConfig.get_logger()
 IP = "192.168.110.4"
 USER = "qujing"
 
-amaas = AMaaSNode(IP, USER, skip_cli=True).api
+amaas = AMaaSNode(IP, USER, skip_cli=True)
 
 
 class TestAmaaSModelParams:
@@ -17,9 +17,9 @@ class TestAmaaSModelParams:
         tp = 1
         tp = 2
         model_name = "DeepSeek-V3-0324-GPU-weight"
-        model_store = amaas.init_model_store.llm.filter(name=model_name)[0]
+        model_store = amaas.api.init_model_store.llm.filter(name=model_name)[0]
         params = AMaaSModelParams(amaas, model_store, tp).gen_params
 
         logger.info(params)
 
-        amaas.launch_model_with_default(tp, model_store)
+        amaas.api.launch_model_with_default(tp, model_store)
