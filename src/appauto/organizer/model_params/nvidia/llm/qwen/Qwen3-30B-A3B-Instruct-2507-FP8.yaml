@@ -23,7 +23,6 @@ engine:
       tensor-parallel-size: 8
       
 amaas:
-
+  1: 
+    max_total_tokens: 110000
   2: default
-  4: default
-  8: default
