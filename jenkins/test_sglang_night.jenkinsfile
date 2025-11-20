@@ -30,7 +30,7 @@ pipeline {
                             if ("${test_demo}" == "true") {
                                 sh "appauto run pytest --testpaths ${testpaths} --keyword test_single_random_peoblems --mmlu_questions_num=1 --sglang_ip=${sglang_ip} --sglang_port=${sglang_port} --notify-user ou_de15ea583c7731052a0ab3bd370fc113 --report-server=192.168.110.11:9080 --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
                             } else {
-                                sh "appauto run pytest --topic '${topic}' --testpaths ${testpaths} --case-level night --sglang_ip=${sglang_ip} --sglang_port=${sglang_port} --notify-group ${notify_group_id} --report-server=192.168.110.11:9080 --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
+                                sh "appauto run pytest --topic '${topic}' --lark-user '${user}' --testpaths ${testpaths} --case-level night --sglang_ip=${sglang_ip} --sglang_port=${sglang_port} --notify-group ${notify_group_id} --report-server=192.168.110.11:9080 --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
                             }
                         }
                     }

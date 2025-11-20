@@ -26,6 +26,7 @@ def pytest_addoption(parser):
     parser.addoption("--set_report_url_suffix", action="store", default=False, help="Set Allure report url suffix")
     parser.addoption("--interval", action="store", default=0, help="Delay in seconds between test cases")
     parser.addoption("--topic", action="store", default=None, help="The test topic")
+    parser.addoption("--lark_user", action="store", default=None, help="Lark user")
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -57,6 +58,7 @@ def gen_report_and_send_lark(
     user_open_id = config.getoption("--notify_user")
     testpaths = config.getoption("--testpaths")
     report_url = config.getoption("--report_url")
+    lark_user = config.getoption("--lark_user")
 
     lark = LarkClient()
 
@@ -79,13 +81,18 @@ def gen_report_and_send_lark(
 
     if group_chat_id and group_chat_id.lower() != "none":
         lark.send_msg(
-            lark.construct_msg_payload(group_chat_id, case_dict, env_summary=None, link=test_report, topic=topic),
+            lark.construct_msg_payload(
+                group_chat_id, case_dict, env_summary=None, link=test_report, topic=topic, user=lark_user
+            ),
             "group",
         )
 
     elif user_open_id and user_open_id.lower() != "none":
         lark.send_msg(
-            lark.construct_msg_payload(user_open_id, case_dict, env_summary=None, link=test_report, topic=topic), "dm"
+            lark.construct_msg_payload(
+                user_open_id, case_dict, env_summary=None, link=test_report, topic=topic, user=lark_user
+            ),
+            "dm",
         )
 
 
