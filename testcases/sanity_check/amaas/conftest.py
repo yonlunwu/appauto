@@ -30,6 +30,14 @@ def global_fixture_for_amaas_ci_sanity_check():
     amaas.api.wait_gpu_release(interval_s=20, timeout_s=180)
 
 
+@pytest.fixture(autouse=True, scope="session")
+def worker_gpu_count():
+    try:
+        return amaas.api.workers[0].gpu_sum
+    except Exception as e:
+        return 8
+
+
 class CommonModelBaseStep:
     @classmethod
     @allure.step("scene_and_stop")
