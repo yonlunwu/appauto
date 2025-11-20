@@ -8,8 +8,9 @@ pipeline {
     stages {
         stage('Download Source Code') {
             steps {
-                sh "sudo rm -rf appauto; git clone -b ${git_branch} ${git_url}"
+                sh "git clone -b main git@github.com:kvcache-ai/appauto.git"
                 dir('./appauto') {
+                    sh "git checkout ${git_branch}"
                     sh 'pip install --upgrade pip'
                     sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
                 }
@@ -25,11 +26,9 @@ pipeline {
                     echo "buildNumber: ${buildNumber}"
 
                     dir('./appauto') {
-                        sh 'pip install -e . --break-system-packages'
                         script {
-                            sh "appauto run pytest --notify-user oc_e005f4612602e5af93d6272c0e8a1355 --testpaths testcases/sanity_check/amaas/test_amaas.py --amaas_ip=${ip} --case-level amaas_ci_sanity_check --model_priority=${model_priority}  --report-server=192.168.110.11:9080 --ssh_user=${ssh_user} --ssh_port=${ssh_port} --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
+                            sh "appauto run pytest --topic '${topic}' --testpaths testcases/sanity_check/amaas/test_amaas.py --amaas_ip=${ip} --case-level amaas_ci_sanity_check --model_priority=${model_priority} --ssh_user=${ssh_user} --ssh_port=${ssh_port} --notify-group oc_e005f4612602e5af93d6272c0e8a1355 --report-server=192.168.110.11:9080 --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
                             }
-                        }
                     }
                 }
             }
