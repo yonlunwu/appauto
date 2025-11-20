@@ -197,7 +197,7 @@ class DeployAmaaS(BaseDeploy):
         """
 
         try:
-            assert self.have_tar(tar_name) == "yes"
+            assert self.have_tar(tar_name) == "yes", f"The {tar_name} doesn't exist."
 
             ctn_names = ctn_names or self.ctn_names
             ctn_names = ctn_names if isinstance(ctn_names, list) else [ctn_names]

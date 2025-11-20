@@ -1,3 +1,4 @@
+import sys
 import click
 from typing import Dict, List
 from datetime import datetime
@@ -185,6 +186,9 @@ def amaas(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
     )
     lark.send_msg(payload, "group")
 
+    if result == "failed":
+        sys.exit(1)
+
 
 @deploy.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
@@ -219,6 +223,9 @@ def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag, server_port):
         user=user,
     )
     lark.send_msg(payload, "group")
+
+    if result == "failed":
+        sys.exit(1)
 
 
 @evalscope.command(

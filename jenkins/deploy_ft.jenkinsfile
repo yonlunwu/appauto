@@ -8,8 +8,8 @@ pipeline {
     stages {
         stage('Download Source Code') {
             steps {
-                sh "sudo rm -rf appauto; git clone -b main git@github.com:kvcache-ai/appauto.git"
                 dir('./appauto') {
+                    sh "git checkout ${git_branch} & git pull"
                     sh 'pip install --upgrade pip'
                     sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
                 }

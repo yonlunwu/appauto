@@ -5,19 +5,46 @@ pipeline {
         timeout(time: "${timeoutHours}", unit: 'HOURS')
     }
 
+    // 定义全局变量，用于记录 Deploy 阶段的执行状态
+    environment {
+        DEPLOY_SUCCESS = 'false'  // 初始化为失败状态
+    }
+
     stages {
         stage('Download Source Code') {
             steps {
-                sh "git clone -b main git@github.com:kvcache-ai/appauto.git"
                 dir('./appauto') {
-                    sh "git checkout ${git_branch}"
+                    sh "git checkout ${git_branch} && git pull"
                     sh 'pip install --upgrade pip'
                     sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
                 }
             }
         }
 
+        stage('Deploy AMaaS') {
+            steps {
+                dir('./appauto') {
+                    // 执行部署命令，部署成功后将 DEPLOY_SUCCESS 设为 true
+                    sh "appauto env deploy amaas --user '${user}' --ip ${ip} --ssh-user ${ssh_user} --ssh-port ${ssh_port} --tag ${amaas_tag} --tar-name ${tar_name}"
+                    script {
+                        // 只有部署命令执行成功（退出码 0），才会走到这里，更新状态
+                        env.DEPLOY_SUCCESS = 'true'
+                        echo "✅ Deploy AMaaS 阶段执行成功，标记 DEPLOY_SUCCESS = ${env.DEPLOY_SUCCESS}"
+                    }
+                }
+            }
+            post {
+                failure {
+                    echo "❌ Deploy AMaaS 阶段执行失败，将跳过 Run Test 阶段"
+                }
+            }
+        }
+
         stage("Run Test") {
+            // 添加 when 条件，只有 DEPLOY_SUCCESS 为 true 时才执行该阶段
+            when {
+                expression { env.DEPLOY_SUCCESS == 'true' }
+            }
             steps {
                 script {
                     def buildNumber = env.BUILD_NUMBER
@@ -26,9 +53,7 @@ pipeline {
                     echo "buildNumber: ${buildNumber}"
 
                     dir('./appauto') {
-                        script {
-                            sh "appauto run pytest --lark-user '${user}' --topic '${topic}' --testpaths testcases/sanity_check/amaas/test_amaas.py --amaas_ip=${ip} --case-level amaas_ci_sanity_check --model_priority=${model_priority} --ssh_user=${ssh_user} --ssh_port=${ssh_port} --notify-group oc_e005f4612602e5af93d6272c0e8a1355 --report-server=192.168.110.11:9080 --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
-                            }
+                        sh "appauto run pytest --lark-user '${user}' --topic '${topic}' --testpaths testcases/sanity_check/amaas/test_amaas.py --amaas_ip=${ip} --case-level amaas_ci_sanity_check --model_priority=${model_priority} --ssh_user=${ssh_user} --ssh_port=${ssh_port} --notify-group oc_e005f4612602e5af93d6272c0e8a1355 --report-server=192.168.110.11:9080 --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
                     }
                 }
             }

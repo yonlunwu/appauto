@@ -121,7 +121,7 @@ class DeployFT(BaseDeploy):
 
         try:
             # 检查是否有 image
-            assert self.have_tar(tar_name) == "yes"
+            assert self.have_tar(tar_name) == "yes", f"The {tar_name} doesn't exist."
 
             if cur_ctn_id := self.docker_tool.get_ctn_id_by_name(self.ctn_names):
                 # 停止旧容器
