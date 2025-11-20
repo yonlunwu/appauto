@@ -1,0 +1,72 @@
+pipeline {
+    agent { label 'slave-1' }
+
+    options {
+        timeout(time: "${timeoutHours}", unit: 'HOURS')
+    }
+
+    stages {
+        stage('Download Source Code') {
+            steps {
+                sh "sudo rm -rf appauto; git clone -b ${git_branch} ${git_url}"
+                dir('./appauto') {
+                    sh 'pip install --upgrade pip'
+                    sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
+                }
+            }
+        }
+
+        stage("Run Test") {
+            steps {
+                script {
+                    def buildNumber = env.BUILD_NUMBER
+                    def job_name_list = env.JOB_NAME.split('/')
+                    echo "job_name_list: ${job_name_list}"
+                    echo "buildNumber: ${buildNumber}"
+
+                    dir('./appauto') {
+                        sh 'pip install -e . --break-system-packages'
+                        script {
+                            sh "appauto run pytest --notify-user oc_e005f4612602e5af93d6272c0e8a1355 --testpaths testcases/sanity_check/amaas/test_amaas.py --amaas_ip=${ip} --case-level amaas_ci_sanity_check --model_priority=${model_priority}  --report-server=192.168.110.11:9080 --ssh_user=${ssh_user} --ssh_port=${ssh_port} --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            dir('./appauto') {
+                script {
+                    echo "🔍 Parsing allure results directory from pytest.ini"
+                    def allureResultsDir = sh(
+                        script: "grep -Po '(?<=alluredir=)[^\\s]+' pytest.ini || echo 'reports/allure-results'",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "✅ Detected Allure Results Dir: ${allureResultsDir}"
+
+                    // Optional: ensure dir exists
+                    def exists = sh(
+                        script: "test -d ${allureResultsDir} && echo true || echo false",
+                        returnStdout: true
+                    ).trim()
+
+                    if (exists == "true") {
+                        echo "📁 Allure results directory exists, generating report..."
+                        allure([
+                            includeProperties: false,
+                            jdk: '',
+                            reportBuildPolicy: 'ALWAYS',
+                            results: [[path: allureResultsDir]]
+                        ])
+                    } else {
+                        echo "⚠️ Warning: Allure results directory not found: ${allureResultsDir}"
+                    }
+                }
+            }
+        }
+    }
+}

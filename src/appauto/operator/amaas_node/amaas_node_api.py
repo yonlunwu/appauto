@@ -1,8 +1,9 @@
 from time import time, sleep
-from typing import Dict, TypeVar, Literal, TYPE_CHECKING
+from typing import Dict, TypeVar, Literal, TYPE_CHECKING, List
 
 from appauto.manager.component_manager.components.amaas import AMaaS
 from appauto.manager.config_manager.config_logging import LoggingConfig
+from appauto.organizer.model_params.constructor import AMaaSModelParams
 
 from appauto.manager.component_manager.components.amaas.models.model_store import (
     LLMModelStore,
@@ -11,6 +12,7 @@ from appauto.manager.component_manager.components.amaas.models.model_store impor
     RerankModelStore,
     AudioModelStore,
     ParserModelStore,
+    BaseModelStore,
 )
 
 from appauto.manager.error_manager import ModelStoreCheckError, ModelStoreRunError
@@ -62,9 +64,7 @@ class AMaaSNodeApi(AMaaS):
         """
         从 yml 中读取默认参数, 发起检测 -> 拉起 -> 试验场景
         """
-        from appauto.organizer.model_params.constructor import AMaaSModelParams
-
-        params = AMaaSModelParams(self, model_store, tp, model_name).gen_params
+        params = AMaaSModelParams(self.node, model_store, tp, model_name).gen_params
 
         assert params, f"invalid params: {params}"
 
@@ -84,3 +84,17 @@ class AMaaSNodeApi(AMaaS):
         raise TimeoutError(
             f"timeout while waiting for gpu released. total: {worker.gpu_sum}, empty: {worker.gpu_empty_count}"
         )
+
+    def get_models_store(
+        self,
+        model_store_type: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"],
+        priority: List[Literal["P0", "P1", "P2", "P3"]] = None,
+    ) -> List[BaseModelStore]:
+
+        model_stores = getattr(self.init_model_store, model_store_type)
+
+        if priority:
+            priority = priority if isinstance(priority, list) else [priority]
+            return [m_s for m_s in model_stores if AMaaSModelParams(self.node, m_s, None).model_priority in priority]
+
+        return model_stores

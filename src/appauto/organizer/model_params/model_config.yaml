@@ -1,0 +1,166 @@
+# deepseek
+DeepSeek-R1-0528-GPU-weight: 
+  type: llm
+  priority: P0
+DeepSeek-R1-Distill-Llama-8B:
+  type: llm
+  priority: P2
+DeepSeek-R1-Distill-Qwen-1.5B:
+  type: llm
+  priority: P2
+DeepSeek-R1-Distill-Qwen-14B:
+  type: llm
+  priority: P2
+DeepSeek-R1-Distill-Qwen-32B:
+  type: llm
+  priority: P2
+DeepSeek-R1-Distill-Qwen-7B:
+  type: llm
+  priority: P2
+DeepSeek-V3-0324-GPU-weight:
+  type: llm
+  priority: P0
+DeepSeek-R1-q4km-w8a8:
+  type: llm
+  priority: P2
+DeepSeek-R1-bf16_W8A8:
+  type: llm
+  priority: P2
+DeepSeek-R1-AWQ:
+  type: llm
+  priority: P2
+DeepSeek-R1-Distill-Qwen-32b-GPTQ-Int8:
+  type: llm
+  priority: P2
+DeepSeek-R1-0528-AWQ-GPU-weight:
+  type: llm
+  priority: P0
+
+
+# qwen-llm
+Qwen2.5-7B-Instruct:
+  type: llm
+  priority: P2
+Qwen2.5-Coder-32B-Instruct:
+  type: llm
+  priority: P0
+Qwen2.5-Coder-32B-Instruct-GPTQ-Int8:
+  type: llm
+  priority: P2
+Qwen2.5-32B-Instruct-GPTQ-Int4:
+  type: llm
+  priority: P2
+Qwen2.5-32B-Instruct-GPTQ-Int8:
+  type: llm
+  priority: P2
+Qwen2.5-72B-Instruct:
+  type: llm
+  priority: P1
+Qwen2.5-72B-Instruct-GPTQ-Int8:
+  type: llm
+  priority: P2
+Qwen2.5-72B-Instruct-GPTQ-Int4:
+  type: llm
+  priority: P2
+Qwen3-30B-A3B:
+  type: llm
+  priority: P0
+Qwen3-30B-A3B-AWQ:
+  type: llm
+  priority: P1
+Qwen3-30B-A3B-Instruct-2507:
+  type: llm
+  priority: P1
+Qwen3-30B-A3B-Instruct-2507-FP8:
+  type: llm
+  priority: P1
+Qwen3-32B:
+  type: llm
+  priority: P0
+Qwen3-32B-FP8:
+  type: llm
+  priority: P1
+Qwen3-32B-GPTQ-Int8:
+  type: llm
+  priority: P1
+Qwen3-Next-80B-A3B-Instruct-GPU-weight:
+  type: llm
+  priority: P0
+Qwen3-Next-80B-A3B-Thinking-GPU-weight:
+  type: llm
+  priority: P0
+Qwen3-235B-A22B-Instruct-2507-GPU-weight:
+  type: llm
+  priority: P0
+Qwen3-235B-A22B-Thinking-2507-GPU-weight:
+  type: llm
+  priority: P0
+Qwen3-Coder-480B-A35B-Instruct-GPU-weight:
+  type: llm
+  priority: P2
+
+
+# qwen-vlm
+Qwen2.5-VL-7B-Instruct-AWQ:
+  type: vlm
+  priority: P2
+Qwen2.5-VL-32B-Instruct:
+  type: vlm
+  priority: P2
+Qwen2.5-VL-32B-Instruct-AWQ:
+  type: vlm
+  priority: P2
+Qwen2.5-VL-72B-Instruct:
+  type: vlm
+  priority: P2
+
+
+# kimi
+Kimi-K2-Instruct-GPU-weight:
+  type: llm
+  priority: P2
+
+
+# glm-llm
+GLM-4.5-GPU-weight:
+  type: llm
+  priority: P2
+GLM-4.5-Air-GPU-weight:
+  type: llm
+  priority: P2
+
+
+# glm-vlm
+GLM-4.5V-GPU-weight:
+  type: vlm
+  priority: P2
+
+
+# qwq
+qwq-32b-gptq-int8:
+  type: llm
+  priority: P2
+
+
+# embedding
+bge-m3-FP16:
+  type: embedding
+  priority: P0
+
+
+# rerank
+bge-reranker-v2-m3:
+  type: rerank
+  priority: P0
+
+
+# parser
+PDF-parser:
+  type: parser
+  priority: P0
+
+
+# audio
+SenseVoiceSmall:
+  type: audio
+  priority: P0

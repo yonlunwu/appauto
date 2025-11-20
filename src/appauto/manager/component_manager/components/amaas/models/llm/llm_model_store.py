@@ -20,8 +20,6 @@ class LLMModelStore(BaseModelStore):
         hicache: int = 0,
         timeout=None,
     ):
-        # TODO max_token 最好能获取到 self, 因为每个 model 都不一样
-        # TODO 新版本中 replica 只能是 1
         data = {
             "id": self.object_id,
             "replicas": 1,

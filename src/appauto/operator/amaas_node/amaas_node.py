@@ -21,7 +21,7 @@ class AMaaSNode:
     ):
 
         self.api = (
-            AMaaSNodeApi(mgt_ip, api_port, api_user, api_passwd, object_id, data, ssl_enabled, parent_tokens)
+            AMaaSNodeApi(mgt_ip, api_port, api_user, api_passwd, object_id, data, ssl_enabled, parent_tokens, node=self)
             if not skip_api
             else None
         )

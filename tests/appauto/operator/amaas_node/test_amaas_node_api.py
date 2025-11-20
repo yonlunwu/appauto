@@ -1,5 +1,4 @@
 from appauto.operator import AMaaSNode
-from appauto.organizer.model_params.constructor import AMaaSModelParams
 from appauto.manager.config_manager.config_logging import LoggingConfig
 
 

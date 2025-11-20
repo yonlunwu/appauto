@@ -1,9 +1,12 @@
 import addict
+from tenacity import stop_after_attempt, retry, retry_if_result, after_log, RetryCallState
+import functools
+from httpx import Response
 from typing import TYPE_CHECKING
 from functools import cached_property
-from ....connection_manager.http import HttpClient
-
-from ....config_manager.config_logging import LoggingConfig
+from appauto.manager.connection_manager.http import HttpClient
+from appauto.manager.error_manager.errors import NeedRetryOnHttpRC401
+from appauto.manager.config_manager.config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
 
@@ -78,13 +81,12 @@ class BaseComponent(object):
 
         return BaseComponent.ACCESS_TOKEN
 
-    def request_callback(self, response):
-        retry = True
+    def request_callback(self, response: Response):
+        retry = False
         try:
             if response.status_code == 401:
                 self.refresh_token()
-            elif response.status_code == 200 and response.json().get("ec", "EOK") == "EOK":
-                retry = False
+                retry = True
         finally:
             return addict.Dict(retry=retry, token=self.token)
 
@@ -124,9 +126,40 @@ class BaseComponent(object):
 
         return self.parent_tokens
 
+    def _retry_condition(self, exc: Exception) -> bool:
+        """重试条件：仅当异常是 NeedRetryOnHttpRC401 时重试"""
+        return isinstance(exc, NeedRetryOnHttpRC401)
+
+    def _retry_before_sleep(self, retry_state: RetryCallState):
+        """重试前回调：刷新 Token + 打印日志"""
+        logger.info(f"request {retry_state.fn.__name__} failed {retry_state.attempt_number}")
+        self.refresh_token()
+
+    def http_retry_on_401(self, func):
+        @functools.wraps(func)
+        @retry(
+            stop=stop_after_attempt(2),
+            retry=retry_if_result(self._retry_condition),
+            before_sleep=self._retry_before_sleep,
+            after=after_log(logger, logger.ERROR),
+            reraise=True,
+        )
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                # 满足 retry 条件, 交给 tenacity 去重试
+                if self._retry_condition(e):
+                    raise
+                else:
+                    # 不满足条件, 直接 raise
+                    logger.error(f"call {func.__name__} failed: {str(e)}")
+                    raise e
+
+        return wrapper
+
     def get(self, alias, params=None, url_map=None, timeout=None, headers=None, encode_result=True, **kwargs):
         url_map = url_map or self.GET_URL_MAP
-        # TODO 完善 self.object_tokens
         return self.http.get(
             self.full_url(url_map, alias),
             params,
@@ -149,9 +182,6 @@ class BaseComponent(object):
         stream=False,
         **kwargs,
     ):
-        """
-        encode_result 只在 stream=False 时才生效;
-        """
         url_map = url_map or self.POST_URL_MAP
         url = self.full_url(url_map, alias)
         # 合并 headers：优先使用外部传入的 headers，否则使用默认 headers
@@ -201,7 +231,7 @@ class BaseComponent(object):
         **kwargs,
     ):
         url_map = url_map or self.DELETE_URL_MAP
-        # TODO 完善 self.object_tokens
+
         return self.http.delete(
             self.full_url(url_map, alias),
             params,

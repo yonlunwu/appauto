@@ -393,3 +393,8 @@ class BaseLinux(object):
         except Exception as e:
             logger.error(f"error occurred when detect if file exist: {str(e)}")
             return "unknown"
+
+    @cached_property
+    def gpu_type(self) -> str:
+        # TODO
+        return "nvidia"
