@@ -13,4 +13,6 @@ class Requires:
 
     # TODO 要求 GPU 数量
     @staticmethod
-    def need_gpus(amaas: "AMaaS"): ...
+    def need_gpu_count(amaas: "AMaaS", count: int):
+        actual = len(amaas.workers[0].gpu_sum)
+        return pytest.mark.skipif(actual < count, reason=f"The count of gpu({actual}) is less than needed({count})")
