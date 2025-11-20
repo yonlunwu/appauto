@@ -61,6 +61,7 @@ def evalscope():
 @click.option("--report-server", default=None, show_default=True, help="Report Server")
 @click.option("--report-url", default=None, show_default=True, help="Report URL")
 @click.option("--topic", type=str, default=None, show_default=True, help="The test topic")
+@click.option("--lark-user", type=str, default=None, show_default=True, help="The lark user")
 @click.pass_context
 def run(
     ctx,
@@ -80,6 +81,7 @@ def run(
     report_server,
     report_url,
     topic,
+    lark_user,
 ):
     """运行测试(pytest / ui)"""
     if collect_only:
@@ -133,6 +135,7 @@ def run(
             report_server=report_server,
             report_url=report_url,
             topic=topic,
+            lark_user=lark_user,
         )
         return_code = runner.run()
         if return_code != 0:
@@ -153,6 +156,7 @@ def deploy():
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
 @click.option("--ip", required=True, help="远程主机 IP")
+@click.option("--user", default=None, show_default=True, help="消息卡片中的用户信息, 便于跟踪结果.")
 @click.option("--ssh-user", default="qujing", required=True, show_default=True, help="SSH 用户名")
 @click.option("--ssh-password", default="qujing@$#21", show_default=True, help="SSH 密码")
 @click.option("--ssh-port", default=22, show_default=True, help="SSH 端口")
@@ -160,7 +164,7 @@ def deploy():
 @click.option(
     "--tar-name", required=True, show_default=True, help="tar 包名, 默认在 /mnt/data/deploy/ 下, 需要自行上传."
 )
-def amaas(ip, ssh_user, ssh_password, ssh_port, tar_name, tag):
+def amaas(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
     """在远程服务器部署 amaas"""
     from appauto.env import DeployAmaaS
     from appauto.manager.notify_manager import LarkClient
@@ -172,7 +176,12 @@ def amaas(ip, ssh_user, ssh_password, ssh_port, tar_name, tag):
 
     lark = LarkClient()
     payload = lark.construct_msg_payload(
-        "oc_23c12f5d099f09675a7d6e18d873230f", result_summary, {"ip": ip}, topic="appauto 部署 amaas", report_card=False
+        "oc_23c12f5d099f09675a7d6e18d873230f",
+        result_summary,
+        {"ip": ip},
+        topic="appauto 部署 amaas",
+        report_card=False,
+        user=user,
     )
     lark.send_msg(payload, "group")
 
@@ -181,6 +190,7 @@ def amaas(ip, ssh_user, ssh_password, ssh_port, tar_name, tag):
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
 @click.option("--ip", required=True, help="远程主机 IP")
+@click.option("--user", default=None, show_default=True, help="消息卡片中的用户信息, 便于跟踪结果.")
 @click.option("--ssh-user", default="qujing", required=True, show_default=True, help="SSH 用户名")
 @click.option("--ssh-password", default="qujing@$#21", show_default=True, help="SSH 密码")
 @click.option("--ssh-port", default=22, show_default=True, help="SSH 端口")
@@ -189,7 +199,7 @@ def amaas(ip, ssh_user, ssh_password, ssh_port, tar_name, tag):
     "--tar-name", required=True, show_default=True, help="tar 包名, 默认在 /mnt/data/deploy/ 下, 需要自行上传."
 )
 @click.option("--server-port", default=30000, show_default=True, help="映射端口")
-def ft(ip, ssh_user, ssh_password, ssh_port, tar_name, tag, server_port):
+def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag, server_port):
     """在远程服务器部署 zhiwen-ft"""
     from appauto.env import DeployFT
     from appauto.manager.notify_manager import LarkClient
@@ -206,6 +216,7 @@ def ft(ip, ssh_user, ssh_password, ssh_port, tar_name, tag, server_port):
         {"ip": ip},
         topic="appauto 部署 zhiwen-ft",
         report_card=False,
+        user=user,
     )
     lark.send_msg(payload, "group")
 

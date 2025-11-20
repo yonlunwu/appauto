@@ -33,10 +33,17 @@ class LarkClient(HttpClient):
         except Exception as e:
             logger.error(f"send dm msg failed: {e}")
 
-    def msg_title_card(self, template: Literal["green", "red"]):
+    def msg_title_card(self, template: Literal["green", "red"], user: str = None):
         return {
             "template": template,
-            "title": {"content": "Test Passed" if template == "green" else "Test Failed", "tag": "plain_text"},
+            "title": {
+                "content": (
+                    f"Test Passed {': ' + user if user else ''}"
+                    if template == "green"
+                    else f"Test Failed {': ' + user if user else ''}"
+                ),
+                "tag": "plain_text",
+            },
         }
 
     def msg_topic_card(self, topic: str):
@@ -96,6 +103,7 @@ class LarkClient(HttpClient):
         link: str = None,
         topic: str = None,
         report_card=True,
+        user: str = None,
     ):
         """
         发 dm 用 open_id; 发 group 用 chat_id(并且机器人要在 group 中)
@@ -116,7 +124,7 @@ class LarkClient(HttpClient):
                 {
                     "config": {"wide_screen_mode": True},
                     # 标题栏
-                    "header": self.msg_title_card(template=self.set_template(result_summary)),
+                    "header": self.msg_title_card(self.set_template(result_summary), user),
                     # 内部元素
                     "elements": elements,
                 }
