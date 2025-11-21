@@ -52,6 +52,8 @@ def gen_report_and_send_lark(
     set_url_suffix: bool = False,
     topic: str = None,
 ):
+    from appauto.manager.data_manager.gen_global_data import TEST_DATA_DICT
+
     timestamp = config.getoption("--timestamp")
     no_report = config.getoption("--no_report")
     group_chat_id = config.getoption("--notify_group")
@@ -82,7 +84,12 @@ def gen_report_and_send_lark(
     if group_chat_id and group_chat_id.lower() != "none":
         lark.send_msg(
             lark.construct_msg_payload(
-                group_chat_id, case_dict, env_summary=None, link=test_report, topic=topic, user=lark_user
+                group_chat_id,
+                case_dict,
+                env_summary={"ip": TEST_DATA_DICT.get("amaas_ip", "Please click on the report to view")},
+                link=test_report,
+                topic=topic,
+                user=lark_user,
             ),
             "group",
         )
@@ -90,7 +97,12 @@ def gen_report_and_send_lark(
     elif user_open_id and user_open_id.lower() != "none":
         lark.send_msg(
             lark.construct_msg_payload(
-                user_open_id, case_dict, env_summary=None, link=test_report, topic=topic, user=lark_user
+                user_open_id,
+                case_dict,
+                env_summary={"ip": TEST_DATA_DICT.get("amaas_ip", "Please click on the report to view")},
+                link=test_report,
+                topic=topic,
+                user=lark_user,
             ),
             "dm",
         )

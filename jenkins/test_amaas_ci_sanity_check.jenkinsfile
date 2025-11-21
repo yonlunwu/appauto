@@ -5,56 +5,67 @@ pipeline {
         timeout(time: "${timeoutHours}", unit: 'HOURS')
     }
 
-    // 定义全局变量，用于记录 Deploy 阶段的执行状态
-    environment {
-        DEPLOY_SUCCESS = 'false'  // 初始化为失败状态
-    }
-
     stages {
+
         stage('Download Source Code') {
             steps {
-                dir('./appauto') {
-                    sh "git checkout ${git_branch} && git pull"
-                    sh 'pip install --upgrade pip'
-                    sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
-                }
+                sh """
+                    cd ./appauto
+                    git checkout ${git_branch} && git pull
+                    pip install --upgrade pip
+                    pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple
+                """
             }
         }
 
         stage('Deploy AMaaS') {
             steps {
-                dir('./appauto') {
-                    // 执行部署命令，部署成功后将 DEPLOY_SUCCESS 设为 true
-                    sh "appauto env deploy amaas --user '${user}' --ip ${ip} --ssh-user ${ssh_user} --ssh-port ${ssh_port} --tag ${amaas_tag} --tar-name ${tar_name}"
-                    script {
-                        // 只有部署命令执行成功（退出码 0），才会走到这里，更新状态
-                        env.DEPLOY_SUCCESS = 'true'
-                        echo "✅ Deploy AMaaS 阶段执行成功，标记 DEPLOY_SUCCESS = ${env.DEPLOY_SUCCESS}"
-                    }
-                }
-            }
-            post {
-                failure {
-                    echo "❌ Deploy AMaaS 阶段执行失败，将跳过 Run Test 阶段"
+                script {
+                    echo "🚀 Starting Deploy AMaaS..."
+
+                    deploy_status = sh(
+                        script: """
+                            cd ./appauto
+                            appauto env deploy amaas \
+                                --user '${user}' \
+                                --ip ${ip} \
+                                --ssh-user ${ssh_user} \
+                                --ssh-port ${ssh_port} \
+                                --tag ${amaas_tag} \
+                                --tar-name ${tar_name}
+                        """,
+                        returnStatus: true
+                    )
+
+                    echo "📌 Deploy exit code = ${deploy_status}"
                 }
             }
         }
 
-        stage("Run Test") {
-            // 添加 when 条件，只有 DEPLOY_SUCCESS 为 true 时才执行该阶段
+        stage('Run Test') {
             when {
-                expression { env.DEPLOY_SUCCESS == 'true' }
+                expression { deploy_status == 0 }
             }
             steps {
                 script {
-                    def buildNumber = env.BUILD_NUMBER
-                    def job_name_list = env.JOB_NAME.split('/')
-                    echo "job_name_list: ${job_name_list}"
-                    echo "buildNumber: ${buildNumber}"
+                    echo "🎯 Deploy success → Running test stage"
 
-                    dir('./appauto') {
-                        sh "appauto run pytest --lark-user '${user}' --topic '${topic}' --testpaths testcases/sanity_check/amaas/test_amaas.py --amaas_ip=${ip} --case-level amaas_ci_sanity_check --model_priority=${model_priority} --ssh_user=${ssh_user} --ssh_port=${ssh_port} --notify-group oc_e005f4612602e5af93d6272c0e8a1355 --report-server=192.168.110.11:9080 --report-url=job/${env.JOB_NAME}/${buildNumber}/allure/"
-                    }
+                    sh """
+                        cd ./appauto
+                        sleep 180
+                        appauto run pytest \
+                            --lark-user '${user}' \
+                            --topic '${topic}' \
+                            --testpaths testcases/sanity_check/amaas/test_amaas.py \
+                            --amaas_ip=${ip} \
+                            --case-level amaas_ci_sanity_check \
+                            --model_priority=${model_priority} \
+                            --ssh_user=${ssh_user} \
+                            --ssh_port=${ssh_port} \
+                            --notify-group oc_e005f4612602e5af93d6272c0e8a1355 \
+                            --report-server=192.168.110.11:9080 \
+                            --report-url=job/${env.JOB_NAME}/${env.BUILD_NUMBER}/allure/
+                    """
                 }
             }
         }
@@ -62,33 +73,36 @@ pipeline {
 
     post {
         always {
-            dir('./appauto') {
-                script {
-                    echo "🔍 Parsing allure results directory from pytest.ini"
-                    def allureResultsDir = sh(
-                        script: "grep -Po '(?<=alluredir=)[^\\s]+' pytest.ini || echo 'reports/allure-results'",
-                        returnStdout: true
-                    ).trim()
+            script {
+                echo "📦 Generating Allure Report..."
 
-                    echo "✅ Detected Allure Results Dir: ${allureResultsDir}"
+                def allureResultsDir = sh(
+                    script: """
+                        cd ./appauto
+                        grep -Po '(?<=alluredir=)[^\\s]+' pytest.ini || echo 'reports/allure-results'
+                    """,
+                    returnStdout: true
+                ).trim()
 
-                    // Optional: ensure dir exists
-                    def exists = sh(
-                        script: "test -d ${allureResultsDir} && echo true || echo false",
-                        returnStdout: true
-                    ).trim()
+                echo "📁 Allure Results Dir Detected: ${allureResultsDir}"
 
-                    if (exists == "true") {
-                        echo "📁 Allure results directory exists, generating report..."
-                        allure([
-                            includeProperties: false,
-                            jdk: '',
-                            reportBuildPolicy: 'ALWAYS',
-                            results: [[path: allureResultsDir]]
-                        ])
-                    } else {
-                        echo "⚠️ Warning: Allure results directory not found: ${allureResultsDir}"
-                    }
+                // check dir exists
+                def exists = sh(
+                    script: "test -d ./appauto/${allureResultsDir} && echo true || echo false",
+                    returnStdout: true
+                ).trim()
+
+                if (exists == "true") {
+                    echo "🧪 Allure directory exists → generating..."
+
+                    allure([
+                        includeProperties: false,
+                        jdk: '',
+                        reportBuildPolicy: 'ALWAYS',
+                        results: [[path: "appauto/${allureResultsDir}"]]
+                    ])
+                } else {
+                    echo "⚠️ No allure results found at: appauto/${allureResultsDir}"
                 }
             }
         }
