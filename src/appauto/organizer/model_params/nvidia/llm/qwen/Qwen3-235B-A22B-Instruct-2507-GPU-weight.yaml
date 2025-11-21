@@ -36,8 +36,8 @@ engine:
   ##############################################
 
   perf_common:
-    max-running-requests: 50
-    max-total-tokens: 200000
+    max-running-requests: 240
+    max-total-tokens: 240000
     kt-cpuinfer: 90
     kt-max-deferred-experts-per-token: 2
     enable-mixed-chunk: true
