@@ -1,0 +1,4 @@
+# 该模型无需 engine 侧负责
+
+amaas:
+  1: default

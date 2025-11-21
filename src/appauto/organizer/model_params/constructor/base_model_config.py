@@ -1,7 +1,7 @@
-from functools import cached_property
 from addict import Dict as ADDict
-from typing import Literal, TypeVar
 from functools import cached_property
+from functools import cached_property
+from typing import Literal, TypeVar, Optional
 from ....manager.file_manager.handle_yml import YMLHandler
 from ....manager.component_manager.components.amaas.models.model_store import (
     LLMModelStore,
@@ -25,14 +25,14 @@ class BaseModelConfig:
 
     @cached_property
     def model_type(self) -> Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]:
-        return self.model_config.get(self.model_name).type or "llm"
+        return self.model_config.get(self.model_name, ADDict()).type or "llm"
 
     @cached_property
     def model_priority(self) -> Literal["P0", "P1", "P2", "P3"]:
-        return self.model_config.get(self.model_name).priority or "P0"
+        return self.model_config.get(self.model_name, ADDict()).priority or "P0"
 
     @cached_property
-    def model_family(self) -> Literal["deepseek", "qwen", "glm", "kimi"]:
+    def model_family(self) -> Optional[Literal["deepseek", "qwen", "glm", "kimi"]]:
         if self.model_name.startswith("DeepSeek"):
             return "deepseek"
         elif self.model_name.startswith("GLM"):

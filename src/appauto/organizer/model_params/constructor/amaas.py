@@ -40,10 +40,9 @@ class AMaaSModelParams(BaseModelConfig):
 
     @cached_property
     def handler(self) -> YMLHandler:
-        yml_path = (
-            f"src/appauto/organizer/model_params/{self.amaas.cli.gpu_type}/"
-            f"{self.model_type}/{self.model_family}/{self.model_name}.yaml"
-        )
+        yml_path = f"src/appauto/organizer/model_params/{self.amaas.cli.gpu_type}/{self.model_type}/"
+        yml_path += f"{self.model_family}/{self.model_name}.yaml" if self.model_family else f"{self.model_name}.yaml"
+
         return YMLHandler(yml_path)
 
     def __gen_params_from_rule(self) -> ADDict:
@@ -69,24 +68,27 @@ class AMaaSModelParams(BaseModelConfig):
     @cached_property
     def gen_params(self) -> ADDict:
         # Dict
-        yml_data = self.handler.data.amaas
+        # 如果不存在 amaas 需要 raise 出一个不支持的错误.
+        if yml_data := self.handler.data.amaas:
 
-        # 存在指定的 tp 说明支持该 tp, 否则说明是不支持的
-        # 如果支持该 tp 则按需生成 params
+            # 存在指定的 tp 说明支持该 tp, 否则说明是不支持的
+            # 如果支持该 tp 则按需生成 params
 
-        params = ADDict()
+            params = ADDict()
 
-        if spt_tp_params := yml_data.get(self.tp, False):
-            # spt_tp_params 可能会有 2 种情况, default 或非 default(此时通常是 dict)
-            # default 表示直接从 get_run_rule 中获取默认参数
-            # 非 default 表示 yaml 中该 tp 的配置需要与 get_run_rule 的结果做组合
+            if spt_tp_params := yml_data.get(self.tp, False):
+                # spt_tp_params 可能会有 2 种情况, default 或非 default(此时通常是 dict)
+                # default 表示直接从 get_run_rule 中获取默认参数
+                # 非 default 表示 yaml 中该 tp 的配置需要与 get_run_rule 的结果做组合
 
-            params = self.__gen_params_from_rule()
-            if spt_tp_params != "default":
-                params.update(spt_tp_params)
+                params = self.__gen_params_from_rule()
+                if spt_tp_params != "default":
+                    params.update(spt_tp_params)
 
-            logger.info(f"params: {params}")
+                logger.info(f"params: {params}")
 
-            return params
+                return params
+
+            raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp}.")
 
         raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp}.")

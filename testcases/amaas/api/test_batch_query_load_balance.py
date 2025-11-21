@@ -106,7 +106,7 @@ class TestAMaaSModelBatchQuery:
                 fu = executor.submit(
                     chat.talk,
                     "请解释这张图片",
-                    image_path="/Users/ryanyang/Desktop/WechatIMG1.jpeg",
+                    image_path="src/appauto/assets/ci_test.image",
                     stream=True,
                     process_stream=True,
                 )

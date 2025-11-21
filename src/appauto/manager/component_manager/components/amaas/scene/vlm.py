@@ -39,7 +39,7 @@ class VLM(BaseScene):
     def talk(
         self,
         text: str = "请解释这张图",
-        image_path: str = "/Users/ryanyang/Desktop/WechatIMG1.jpeg",
+        image_path: str = "src/appauto/assets/ci_test.image",
         stream=True,
         max_tokens: int = 1024,
         top_p: int = 1,

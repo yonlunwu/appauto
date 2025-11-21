@@ -101,6 +101,9 @@ Qwen3-Coder-480B-A35B-Instruct-GPU-weight:
 
 
 # qwen-vlm
+Qwen2.5-VL-7B-Instruct:
+  type: vlm
+  priority: P2
 Qwen2.5-VL-7B-Instruct-AWQ:
   type: vlm
   priority: P2
@@ -133,7 +136,7 @@ GLM-4.5-Air-GPU-weight:
 # glm-vlm
 GLM-4.5V-GPU-weight:
   type: vlm
-  priority: P2
+  priority: P1
 
 
 # qwq
