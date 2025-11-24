@@ -1,6 +1,5 @@
 from time import time
 from ..amaas.base_component import BaseComponent
-from ....server_manager import SGLangServer
 from ....config_manager import LoggingConfig
 
 logger = LoggingConfig.get_logger()
@@ -75,5 +74,3 @@ class SGLang(BaseComponent):
         else:
             with self.post_without_token("chat", json_data=payload, timeout=timeout, stream=True) as response:
                 return self.http_without_token.process_stream_amaas(response)
-
-    def server(self) -> SGLangServer: ...

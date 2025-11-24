@@ -67,7 +67,11 @@ class EvalscopeEval:
 
         if "aime" in self.dataset.lower():
             template = {
-                "prompt_template": "{question}\nPlease reason step by step and place your final answer within boxed{{}}. Force Requirement: 1.only the final answer should be wrapped in boxed{{}}; 2.no other numbers or text should be enclosed in boxed{{}}. 3.Answer in English"
+                "prompt_template": (
+                    "{question}\nPlease reason step by step and place your final answer within boxed{{}}. "
+                    "Force Requirement: 1.only the final answer should be wrapped in boxed{{}}; "
+                    "2.no other numbers or text should be enclosed in boxed{{}}. 3.Answer in English"
+                )
             }
             dataset_args = {self.dataset: template}
 

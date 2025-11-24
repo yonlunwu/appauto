@@ -8,6 +8,7 @@ from threading import Thread
 from typing import TYPE_CHECKING, Literal, Tuple, Dict
 from appauto.organizer.model_params.constructor import FTModelParams
 from appauto.manager.client_manager import BaseDockerContainer
+from appauto.manager.component_manager.components.engine import SGLang
 from appauto.manager.config_manager.config_logging import LoggingConfig
 
 logger = LoggingConfig.get_logger()
@@ -30,6 +31,11 @@ class FTContainer(BaseDockerContainer):
         self.conda_env = conda_env
         self.engine = engine
 
+    # TODO 需要维护一个 api_server 用于 sanity_check
+    @property
+    def api_server(self):
+        return SGLang(self.node.mgt_ip)
+
     def launch_model(
         self,
         model_name: str,
@@ -41,6 +47,7 @@ class FTContainer(BaseDockerContainer):
         interval_s=20,
         timeout_s=900,
         print_screen=True,
+        ip: str = "127.0.0.1",
     ):
         """
         nohup 启动模型并将模型日志重定向至指定路径。
@@ -56,7 +63,7 @@ class FTContainer(BaseDockerContainer):
         rc, res, err = self.run(nohup_cmd, sudo, print_screen)
 
         if wait_for_running:
-            self.wait_model_to_running(port, interval_s, timeout_s)
+            self.wait_model_to_running(ip, port, interval_s, timeout_s)
 
         return rc, res, err
 
@@ -70,6 +77,7 @@ class FTContainer(BaseDockerContainer):
         interval_s=20,
         timeout_s=900,
         sudo=True,
+        ip="127.0.0.1",
     ) -> Tuple[Queue, Thread]:
 
         cmd = (
@@ -84,7 +92,7 @@ class FTContainer(BaseDockerContainer):
         th, q = self.run_in_thread(nohup_cmd, sudo, True, True)
 
         if wait_for_running:
-            self.wait_model_to_running(port, interval_s, timeout_s)
+            self.wait_model_to_running(ip, port, interval_s, timeout_s)
 
         return th, q
 
@@ -114,7 +122,7 @@ class FTContainer(BaseDockerContainer):
         evalscope = EvalscopeEval(
             self.node,
             model,
-            self.ip,
+            "127.0.0.1",
             port,
             dataset,
             max_tokens,
@@ -150,7 +158,7 @@ class FTContainer(BaseDockerContainer):
         evalscope = EvalscopePerf(
             self.node,
             model,
-            self.ip,
+            "127.0.0.1",
             port,
             parallel,
             number,

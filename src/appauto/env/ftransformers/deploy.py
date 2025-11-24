@@ -29,8 +29,6 @@ class DeployFT(BaseDeploy):
         self,
         image="zhiwen-ftransformers",
         tag="v3.3.0-test2",
-        host_port=30000,
-        ctn_port=30000,
         output="ft-docker-compose",
     ) -> str:
         """
@@ -41,8 +39,6 @@ class DeployFT(BaseDeploy):
             - mac_address: 网卡 MAC
             - image: 镜像名称
             - tag: 镜像 tag
-            - host_port: 宿主机 port
-            - ctn_port: 容器 port
             - output: 输出文件前缀, 最终是: $output_$tag.yaml
         """
         template_content = """services:
@@ -51,6 +47,7 @@ class DeployFT(BaseDeploy):
     container_name: $ctn_name
     shm_size: "32GB"
     privileged: true
+    network_mode: host
     volumes:
       - /mnt/data/models:/mnt/data/models
     restart: always
@@ -59,8 +56,6 @@ class DeployFT(BaseDeploy):
       - "TZ=Asia/Shanghai"
       - "MAC_ADDRESS=$mac_address"
       - "NVIDIA_VISIBLE_DEVICES=all"
-    ports:
-      - "$host_port:$ctn_port"
     deploy:
       resources:
         reservations:
@@ -77,8 +72,6 @@ class DeployFT(BaseDeploy):
             mac_address=self.nic_mac_addr,
             image=image,
             tag=tag,
-            host_port=host_port,
-            ctn_port=ctn_port,
         )
 
         output = f"{output}_{tag}.yaml"
@@ -94,8 +87,6 @@ class DeployFT(BaseDeploy):
         tar_name,
         image="zhiwen-ftransformers",
         tag="v3.3.0-test2",
-        host_port=30000,
-        ctn_port=30000,
         output="ft-docker-compose",
         stop_old=True,
     ) -> Literal["succeed", "failed"]:
@@ -107,8 +98,6 @@ class DeployFT(BaseDeploy):
             - tar_name: tar 包, 如: zhiwen-ftransformers-v3.3.0-test4.tar
             - image: 镜像名称
             - tag: 镜像 tag
-            - host_port: 宿主机 port
-            - ctn_port: 容器 port
             - output: 输出文件前缀, 最终是: $output_$tag.yaml
 
             ### 停掉旧 container
@@ -133,7 +122,7 @@ class DeployFT(BaseDeploy):
             self.docker_tool.rm_image_by_tag(image, tag, force=True)
 
             # 部署新容器
-            docker_compose = self.gen_docker_compose(image, tag, host_port, ctn_port, output)
+            docker_compose = self.gen_docker_compose(image, tag, output)
 
             self.upload(f"{self.deploy_path}{docker_compose}", docker_compose)
 

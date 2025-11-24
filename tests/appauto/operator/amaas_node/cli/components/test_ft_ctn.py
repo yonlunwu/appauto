@@ -6,8 +6,7 @@ from appauto.manager.config_manager.config_logging import LoggingConfig
 logger = LoggingConfig.get_logger()
 
 
-# amaas = AMaaSNode("192.168.111.10", ssh_user="qujing", skip_api=True)
-amaas = AMaaSNode("27.0.166.176", ssh_user="qujing", skip_api=True, ssh_port=15017)
+amaas = AMaaSNode("192.168.111.10", ssh_user="qujing", skip_api=True)
 
 
 class TestAMaasNodeFtContainer:

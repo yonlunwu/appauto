@@ -28,18 +28,18 @@ class BaseDockerContainer:
     def ip(self):
         return self.docker_tool.get_ctn_ip(self.name)
 
-    def check_server_reachable(self, port: int) -> bool:
-        cmd = f"nc -zv {self.ip} {port}"
+    def check_server_reachable(self, ip: str, port: int) -> bool:
+        cmd = f"nc -zv {ip} {port}"
         rc, _, _ = self.node.run(cmd)
         if rc == 0:
             return True
         return False
 
-    def wait_server_reachable(self, port: int, interval_s: int = 20, timeout_s: int = 300) -> bool:
+    def wait_server_reachable(self, ip: str, port: int, interval_s: int = 20, timeout_s: int = 300) -> bool:
         start_time = time()
 
         while True:
-            if self.check_server_reachable(port):
+            if self.check_server_reachable(ip, port):
                 return True
             elif time() - start_time >= timeout_s:
                 raise TimeoutError(f"Timeout while waiting for {self.ip}:{port} to be reachable.")
@@ -106,9 +106,10 @@ class BaseDockerContainer:
 
     def wait_model_to_running(
         self,
+        ip,
         port,
         interval_s=20,
         timeout_s=900,
     ):
-        self.wait_server_reachable(port, interval_s, timeout_s)
-        assert self.check_server_reachable(port)
+        self.wait_server_reachable(ip, port, interval_s, timeout_s)
+        assert self.check_server_reachable(ip, port)
