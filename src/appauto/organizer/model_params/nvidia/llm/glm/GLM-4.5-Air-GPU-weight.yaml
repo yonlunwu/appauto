@@ -1,4 +1,3 @@
-# 结构：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
 engine:
   common:
     model-path: /mnt/data/models/GLM-4.5-Air-GPU-weight
@@ -11,34 +10,20 @@ engine:
     kt-threadpool-count: 2
     mem-fraction-static: 0.9
 
-
   dynamic:
     kt-cpuinfer: 80
-
-
-  ##############################################
-  #             正确性优先版（correct）        #
-  ##############################################
 
   correct_common:
     max-running-requests: 50
     max-total-tokens: 50000
 
-
   correct:
     1:
       tensor-parallel-size: 1
       kt-num-gpu-experts: 1
-
     2:
       tensor-parallel-size: 2
       kt-num-gpu-experts: 81
-
-
-
-  ##############################################
-  #              性能优化版（perf）            #
-  ##############################################
 
   perf_common:
     max-running-requests: 37
@@ -50,19 +35,37 @@ engine:
     disable-radix-cache: true
     disable-chunked-prefix-cache: true
 
-
   perf:
     1:
       tensor-parallel-size: 1
       kt-num-gpu-experts: 30
-
     2:
       tensor-parallel-size: 2
       kt-num-gpu-experts: 90
       dp: 2
       enable-dp-attention: true
 
-# 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
-  1: default
-  2: default
+  correct:
+    1: default
+    2: default
+
+  perf_common:
+    max_total_tokens: 37000
+    backend_parameters:
+      kt-max-deferred-experts-per-token: 2
+      attention-backend: flashinfer
+      chunked-prefill-size: 4096
+      enable-mixed-chunk: ''
+      disable-radix-cache: ''
+      disable-chunked-prefix-cache: ''
+
+  perf:
+    1:
+      backend_parameters:
+        kt-num-gpu-experts: 30
+    2:
+      backend_parameters:
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 90

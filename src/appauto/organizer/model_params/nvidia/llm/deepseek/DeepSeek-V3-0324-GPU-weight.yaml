@@ -82,7 +82,7 @@ engine:
       dp: 2
       enable-dp-attention: true
 
-# 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
+## 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
   correct:
     1: default
@@ -102,9 +102,8 @@ amaas:
       chunked-prefill-size: 4096
       enable-mixed-chunk: ''
 
-
   perf:
-    1: 
+    1:
       backend_parameters:
         kt-num-gpu-experts: 15
         

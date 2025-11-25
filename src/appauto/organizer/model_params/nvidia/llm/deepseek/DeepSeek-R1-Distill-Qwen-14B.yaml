@@ -7,10 +7,9 @@ engine:
     enable-p2p-check: true
     mem-fraction-static: 0.85
 
-
   correct_common:
     max-total-tokens: 131072
-    
+
   correct:
     2:
       tensor-parallel-size: 2
@@ -21,7 +20,6 @@ engine:
     8:
       tensor-parallel-size: 8
 
-
 # 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
   # correct 默认是 default，除非内部写了配置
@@ -30,13 +28,11 @@ amaas:
     4: default
     8: default
 
-
   # perf 模式: perf_common + perf
   perf_common:
     backend_parameters:
-      disable-chunked-prefix-cache: ''
-      disable-radix-cache: ''
-
+      disable-chunked-prefix-cache: ""
+      disable-radix-cache: ""
 
   perf:
     2: default
