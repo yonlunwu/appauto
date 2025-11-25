@@ -85,6 +85,7 @@ amaas:
     4: default
     8: default
 
+
   # perf 模式: perf_common + perf
   perf_common:
     max_total_tokens: 37000
@@ -101,23 +102,22 @@ amaas:
   perf:
     1: 
       backend_parameters:
-        - kt-num-gpu-experts: 10
-        - enable-defer: ''
+        kt-num-gpu-experts: 10
+
     2: 
       backend_parameters:
-        - dp: 2
-        - enable-dp-attention: ''
-        - kt-num-gpu-experts: 50
-        - enable-defer: ''
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 50
+
     4: 
       backend_parameters:
-        - dp: 2
-        - enable-dp-attention: ''
-        - kt-num-gpu-experts: 110
-        - enable-defer: ''
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 110
+
     8: 
       backend_parameters:
-        - dp: 2
-        - enable-dp-attention: ''
-        - kt-num-gpu-experts: 230
-        - enable-defer: ''
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 230

@@ -98,43 +98,48 @@ class AMaaSModelParams(BaseModelConfig):
         """
         规则: amaas 以性能测试拉起模型, 实际一般修改 cpu-infer 和其他高级参数(backend_parameters)
         """
-        if perf := self.handler.data.amaas.perf:
-            params = ADDict()
+        try:
+            # 存在 perf 说明 yml 支持 perf 模式, 否则不支持
+            data = self.handler.data.amaas
+            assert data.perf_common
+            assert data.perf
 
-            # perf_common 的修改一般包含 backend_params 和 max-total-tokens（fixed_backend_params 中）
-            perf_common = self.handler.data.amaas.perf_common or {}
-            b_p_from_p_c = [item for k, v in perf_common.backend_parameters.items() for item in (f"--{k}", f"{v}")]
-            # TODO kt-cpuinfer
-            b_p_from_p_c.extend(["--kt-cpuinfer", "90" if self.amaas.cli.cpuinfer == 96 else "60"])
+            params = self.__gen_params_from_rule()
 
-            if spt_tp_params := perf.get(self.tp, False):
-                # spt_tp_params 可能会有 2 种情况, default 或非 default(此时通常是 dict)
-                # default 表示直接从 get_run_rule 中获取默认参数
-                # 非 default 表示 yaml 中该 tp 的配置需要与 get_run_rule 的结果做组合(通常是修改 backend_parameters)
+            # perf_common 中有可能存在 max_total_tokens
+            if max_total_tokens := data.perf_common.max_total_tokens:
+                params.max_total_tokens = max_total_tokens
 
-                params = self.__gen_params_from_rule()
-                if spt_tp_params != "default":
-                    # 修改 backend_parameters
-                    if isinstance(spt_tp_params, dict) and "backend_parameters" in spt_tp_params:
-                        tmp = {}
-                        res = [
-                            item
-                            for d in spt_tp_params["backend_parameters"]
-                            for k, v in d.items()
-                            for item in (f"--{k}", f"{v}")
-                        ]
-                        b_p_from_p_c.extend(res)
-                        tmp["backend_parameters"] = b_p_from_p_c
-                        params.update(tmp)
+            # 预期 perf_common 一定存在 backend_parameters：要关闭 cache
+            b_p = [item for k, v in data.perf_common.backend_parameters.items() for item in (f"--{k}", f"{v}")]
+            # backend_params 中要修改 cpuinfer
+            b_p.extend(["--kt-cpuinfer", "90" if self.amaas.cli.cpuinfer == 96 else "60"])
+            params.backend_parameters = b_p
 
-                    # 修改 fixed_backend_parameters 中的 max_total_tokens
-                    if max_total_tokens := perf_common.max_total_tokens:
-                        params.update(dict(max_total_tokens=max_total_tokens))
+            # 存在 tp 说明支持该 tp 的 perf 模式，否则不支持
+            # spt_tp_params 取值：default 或非 default(此时通常是 dict)
+            # default：直接从 get_run_rule 中获取默认参数，但依然需要结合 perf_common
+            # 非 default：从 yaml 中读出指定 tp，并与 get_run_rule 结果和 perf_common 做组合(通常是修改 backend_parameters)
+            # 因此无论什么情况都需要先 get_run_rule 和 获取 perf_common
+            tp_data = data.perf.get(self.tp, None)
+            assert tp_data
 
-                logger.info(f"perf params: {params}")
+            # 当 tp 不是 default 时, 还需要结合 get_run_rule 进一步修改 backend_parameters
+            if tp_data != "default":
 
-                return params
+                assert isinstance(tp_data, dict)
 
+                if "backend_parameters" in tp_data:
+                    fmt = [item for k, v in tp_data["backend_parameters"].items() for item in (f"--{k}", f"{v}")]
+                    params.backend_parameters.extend(fmt)
+
+                # tp 中如果指定了 max_total_tokens 需要覆盖 perf_common 中的值
+                if "max_total_tokens" in tp_data:
+                    params.max_total_tokens = tp_data.max_total_tokens
+
+            logger.info(f"perf params: {params}")
+
+            return params
+
+        except AssertionError:
             raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp} for perf.")
-
-        raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp} for perf.")

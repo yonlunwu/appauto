@@ -5,8 +5,8 @@ from appauto.manager.config_manager.config_logging import LoggingConfig
 logger = LoggingConfig.get_logger()
 
 
-IP = "192.168.111.10"
-USER = "qujing"
+IP = "192.168.111.11"
+USER = "zkyd"
 
 amaas = AMaaSNode(IP, USER).api
 
@@ -26,6 +26,8 @@ class TestAmaaSModelParams:
     def test_launch_model_with_perf(self):
         tp = 2
         model_name = "DeepSeek-R1-0528-GPU-weight"
+        tp = 4
+        model_name = "Qwen2.5-72B-Instruct-GPTQ-Int8"
         model_store = amaas.init_model_store.llm.filter(name=model_name)[0]
 
         amaas.launch_model_with_perf(tp, model_store)

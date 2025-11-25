@@ -83,9 +83,48 @@ engine:
       dp: 2
       enable-dp-attention: true
 
+
+
 # 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
-  1: default
-  2: default
-  4: default
-  8: default
+  correct:
+    1: default
+    2: default
+    4: default
+    8: default
+
+  # perf 模式: perf_common + perf
+  perf_common:
+    max_total_tokens: 37000
+    # 放在 backend_params 中
+    backend_parameters:
+      kt-max-deferred-experts-per-token: 2
+      disable-chunked-prefix-cache: ''
+      disable-radix-cache: ''
+      attention-backend: flashinfer
+      chunked-prefill-size: 4096
+      enable-mixed-chunk: ''
+
+
+  perf:
+    1: 
+      backend_parameters:
+        kt-num-gpu-experts: 10
+    
+    2: 
+      backend_parameters:
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 40
+    
+    4: 
+      backend_parameters:
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 130
+    
+    8: 
+      backend_parameters:
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 160
