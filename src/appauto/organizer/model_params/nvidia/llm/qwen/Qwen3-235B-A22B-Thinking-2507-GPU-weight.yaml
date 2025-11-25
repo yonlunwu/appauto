@@ -38,7 +38,6 @@ engine:
   perf_common:
     max-running-requests: 240
     max-total-tokens: 240000
-    kt-cpuinfer: 90                    # 覆盖 dynamic 的 80
     kt-max-deferred-experts-per-token: 2
     enable-mixed-chunk: true
     disable-radix-cache: true

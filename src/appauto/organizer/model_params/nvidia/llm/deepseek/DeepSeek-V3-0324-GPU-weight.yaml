@@ -13,7 +13,6 @@ engine:
 
 
   dynamic:
-    # correct = 80   /   perf = 会被 perf_common 覆盖成 90
     kt-cpuinfer: 80
 
 
@@ -56,7 +55,6 @@ engine:
     disable-chunked-prefix-cache: true
     disable-radix-cache: true
     attention-backend: flashinfer
-    kt-cpuinfer: 90
     chunked-prefill-size: 4096
     enable-mixed-chunk: true
 
@@ -86,7 +84,36 @@ engine:
 
 # 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
-  1: default
-  2: default
-  4: default
-  8: default
+  correct:
+    1: default
+    2: default
+    4: default
+    8: default
+
+  dynamic:
+    # 根据 cpu 和 mode 调整
+    kt-cpuinfer: 80
+
+  perf:
+    1: 
+      backend_parameters:
+        - kt-num-gpu-experts: 10
+        - enable-defer: ''
+    2: 
+      backend_parameters:
+        # - dp: 2
+        # - enable-dp-attention: ''
+        - num-gpu-experts: 50
+        - enable-defer: ''
+    4: 
+      backend_parameters:
+        - dp: 2
+        - enable-dp-attention: ''
+        - kt-num-gpu-experts: 110
+        - enable-defer: ''
+    8: 
+      backend_parameters:
+        - dp: 2
+        - enable-dp-attention: ''
+        - kt-num-gpu-experts: 230
+        - enable-defer: ''

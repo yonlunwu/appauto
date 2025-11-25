@@ -64,12 +64,34 @@ class AMaaSNodeApi(AMaaS):
         """
         从 yml 中读取默认参数, 发起检测 -> 拉起 -> 试验场景
         """
-        params = AMaaSModelParams(self.node, model_store, tp, model_name).gen_params
+        params = AMaaSModelParams(self.node, model_store, tp, model_name).gen_default_params
 
         assert params, f"invalid params: {params}"
 
         self.model_store_check(model_store, params)
         self.model_store_run(model_store, params, timeout_s)
+
+    def launch_model_with_perf(
+        self, tp: Literal[1, 2, 4, 8], model_store: T, model_name: str = None, timeout_s: int = 900
+    ):
+        """
+        从 yml 中读取默认性能测试参数, 发起检测 -> 拉起 -> 性能测试场景
+        """
+        params = AMaaSModelParams(self.node, model_store, tp, model_name).gen_perf_params
+
+        assert params, f"invalid params: {params}"
+
+        self.model_store_check(model_store, params)
+        self.model_store_run(model_store, params, timeout_s)
+
+    def stop_model(self, model_store: T, type_: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]):
+
+        if model_list := getattr(self.model, type_, None):
+            if target_models := [
+                m for m in model_list if m.display_model_name == model_store.name or m.name == model_store.name
+            ]:
+                for t_m in target_models:
+                    t_m.stop()
 
     def wait_gpu_release(self, interval_s: int = 20, timeout_s: int = 180):
         start_time = time()

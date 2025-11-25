@@ -18,7 +18,7 @@ class TestAmaaSModelParams:
         tp = 2
         model_name = "DeepSeek-V3-0324-GPU-weight"
         model_store = amaas.api.init_model_store.llm.filter(name=model_name)[0]
-        params = AMaaSModelParams(amaas, model_store, tp).gen_params
+        params = AMaaSModelParams(amaas, model_store, tp).gen_default_params
 
         logger.info(params)
 

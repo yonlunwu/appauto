@@ -12,7 +12,7 @@ sglang = SGLangServer(
     model_path="DeepSeek-R1-GPTQ4-experts",
     amx_weight_path="DeepSeek-R1-INT4",
     served_model_name="DeepSeek-R1",
-    cpuinfer=80,
+    cpu_infer=80,
     ssh_user="zkyd",
     ssh_password="zkyd@12#$",
 )

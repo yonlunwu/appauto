@@ -44,7 +44,6 @@ engine:
   perf_common:
     max-running-requests: 37
     max-total-tokens: 37000
-    kt-cpuinfer: 90                           # 覆盖 dynamic 的 80
     kt-max-deferred-experts-per-token: 2
     chunked-prefill-size: 4096
     enable-mixed-chunk: true

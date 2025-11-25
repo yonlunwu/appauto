@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from ..base_component import BaseComponent
 
 
@@ -18,3 +20,7 @@ class APIKey(BaseComponent):
 
     def delete(self, timeout: int = None):
         return self.delete("delete", timeout=timeout)
+
+    @cached_property
+    def value(self) -> str:
+        return self.data.value

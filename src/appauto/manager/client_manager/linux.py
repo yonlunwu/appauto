@@ -398,3 +398,23 @@ class BaseLinux(object):
     def gpu_type(self) -> str:
         # TODO
         return "nvidia"
+
+    @cached_property
+    def cpu_socket(self) -> int:
+        cmd = "lscpu | grep 'Socket(s)' | awk -F':' '{print $NF}' | tr -d ' '"
+        rc, res, _ = self.run(cmd)
+        if rc == 0:
+            return int(res)
+        return 2
+
+    @cached_property
+    def cpu_core_per_socket(self) -> int:
+        cmd = "lscpu | grep 'Core(s) per socket' | awk -F':' '{print $NF}' | tr -d ' '"
+        rc, res, _ = self.run(cmd)
+        if rc == 0:
+            return int(res)
+        return 48
+
+    @cached_property
+    def cpuinfer(self) -> int:
+        return self.cpu_core_per_socket * self.cpu_socket

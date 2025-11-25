@@ -13,7 +13,6 @@ engine:
 
 
   dynamic:
-    # correct = 80；perf 会被 perf_common 覆盖为 90
     kt-cpuinfer: 80
 
 
@@ -44,7 +43,6 @@ engine:
   perf_common:
     max-running-requests: 37
     max-total-tokens: 37000
-    kt-cpuinfer: 90                           # 覆盖 dynamic 的 80
     kt-max-deferred-experts-per-token: 2
     attention-backend: flashinfer
     chunked-prefill-size: 4096

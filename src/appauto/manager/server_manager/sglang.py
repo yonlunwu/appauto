@@ -15,7 +15,7 @@ class SGLangServer(BaseLinux):
         model_path: Literal["DeepSeek-R1-GPTQ4-experts"],
         amx_weight_path: Literal["DeepSeek-R1-INT4"],
         served_model_name: Literal["DeepSeek-R1"],
-        cpuinfer: int,
+        cpu_infer: int,
         context_length: int = 8192,
         max_running_request: int = 64,
         max_total_tokens: int = 65536,
@@ -35,7 +35,7 @@ class SGLangServer(BaseLinux):
         self.conda_env_name = conda_env_name
         self.model_path = model_path
         self.amx_weight_path = amx_weight_path
-        self.cpuinfer = cpuinfer
+        self.cpu_infer = cpu_infer
         self.num_gpu_experts = num_gpu_experts
         self.attention_backend = attention_backend
         self.trust_remote_code = trust_remote_code  # flag
@@ -54,7 +54,7 @@ class SGLangServer(BaseLinux):
             f"export PATH=$PATH:$HOME/.local/bin && "
             f"{self.conda_path} run -n {self.conda_env_name} python -m sglang.launch_server "
             f"--model /mnt/data/models/{self.model_path} "
-            f"--amx-weight-path /mnt/data/models/{self.amx_weight_path} --cpuinfer {self.cpuinfer} "
+            f"--amx-weight-path /mnt/data/models/{self.amx_weight_path} --cpuinfer {self.cpu_socket} "
             f"--num-gpu-experts {self.num_gpu_experts} --attention-backend {self.attention_backend} "
             f"--mem-fraction-static {self.mem_fraction_static} --context-length {self.context_length} "
             f"--max-running-requests {self.max_running_request} --max-total-tokens {self.max_total_tokens} "

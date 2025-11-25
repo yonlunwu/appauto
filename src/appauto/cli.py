@@ -230,8 +230,8 @@ def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
 @evalscope.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
-@click.option("--ip", default="192.168.110.15", help="")
-@click.option("--port", type=int, default=11002, show_default=True, help="服务端口")
+@click.option("--ip", default="192.168.110.15", show_default=True, help="服务器 IP")
+@click.option("--port", default=10011, show_default=True, help="API 端口, 基于 AMaaS 测试时固定为 10011.")
 @click.option("--ssh-user", default="zkyd", show_default=True, help="SSH 用户名")
 @click.option("--ssh-password", default="zkyd@12#$", show_default=True, help="SSH 密码")
 @click.option("--ssh-port", type=int, default=22, show_default=True, help="SSH 端口")
@@ -243,17 +243,24 @@ def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
     show_default=True,
     help="每个线程内部依次请求数, 比如设置为 5, 表示每个线程内部都会顺序发 5 个请求。",
 )
-@click.option("--model", type=click.Choice(["DeepSeek-R1-GPTQ4-experts"]), required=True)
-@click.option("--tokenizer-path", type=click.Choice(["DeepSeek-R1-GPTQ4-experts"]), required=True)
-@click.option("--api", type=click.Choice(["openai"]), default="openai", show_default=True)
-@click.option("--dataset", default="random", show_default=True)
-@click.option("--max-tokens", type=int, default=1024, show_default=True)
-@click.option("--min-tokens", type=int, default=1024, show_default=True)
-@click.option("--max-prompt-length", type=int, default=1024, show_default=True)
-@click.option("--min-prompt-length", type=int, default=1024, show_default=True)
-@click.option("--prefix-length", type=int, default=0, show_default=True)
-@click.option("--swanlab-api-key", type=str, default="local", show_default=True)
-@click.option("--name", type=str, default="appauto-bench", show_default=True)
+@click.option("--model", type=str, required=True, help="模型名称, 比如: DeepSeek-R1-0528-GPU-weight")
+@click.option("--tp", type=int, required=True, help="几卡拉起模型")
+@click.option("--launch-timeout", type=int, default=900, show_default=True, help="模型拉起超时时间(S)")
+@click.option(
+    "--tokenizer-path",
+    type=str,
+    default=None,
+    show_default=True,
+    help="tokenizer 路径, 默认不填, 使用模型自带 tokenizer",
+)
+@click.option("--input-length", type=int, default=128, show_default=True, help="输入长度")
+@click.option("--output-length", type=int, default=512, show_default=True, help="输出长度")
+@click.option("--loop", type=int, default=1, show_default=True, help="循环次数")
+@click.option("--debug", is_flag=True, show_default=True, help="是否开启 debug 模式")
+@click.option("--base-ft", is_flag=True, show_default=True, help="是否基于 ft 容器跑测试")
+@click.option("--base-amaas", is_flag=True, show_default=True, help="是否基于 amaas 跑测试")
+@click.option("--read-timeout", type=int, default=600, show_default=True, help="读取超时时间")
+@click.option("--keep-model", is_flag=True, show_default=True, help="是否保持模型拉起状态")
 def perf(
     ip,
     port,
@@ -263,157 +270,78 @@ def perf(
     parallel,
     number,
     model,
+    tp,
+    launch_timeout,
     tokenizer_path,
-    api,
-    dataset,
-    max_tokens,
-    min_tokens,
-    max_prompt_length,
-    min_prompt_length,
-    prefix_length,
-    swanlab_api_key,
-    name,
+    input_length,
+    output_length,
+    read_timeout,
+    loop,
+    debug,
+    base_ft,
+    base_amaas,
+    keep_model,
 ):
-    """远程启动 sglang 服务"""
-    logger = LoggingConfig.get_logger()
-    from appauto.manager.server_manager import SGLangServer
+    """
+    基于 evalscope 跑模型性能测试(基于 ft)
+    """
+    # TODO 优先拉起模型
+    from appauto.operator.amaas_node import AMaaSNode
 
-    server = SGLangServer(
-        ip,
-        port=port,
-        ssh_user=ssh_user,
-        ssh_password=ssh_password,
-        ssh_port=ssh_port,
-        conda_path=None,
-        conda_env_name=None,
-        model_path=None,
-        amx_weight_path=None,
-        served_model_name=None,
-        cpuinfer=None,
-    )
+    assert base_ft or base_amaas, "Either --base-ft or --base-amaas must be specified."
 
-    def get_evalscope_path():
-        # _, res, _ = server.run("bash -l -c 'which evalscope'", sudo=False)
-        # logger.info(f"evalscope path: {res}")
-        # return res.strip("\n")
-        return f"/home/{ssh_user}/perftest/venv/evalscope-py/bin/evalscope"
+    if base_ft:
+        ft = AMaaSNode(ip, ssh_user, ssh_password, ssh_port, skip_api=True).cli.docker_ctn_factory.ft
 
-    evalscope_path = get_evalscope_path()
-    assert evalscope_path
+        ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
 
-    cmd = (
-        f"{evalscope_path} perf --parallel {parallel} --number {number} "
-        f"--model /mnt/data/models/{model} "
-        f"--url http://127.0.0.1:{port}/v1/chat/completions "
-        f"--api {api} --dataset {dataset} "
-        f"--prefix-length {prefix_length} "
-        f"--max-tokens {max_tokens} --min-tokens {min_tokens} "
-        f"--min-prompt-length {min_prompt_length} --max-prompt-length {max_prompt_length} "
-        f"--tokenizer-path /mnt/data/models/{tokenizer_path} "
-        "--extra-args '{\"ignore_eos\": true}' "
-        f"--swanlab-api-key {swanlab_api_key} --name {name}"
-    )
+        ft.run_perf_via_evalscope(
+            port,
+            model,
+            parallel,
+            number,
+            input_length,
+            output_length,
+            read_timeout,
+            loop=loop,
+            debug=debug,
+            tokenizer_path=tokenizer_path,
+        )
 
-    try:
-        rc, res, err = server.run(cmd, sudo=False)
-        logger.info("✅ 测试完成!")
+        if not keep_model:
+            ft.stop_model(model)
 
-    except Exception as e:
-        logger.error("❌ 测试失败!")
+        return
 
+    elif base_amaas:
+        from appauto.tool.evalscope.perf import EvalscopePerf
 
-@sglang.command(
-    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
-)
-@click.option("--mgt-ip", default="192.168.110.15", help="管理 IP 地址(Default: 192.168.110.15)")
-@click.option("--conda-path", default="/home/zkyd/miniconda3/bin/conda", show_default=True, help="conda 路径")
-@click.option("--conda-env-name", default="yanlong-ft", show_default=True, help="conda 环境名称")
-@click.option(
-    "--model-path", type=click.Choice(["DeepSeek-R1-GPTQ4-experts"]), required=True, help="模型路径（仅支持指定值）"
-)
-@click.option(
-    "--amx-weight-path", type=click.Choice(["DeepSeek-R1-INT4"]), required=True, help="amx 权重路径（仅支持指定值）"
-)
-@click.option(
-    "--served-model-name",
-    type=click.Choice(["DeepSeek-R1"]),
-    required=True,
-    help="服务的模型名称（仅支持指定值）",
-)
-@click.option("--cpuinfer", type=int, required=True, help="CPU 推理线程数")
-@click.option("--context-length", type=int, default=8192, show_default=True, help="上下文长度")
-@click.option("--max-running-request", type=int, default=64, show_default=True, help="最大并发请求数")
-@click.option("--max-total-tokens", type=int, default=65536, show_default=True, help="最大总 token 数")
-@click.option("--mem-fraction-static", type=float, default=0.98, show_default=True, help="静态内存占用比例")
-@click.option("--num-gpu-experts", type=int, default=1, show_default=True, help="GPU 专家数量")
-@click.option(
-    "--attention-backend",
-    type=click.Choice(["flashinfer"]),
-    default="flashinfer",
-    show_default=True,
-    help="注意力机制后端",
-)
-@click.option("--trust-remote-code", default=True, help="是否信任远程代码")
-@click.option("--port", type=int, default=11002, show_default=True, help="服务端口")
-@click.option("--host", default="0.0.0.0", show_default=True, help="绑定的主机地址")
-@click.option(
-    "--disable-shared-experts-fusion/--enable-shared-experts-fusion", default=True, help="是否禁用共享专家融合"
-)
-@click.option("--ssh-user", default="zkyd", show_default=True, help="SSH 用户名")
-@click.option("--ssh-password", default="zkyd@12#$", help="SSH 密码")
-@click.option("--ssh-port", type=int, default=22, show_default=True, help="SSH 端口")
-def start(
-    mgt_ip,
-    ssh_user,
-    ssh_password,
-    ssh_port,
-    conda_path,
-    conda_env_name,
-    model_path,
-    amx_weight_path,
-    served_model_name,
-    cpuinfer,
-    port,
-    host,
-    trust_remote_code,
-    attention_backend,
-    disable_shared_experts_fusion,
-    num_gpu_experts,
-    mem_fraction_static,
-    max_total_tokens,
-    max_running_request,
-    context_length,
-):
-    """远程启动 sglang 服务"""
-    logger = LoggingConfig.get_logger()
-    from appauto.manager.server_manager import SGLangServer
+        amaas = AMaaSNode(ip, ssh_user, ssh_password, ssh_port)
 
-    server = SGLangServer(
-        mgt_ip=mgt_ip,
-        ssh_user=ssh_user,
-        ssh_password=ssh_password,
-        conda_path=conda_path,
-        conda_env_name=conda_env_name,
-        model_path=model_path,
-        amx_weight_path=amx_weight_path,
-        served_model_name=served_model_name,
-        cpuinfer=cpuinfer,
-        port=port,
-        trust_remote_code=trust_remote_code,
-        disable_shared_experts_fusion=disable_shared_experts_fusion,
-        ssh_port=ssh_port,
-        host=host,
-        attention_backend=attention_backend,
-        num_gpu_experts=num_gpu_experts,
-        mem_fraction_static=mem_fraction_static,
-        max_total_tokens=max_total_tokens,
-        max_running_request=max_running_request,
-        context_length=context_length,
-    )
+        model_store = amaas.api.init_model_store.llm.filter(name=model)[0]
+        amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout)
 
-    server.start(timeout_s=900)
+        evalscope = EvalscopePerf(
+            amaas.cli,
+            model,
+            ip,
+            10011,
+            parallel,
+            number,
+            tokenizer_path or f"/mnt/data/models/{model}",
+            amaas.api.api_keys[0].value,
+            input_length,
+            output_length,
+            read_timeout,
+            loop=loop,
+            debug=debug,
+        )
+        evalscope.run_perf()
 
-    logger.info("✅ 已启动 sglang 服务!")
+        if not keep_model:
+            amaas.api.stop_model(model_store, "llm")
+
+        return
 
 
 def parse_extra_args(args: List[str]) -> Dict[str, str | bool]:

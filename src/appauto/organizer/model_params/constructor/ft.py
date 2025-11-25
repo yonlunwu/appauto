@@ -74,12 +74,15 @@ class FTModelParams(BaseModelConfig):
         # 某些模型不是 engine 负责的，是 amaas 负责，比如 embedding
         if yml_data := self.handler.data.engine:
             common = yml_data.common
+            # 根据 self.node 的 cpu 设置 cpuinfer
             dynamic = yml_data.dynamic
 
             mode_common, mode_spec, params = {}, {}, {}
 
             # TODO 补全更多 mode 以及考虑当不存在指定 mode 时的处理
             if self.mode == "perf":
+                # 性能模式下需要调整 cpuinfer
+                dynamic.update({"kt-cpuinfer": 90 if self.node.cpuinfer == 96 else 60})
                 # perf 不存在时，降级到 correct 模式
                 mode_common = yml_data.perf_common or yml_data.correct_common or {}
                 mode_spec = yml_data.perf.get(self.tp, {}) or yml_data.correct.get(self.tp, {})

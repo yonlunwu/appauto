@@ -152,7 +152,12 @@ class FTContainer(BaseDockerContainer):
         loop=1,
         name="appauto-bench",
         debug=False,
+        tokenizer_path: str = None,
+        perf_timeout: int = 3600,
     ):
+        """
+        tokenizer_path 默认不填, 使用模型自带 tokenizer
+        """
         from appauto.tool.evalscope.perf import EvalscopePerf
 
         evalscope = EvalscopePerf(
@@ -162,7 +167,7 @@ class FTContainer(BaseDockerContainer):
             port,
             parallel,
             number,
-            f"/mnt/data/models/{model}",
+            tokenizer_path or f"/mnt/data/models/{model}",
             "EMPTY",
             input_length,
             output_length,

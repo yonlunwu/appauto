@@ -66,10 +66,10 @@ class AMaaSModelParams(BaseModelConfig):
         return params
 
     @cached_property
-    def gen_params(self) -> ADDict:
+    def gen_default_params(self) -> ADDict:
         # Dict
         # 如果不存在 amaas 需要 raise 出一个不支持的错误.
-        if yml_data := self.handler.data.amaas:
+        if yml_data := self.handler.data.amaas.correct:
 
             # 存在指定的 tp 说明支持该 tp, 否则说明是不支持的
             # 如果支持该 tp 则按需生成 params
@@ -92,3 +92,49 @@ class AMaaSModelParams(BaseModelConfig):
             raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp}.")
 
         raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp}.")
+
+    @cached_property
+    def gen_perf_params(self) -> ADDict:
+        """
+        规则: amaas 以性能测试拉起模型, 实际一般修改 cpu-infer 和其他高级参数(backend_parameters)
+        """
+        if perf := self.handler.data.amaas.perf:
+            params = ADDict()
+
+            # perf_common 的修改一般包含 backend_params 和 max-total-tokens（fixed_backend_params 中）
+            perf_common = self.handler.data.amaas.perf_common or {}
+            b_p_from_p_c = [item for k, v in perf_common.backend_parameters.items() for item in (f"--{k}", f"{v}")]
+            # TODO kt-cpuinfer
+            b_p_from_p_c.extend(["--kt-cpuinfer", "90" if self.amaas.cli.cpuinfer == 96 else "60"])
+
+            if spt_tp_params := perf.get(self.tp, False):
+                # spt_tp_params 可能会有 2 种情况, default 或非 default(此时通常是 dict)
+                # default 表示直接从 get_run_rule 中获取默认参数
+                # 非 default 表示 yaml 中该 tp 的配置需要与 get_run_rule 的结果做组合(通常是修改 backend_parameters)
+
+                params = self.__gen_params_from_rule()
+                if spt_tp_params != "default":
+                    # 修改 backend_parameters
+                    if isinstance(spt_tp_params, dict) and "backend_parameters" in spt_tp_params:
+                        tmp = {}
+                        res = [
+                            item
+                            for d in spt_tp_params["backend_parameters"]
+                            for k, v in d.items()
+                            for item in (f"--{k}", f"{v}")
+                        ]
+                        b_p_from_p_c.extend(res)
+                        tmp["backend_parameters"] = b_p_from_p_c
+                        params.update(tmp)
+
+                    # 修改 fixed_backend_parameters 中的 max_total_tokens
+                    if max_total_tokens := perf_common.max_total_tokens:
+                        params.update(dict(max_total_tokens=max_total_tokens))
+
+                logger.info(f"perf params: {params}")
+
+                return params
+
+            raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp} for perf.")
+
+        raise OperationNotSupported(f"{self.model_name} doesn't support tp {self.tp} for perf.")

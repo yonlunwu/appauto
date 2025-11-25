@@ -30,6 +30,7 @@ class EvalscopeEval:
         timeout_s: int = 6000,
         work_dir: str = None,
         ft: "FTContainer" = None,
+        api_key: str = None,
     ):
         self.node = node
         self.ft = ft
@@ -46,6 +47,7 @@ class EvalscopeEval:
         self.debug = debug
         self.timeout_s = timeout_s
         self.work_dir = work_dir or str(uuid4())
+        self.api_key = api_key
 
     @cached_property
     def cmd(self):
@@ -53,7 +55,8 @@ class EvalscopeEval:
         prefix = "cd /mnt/data/models/perftest && source venv/evalscope-py/bin/activate && python eval_via_es10x.py"
         cmd = (
             prefix
-            + f" --ip {self.ip} --port {self.port} --model {self.model} --datasets {self.dataset} --work-dir {self.work_dir}"
+            + f" --ip {self.ip} --port {self.port} --model {self.model} --datasets {self.dataset} "
+            + f"--work-dir {self.work_dir} {'' if not self.api_key else f'--api-key {self.api_key} '}"
         )
 
         if self.limit:
@@ -94,7 +97,7 @@ class EvalscopeEval:
             "curl -s -o /mnt/data/models/perftest/eval_via_es10x.py "
             "http://192.168.110.11:8090/scripts/eval_via_es10x.py"
         )
-        self.ft.run(cmd)
+        self.node.run(cmd)
 
     def run_eval(self):
         """

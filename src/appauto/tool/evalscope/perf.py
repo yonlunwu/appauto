@@ -23,7 +23,7 @@ class EvalscopePerf:
         parallel: str,
         number: str,
         tokenizer_path,
-        api_key="EMPTY",
+        api_key=None,
         input_length=128,
         output_length=512,
         read_timeout=600,
@@ -56,6 +56,7 @@ class EvalscopePerf:
         prefix = "cd /mnt/data/models/perftest && source venv/evalscope-py/bin/activate && python perf_via_es10x.py"
         cmd = (
             prefix + f" --ip {self.ip} --port {self.port} --parallel {self.parallel} --number {self.number} "
+            f"{'' if not self.api_key else f'--api-key {self.api_key} '}"
             f"--model {self.model} --tokenizer-path {self.tokenizer_path} --input-length {self.input_length} "
             f"--output-length {self.output_length} --read-timeout {self.read_timeout} --seed {self.seed} "
             f"--loop {self.loop} --output-csv {self.output_csv} "
@@ -69,7 +70,7 @@ class EvalscopePerf:
             "curl -s -o /mnt/data/models/perftest/perf_via_es10x.py "
             "http://192.168.110.11:8090/scripts/perf_via_es10x.py"
         )
-        self.ft.run(cmd)
+        self.node.run(cmd)
 
     def run_perf(self):
         """
@@ -78,6 +79,6 @@ class EvalscopePerf:
         3. 将生成的 xlsx 文件 download 到本地
         """
         self.download_script()
-        self.node.run(self.cmd, sudo=False)
+        self.node.run(self.cmd, sudo=False, print_screen=True)
         logger.info(f"The performance test data has been saved to: {self.output_csv}.csv, {self.output_csv}.xlsx")
         self.node.download(f"/mnt/data/models/perftest/{self.output_csv}.xlsx", f"{self.output_csv}.xlsx")
