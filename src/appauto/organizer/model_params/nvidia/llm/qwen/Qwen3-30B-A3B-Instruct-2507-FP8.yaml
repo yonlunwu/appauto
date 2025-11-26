@@ -17,6 +17,19 @@ engine:
     2:
       tensor-parallel-size: 2
 
+  perf_common:
+    disable-chunked-prefix-cache: true
+    disable-radix-cache: true
+
+  perf:
+    1:
+      tensor-parallel-size: 1
+      max-total-tokens: 110000
+
+    2:
+      tensor-parallel-size: 2
+      max-total-tokens: 262144
+      
 amaas:
   correct:
     1:
