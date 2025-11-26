@@ -6,6 +6,9 @@ engine:
     enable-p2p-check: true
     mem-fraction-static: 0.85
 
+  correct_common:
+    max-total-tokens: 128000
+
   correct:
     1:
       tensor-parallel-size: 1
@@ -13,15 +16,28 @@ engine:
 
     2:
       tensor-parallel-size: 2
-      max-total-tokens: 128000
 
     4:
       tensor-parallel-size: 4
-      max-total-tokens: 128000
 
     8:
       tensor-parallel-size: 8
-      max-total-tokens: 128000
+
+  perf_common:
+    max-total-tokens: 128000
+    disable-chunked-prefix-cache: true
+    disable-radix-cache: true
+
+  perf:
+    1:
+      max-total-tokens: 50000
+      tensor-parallel-size: 1
+    2:
+      tensor-parallel-size: 2
+    4:
+      tensor-parallel-size: 4
+    8:
+      tensor-parallel-size: 8
 
 amaas:
   correct:
