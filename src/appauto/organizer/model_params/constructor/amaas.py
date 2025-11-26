@@ -113,7 +113,7 @@ class AMaaSModelParams(BaseModelConfig):
             # 预期 perf_common 一定存在 backend_parameters：要关闭 cache
             b_p = [item for k, v in data.perf_common.backend_parameters.items() for item in (f"--{k}", f"{v}")]
             # backend_params 中要修改 cpuinfer
-            b_p.extend(["--kt-cpuinfer", "90" if self.amaas.cli.cpuinfer == 96 else "60"])
+            b_p.extend(["--cpuinfer", "90" if self.amaas.cli.cpuinfer == 96 else "60"])
             params.backend_parameters = b_p
 
             # 存在 tp 说明支持该 tp 的 perf 模式，否则不支持

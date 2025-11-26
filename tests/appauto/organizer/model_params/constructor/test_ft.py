@@ -20,7 +20,7 @@ class TestModelParams:
         assert "--model-path /mnt/data/models/DeepSeek-R1-0528-GPU-weight" in cmd
         assert "--served-model-name DeepSeek-R1-0528-GPU-weight" in cmd
         assert "--tensor-parallel-size 2" in cmd
-        assert "--kt-cpuinfer 80" in cmd
+        assert "--cpuinfer 80" in cmd
         assert "--max-running-requests 50" in cmd
         assert "--max-total-tokens 50000" in cmd
 
@@ -34,8 +34,8 @@ class TestModelParams:
         assert "--model-path /mnt/data/models/DeepSeek-R1-0528-GPU-weight" in cmd
         assert "--served-model-name DeepSeek-R1-0528-GPU-weight" in cmd
         assert "--tensor-parallel-size 2" in cmd
-        assert "--kt-cpuinfer 80" not in cmd
-        assert "--kt-cpuinfer 90" in cmd
+        assert "--cpuinfer 80" not in cmd
+        assert "--cpuinfer 90" in cmd
         assert "--max-running-requests 37" in cmd
         assert "--max-total-tokens 37000" in cmd
 

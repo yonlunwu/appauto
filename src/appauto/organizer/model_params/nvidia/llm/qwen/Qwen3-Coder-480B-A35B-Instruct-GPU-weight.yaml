@@ -5,12 +5,12 @@ engine:
     trust-remote-code: true
     enable-p2p-check: true
     disable-shared-experts-fusion: true
-    kt-weight-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-CPU-weight
-    kt-method: AMXINT8
+    amx-weight-path: /mnt/data/models/Qwen3-Coder-480B-A35B-Instruct-CPU-weight
+    amx-method: AMXINT8
     mem-fraction-static: 0.98
 
   dynamic:
-    kt-cpuinfer: 80
+    cpuinfer: 80
 
   correct_common:
     max-running-requests: 50
@@ -19,12 +19,12 @@ engine:
   correct:
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 103
+      num-gpu-experts: 103
 
   perf_common:
     max-running-requests: 37
     max-total-tokens: 37000
-    kt-max-deferred-experts-per-token: 2
+    enable-defer: true
     enable-mixed-chunk: true
     attention-backend: flashinfer
     disable-radix-cache: true
@@ -33,7 +33,7 @@ engine:
   perf:
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 105
+      num-gpu-experts: 105
       dp: 2
       enable-dp-attention: true
 
@@ -44,7 +44,7 @@ amaas:
   perf_common:
     max_total_tokens: 37000
     backend_parameters:
-      kt-max-deferred-experts-per-token: 2
+      enable-defer: ''
       enable-mixed-chunk: ''
       attention-backend: flashinfer
       disable-radix-cache: ''
@@ -55,4 +55,4 @@ amaas:
       backend_parameters:
         dp: 2
         enable-dp-attention: ''
-        kt-num-gpu-experts: 105
+        num-gpu-experts: 105

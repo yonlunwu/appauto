@@ -5,12 +5,12 @@ engine:
     trust-remote-code: true
     enable-p2p-check: true
     disable-shared-experts-fusion: true
-    kt-weight-path: /mnt/data/models/Qwen3-235B-A22B-Thinking-2507-CPU-weight
-    kt-method: AMXINT8
+    amx-weight-path: /mnt/data/models/Qwen3-235B-A22B-Thinking-2507-CPU-weight
+    amx-method: AMXINT8
     mem-fraction-static: 0.98
 
   dynamic:
-    kt-cpuinfer: 80
+    cpuinfer: 80
 
   correct_common:
     max-running-requests: 50
@@ -19,12 +19,12 @@ engine:
   correct:
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 128
+      num-gpu-experts: 128
 
   perf_common:
     max-running-requests: 240
     max-total-tokens: 240000
-    kt-max-deferred-experts-per-token: 2
+    enable-defer: true
     enable-mixed-chunk: true
     disable-radix-cache: true
     disable-chunked-prefix-cache: true
@@ -33,7 +33,7 @@ engine:
   perf:
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 128
+      num-gpu-experts: 128
       dp: 2
       enable-dp-attention: true
 
@@ -44,7 +44,7 @@ amaas:
   perf_common:
     max_total_tokens: 240000
     backend_parameters:
-      kt-max-deferred-experts-per-token: 2
+      enable-defer: ''
       enable-mixed-chunk: ''
       disable-radix-cache: ''
       disable-chunked-prefix-cache: ''
@@ -55,4 +55,4 @@ amaas:
       backend_parameters:
         dp: 2
         enable-dp-attention: ''
-        kt-num-gpu-experts: 128
+        num-gpu-experts: 128

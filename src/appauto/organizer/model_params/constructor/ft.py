@@ -82,7 +82,7 @@ class FTModelParams(BaseModelConfig):
             # TODO 补全更多 mode 以及考虑当不存在指定 mode 时的处理
             if self.mode == "perf":
                 # 性能模式下需要调整 cpuinfer
-                dynamic.update({"kt-cpuinfer": 90 if self.node.cpuinfer == 96 else 60})
+                dynamic.update({"cpuinfer": 90 if self.node.cpuinfer == 96 else 60})
                 # perf 不存在时，降级到 correct 模式
                 mode_common = yml_data.perf_common or yml_data.correct_common or {}
                 mode_spec = yml_data.perf.get(self.tp, {}) or yml_data.correct.get(self.tp, {})

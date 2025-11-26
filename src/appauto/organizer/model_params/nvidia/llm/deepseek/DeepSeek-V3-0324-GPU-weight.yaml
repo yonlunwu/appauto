@@ -6,14 +6,14 @@ engine:
     trust-remote-code: true
     disable-shared-experts-fusion: true
     enable-p2p-check: true          # 全部 CLI 都有
-    kt-weight-path: /mnt/data/models/DeepSeek-V3-0324-CPU-weight
-    kt-method: AMXINT4
-    kt-threadpool-count: 2
+    amx-weight-path: /mnt/data/models/DeepSeek-V3-0324-CPU-weight
+    amx-method: AMXINT4
+    subpool-count: 2
     mem-fraction-static: 0.98
 
 
   dynamic:
-    kt-cpuinfer: 80
+    cpuinfer: 80
 
 
   ##############################################
@@ -28,19 +28,19 @@ engine:
   correct:
     1:
       tensor-parallel-size: 1
-      kt-num-gpu-experts: 1
+      num-gpu-experts: 1
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 43
+      num-gpu-experts: 43
 
     4:
       tensor-parallel-size: 4
-      kt-num-gpu-experts: 100
+      num-gpu-experts: 100
 
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 215
+      num-gpu-experts: 215
 
 
 
@@ -51,7 +51,7 @@ engine:
   perf_common:
     max-total-tokens: 37000
     max-running-requests: 37
-    kt-max-deferred-experts-per-token: 2
+    enable-defer: true
     disable-chunked-prefix-cache: true
     disable-radix-cache: true
     attention-backend: flashinfer
@@ -62,23 +62,23 @@ engine:
   perf:
     1:
       tensor-parallel-size: 1
-      kt-num-gpu-experts: 15
+      num-gpu-experts: 15
 
     2:
       tensor-parallel-size: 2
-      kt-num-gpu-experts: 50
+      num-gpu-experts: 50
       dp: 2
       enable-dp-attention: true
 
     4:
       tensor-parallel-size: 4
-      kt-num-gpu-experts: 110
+      num-gpu-experts: 110
       dp: 2
       enable-dp-attention: true
 
     8:
       tensor-parallel-size: 8
-      kt-num-gpu-experts: 230
+      num-gpu-experts: 230
       dp: 2
       enable-dp-attention: true
 
@@ -95,7 +95,7 @@ amaas:
   perf_common:
     max_total_tokens: 37000
     backend_parameters:
-      kt-max-deferred-experts-per-token: 2
+      enable-defer: ''
       disable-chunked-prefix-cache: ''
       disable-radix-cache: ''
       attention-backend: flashinfer
@@ -105,23 +105,23 @@ amaas:
   perf:
     1:
       backend_parameters:
-        kt-num-gpu-experts: 15
+        num-gpu-experts: 15
         
     2: 
       backend_parameters:
         dp: 2
         enable-dp-attention: ''
-        kt-num-gpu-experts: 50
+        num-gpu-experts: 50
         
     4: 
       backend_parameters:
         dp: 2
         enable-dp-attention: ''
-        kt-num-gpu-experts: 110
+        num-gpu-experts: 110
         
     8: 
       backend_parameters:
         dp: 2
         enable-dp-attention: ''
-        kt-num-gpu-experts: 230
+        num-gpu-experts: 230
         
