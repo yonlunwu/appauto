@@ -57,7 +57,7 @@ pipeline {
                             --lark-user '${user}' \
                             --topic '${topic}' \
                             --testpaths testcases/sanity_check/amaas/test_amaas.py \
-                            --amaas_ip=${ip} \
+                            --ip=${ip} \
                             --case-level amaas_ci_sanity_check \
                             --model_priority=${model_priority} \
                             --ssh_user=${ssh_user} \
