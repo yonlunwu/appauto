@@ -1,4 +1,3 @@
-# 参数结构：common + correct[n]
 engine:
   common:
     model-path: /mnt/data/models/Qwen2.5-72B-Instruct-GPTQ-Int4
@@ -7,19 +6,30 @@ engine:
     enable-p2p-check: true
     mem-fraction-static: 0.85
 
-
   correct_common:
     max-total-tokens: 32768
 
   correct:
+    2:
+      tensor-parallel-size: 2
     4:
       tensor-parallel-size: 4
-
-
     8:
       tensor-parallel-size: 8
 
-# 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
 amaas:
-  4: default
-  8: default
+  correct:
+    2: default
+    4: default
+    8: default
+
+  perf_common:
+    max_total_tokens: 32768
+    backend_parameters:
+      disable-chunked-prefix-cache: ""
+      disable-radix-cache: ""
+
+  perf:
+    2: default
+    4: default
+    8: default

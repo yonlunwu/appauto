@@ -1,5 +1,4 @@
-# 参数结构：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
-engine:  
+engine:
   common:
     model-path: /mnt/data/models/Qwen3-Next-80B-A3B-Thinking-GPU-weight
     served-model-name: Qwen3-Next-80B-A3B-Thinking-GPU-weight
@@ -10,39 +9,23 @@ engine:
     kt-threadpool-count: 2
     mem-fraction-static: 0.98
 
-
   dynamic:
-    # correct = 80；perf 会被 perf_common 覆盖成 90
     kt-cpuinfer: 80
-
-
-  ##############################################
-  #             正确性优先版（correct）        #
-  ##############################################
 
   correct_common:
     max-running-requests: 50
     max-total-tokens: 50000
 
-
   correct:
     1:
       tensor-parallel-size: 1
       kt-num-gpu-experts: 1
-
     2:
       tensor-parallel-size: 2
       kt-num-gpu-experts: 512
-
     4:
       tensor-parallel-size: 4
       kt-num-gpu-experts: 512
-
-
-
-  ##############################################
-  #              性能优化版（perf）            #
-  ##############################################
 
   perf_common:
     max-running-requests: 37
@@ -54,24 +37,49 @@ engine:
     disable-radix-cache: true
     disable-chunked-prefix-cache: true
 
-
   perf:
     1:
       tensor-parallel-size: 1
       kt-num-gpu-experts: 500
-
     2:
       tensor-parallel-size: 2
       kt-num-gpu-experts: 512
       dp: 2
       enable-dp-attention: true
-
     4:
       tensor-parallel-size: 4
       kt-num-gpu-experts: 512
       dp: 2
       enable-dp-attention: true
+
 amaas:
-  1: default
-  2: default
-  4: default
+  correct:
+    1: default
+    2: default
+    4: default
+
+  perf_common:
+    max_total_tokens: 128000
+    backend_parameters:
+      kt-max-deferred-experts-per-token: 2
+      chunked-prefill-size: 4096
+      enable-mixed-chunk: ''
+      attention-backend: flashinfer
+      disable-radix-cache: ''
+      disable-chunked-prefix-cache: ''
+
+  perf:
+    1:
+      max_total_tokens: 37000
+      backend_parameters:
+        kt-num-gpu-experts: 500
+    2:
+      backend_parameters:
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 512
+    4:
+      backend_parameters:
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 512

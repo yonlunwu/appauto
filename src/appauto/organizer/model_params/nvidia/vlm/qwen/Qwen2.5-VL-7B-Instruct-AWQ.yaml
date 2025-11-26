@@ -1,4 +1,4 @@
-engine:  
+engine:
   common:
     model-path: /mnt/data/models/Qwen2.5-VL-7B-Instruct-AWQ
     served-model-name: Qwen2.5-VL-7B-Instruct-AWQ
@@ -6,24 +6,32 @@ engine:
     enable-p2p-check: true
     mem-fraction-static: 0.85
 
-
   correct_common:
     max-total-tokens: 128000
 
   correct:
     1:
       tensor-parallel-size: 1
-      
 
     2:
       tensor-parallel-size: 2
 
-
     4:
       tensor-parallel-size: 4
 
-
 amaas:
-  1: default
-  2: default
-  4: default
+  correct:
+    1: default
+    2: default
+    4: default
+
+  perf_common:
+    max_total_tokens: 128000
+    backend_parameters:
+      disable-chunked-prefix-cache: ""
+      disable-radix-cache: ""
+
+  perf:
+    1: default
+    2: default
+    4: default

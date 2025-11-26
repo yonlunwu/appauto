@@ -1,4 +1,3 @@
-# 参数结构：common + correct[n]
 engine:
   common:
     model-path: /mnt/data/models/Qwen3-30B-A3B-Instruct-2507
@@ -7,7 +6,6 @@ engine:
     enable-p2p-check: true
     mem-fraction-static: 0.85
 
-
   correct_common:
     max-total-tokens: 262144
 
@@ -15,15 +13,25 @@ engine:
     2:
       tensor-parallel-size: 2
 
-
     4:
       tensor-parallel-size: 4
 
-
     8:
       tensor-parallel-size: 8
-      
+
 amaas:
-  2: default
-  4: default
-  8: default
+  correct:
+    2: default
+    4: default
+    8: default
+
+  perf_common:
+    max_total_tokens: 262144
+    backend_parameters:
+      disable-chunked-prefix-cache: ""
+      disable-radix-cache: ""
+
+  perf:
+    2: default
+    4: default
+    8: default

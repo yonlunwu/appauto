@@ -1,15 +1,10 @@
-# 参数结构：common + correct_common + correct[n]
-engine:  
+engine:
   common:
     model-path: /mnt/data/models/Qwen2.5-VL-32B-Instruct
     served-model-name: Qwen2.5-VL-32B-Instruct
     trust-remote-code: true
     enable-p2p-check: true
     mem-fraction-static: 0.85
-
-
-  # 注意：不同卡数 max-total-tokens 不一样，因此 correct_common 不统一
-  # 按你 CLI 分别设置在 correct 中
 
   correct:
     2:
@@ -24,9 +19,20 @@ engine:
       tensor-parallel-size: 8
       max-total-tokens: 128000
 
-
 amaas:
-  2: 
-    max-total-tokens: 50000
-  4: default
-  8: default
+  correct:
+    2:
+      max-total-tokens: 50000
+    4: default
+    8: default
+
+  perf_common:
+    backend_parameters:
+      disable-chunked-prefix-cache: ""
+      disable-radix-cache: ""
+
+  perf:
+    2:
+      max-total-tokens: 50000
+    4: default
+    8: default

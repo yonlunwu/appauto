@@ -1,5 +1,4 @@
-# 由：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
-engine:  
+engine:
   common:
     model-path: /mnt/data/models/Qwen3-235B-A22B-Instruct-2507-GPU-weight
     served-model-name: Qwen3-235B-A22B-Instruct-2507-GPU-weight
@@ -10,30 +9,17 @@ engine:
     kt-method: AMXINT8
     mem-fraction-static: 0.98
 
-
   dynamic:
-    # correct = 80；perf = 会被 perf_common 覆盖为 90
     kt-cpuinfer: 80
-
-
-  ##############################################
-  #               正确性优先版（correct）       #
-  ##############################################
 
   correct_common:
     max-running-requests: 50
     max-total-tokens: 50000
 
-
   correct:
     8:
       tensor-parallel-size: 8
       kt-num-gpu-experts: 128
-
-
-  ##############################################
-  #               性能优化版（perf）           #
-  ##############################################
 
   perf_common:
     max-running-requests: 240
@@ -44,7 +30,6 @@ engine:
     disable-chunked-prefix-cache: true
     attention-backend: flashinfer
 
-
   perf:
     8:
       tensor-parallel-size: 8
@@ -52,6 +37,22 @@ engine:
       dp: 2
       enable-dp-attention: true
 
-
 amaas:
-  8: default
+  correct:
+    8: default
+
+  perf_common:
+    max_total_tokens: 240000
+    backend_parameters:
+      kt-max-deferred-experts-per-token: 2
+      enable-mixed-chunk: ''
+      disable-radix-cache: ''
+      disable-chunked-prefix-cache: ''
+      attention-backend: flashinfer
+
+  perf:
+    8:
+      backend_parameters:
+        dp: 2
+        enable-dp-attention: ''
+        kt-num-gpu-experts: 128

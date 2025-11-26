@@ -1,4 +1,3 @@
-# 参数由：common + correct[n]
 engine:
   common:
     model-path: /mnt/data/models/Qwen2.5-32B-Instruct-GPTQ-Int8
@@ -6,10 +5,8 @@ engine:
     trust-remote-code: true
     enable-p2p-check: true
 
-
   correct_common:
     max-total-tokens: 23552
-
 
   correct:
     1:
@@ -23,9 +20,22 @@ engine:
 
     8:
       tensor-parallel-size: 8
-# 基于 amaas 测试: 参数组成：如果什么都没写，就是 default
+
 amaas:
-  1: default
-  2: default
-  4: default
-  8: default
+  correct:
+    1: default
+    2: default
+    4: default
+    8: default
+
+  perf_common:
+    max_total_tokens: 23552
+    backend_parameters:
+      disable-chunked-prefix-cache: ""
+      disable-radix-cache: ""
+
+  perf:
+    1: default
+    2: default
+    4: default
+    8: default
