@@ -285,31 +285,36 @@ def perf(
     """
     基于 evalscope 跑模型性能测试(基于 ft)
     """
-    # TODO 优先拉起模型
     from appauto.operator.amaas_node import AMaaSNode
+    from appauto.manager.error_manager.model_store import ModelStoreCheckError, ModelStoreRunError
 
     assert base_ft or base_amaas, "Either --base-ft or --base-amaas must be specified."
 
     if base_ft:
         ft = AMaaSNode(ip, ssh_user, ssh_password, ssh_port, skip_api=True).cli.docker_ctn_factory.ft
 
-        ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
+        try:
+            ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
 
-        ft.run_perf_via_evalscope(
-            port,
-            model,
-            parallel,
-            number,
-            input_length,
-            output_length,
-            read_timeout,
-            loop=loop,
-            debug=debug,
-            tokenizer_path=tokenizer_path,
-        )
+            ft.run_perf_via_evalscope(
+                port,
+                model,
+                parallel,
+                number,
+                input_length,
+                output_length,
+                read_timeout,
+                loop=loop,
+                debug=debug,
+                tokenizer_path=tokenizer_path,
+            )
 
-        if not keep_model:
+            if not keep_model:
+                ft.stop_model(model)
+
+        except (ModelStoreCheckError, ModelStoreRunError):
             ft.stop_model(model)
+            print(f" ❌ test failed: {e}")
 
         return
 
@@ -319,27 +324,33 @@ def perf(
         amaas = AMaaSNode(ip, ssh_user, ssh_password, ssh_port)
 
         model_store = amaas.api.init_model_store.llm.filter(name=model)[0]
-        amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout)
 
-        evalscope = EvalscopePerf(
-            amaas.cli,
-            model,
-            ip,
-            10011,
-            parallel,
-            number,
-            tokenizer_path or f"/mnt/data/models/{model}",
-            amaas.api.api_keys[0].value,
-            input_length,
-            output_length,
-            read_timeout,
-            loop=loop,
-            debug=debug,
-        )
-        evalscope.run_perf()
+        try:
+            amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout)
 
-        if not keep_model:
+            evalscope = EvalscopePerf(
+                amaas.cli,
+                model,
+                ip,
+                10011,
+                parallel,
+                number,
+                tokenizer_path or f"/mnt/data/models/{model}",
+                amaas.api.api_keys[0].value,
+                input_length,
+                output_length,
+                read_timeout,
+                loop=loop,
+                debug=debug,
+            )
+            evalscope.run_perf()
+
+            if not keep_model:
+                amaas.api.stop_model(model_store, "llm")
+
+        except (ModelStoreCheckError, ModelStoreRunError) as e:
             amaas.api.stop_model(model_store, "llm")
+            print(f" ❌ test failed: {e}")
 
         return
 
