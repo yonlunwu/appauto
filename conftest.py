@@ -86,7 +86,7 @@ def gen_report_and_send_lark(
             lark.construct_msg_payload(
                 group_chat_id,
                 case_dict,
-                env_summary={"ip": TEST_DATA_DICT.get("amaas_ip", "Please click on the report to view")},
+                env_summary={"ip": TEST_DATA_DICT.get("ip", "Please click on the report to view")},
                 link=test_report,
                 topic=topic,
                 user=lark_user,
@@ -99,7 +99,7 @@ def gen_report_and_send_lark(
             lark.construct_msg_payload(
                 user_open_id,
                 case_dict,
-                env_summary={"ip": TEST_DATA_DICT.get("amaas_ip", "Please click on the report to view")},
+                env_summary={"ip": TEST_DATA_DICT.get("ip", "Please click on the report to view")},
                 link=test_report,
                 topic=topic,
                 user=lark_user,

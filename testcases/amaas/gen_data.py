@@ -11,7 +11,7 @@ logger = LoggingConfig.get_logger()
 
 @dataclass
 class DefaultParams:
-    ip: str = TEST_DATA_DICT.get("amaas_ip", "117.133.60.227")
+    ip: str = TEST_DATA_DICT.get("ip", "117.133.60.227")
     port: str = TEST_DATA_DICT.get("amaas_port", "10001")
     ssh_user: str = TEST_DATA_DICT.get("ssh_user", "qujing")
     ssh_port: str = TEST_DATA_DICT.get("ssh_port", 22)
