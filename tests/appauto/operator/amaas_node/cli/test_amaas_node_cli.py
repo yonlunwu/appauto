@@ -16,3 +16,7 @@ class TestAMaaSNodeCli:
         ctn_id = amaas.cli.docker_ctn_factory.ft.ctn_id
         logger.info(ctn_id)
         assert ctn_id == "37c045745fcc"
+
+    def test_collect_local_models(self):
+        res = amaas.cli.local_models()
+        logger.info(res)
