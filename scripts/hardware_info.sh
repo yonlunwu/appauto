@@ -52,6 +52,39 @@ else
 fi
 echo "" >> "$OUTPUT_FILE"
 
+# 沐曦（MX）显卡信息 - 直接输出完整 mx-smi 原始信息
+echo "=== 沐曦显卡信息 ===" >> "$OUTPUT_FILE"
+if command -v mx-smi &> /dev/null; then
+    echo "mx-smi 完整输出（原始信息）:" >> "$OUTPUT_FILE"
+    echo "----------------------------------------" >> "$OUTPUT_FILE"
+    # 直接执行 mx-smi 并将完整输出写入文件（保留原始格式）
+    mx-smi 2>/dev/null >> "$OUTPUT_FILE"
+    # 捕获执行结果，判断是否成功获取信息
+    if [ $? -ne 0 ]; then
+        echo "警告：mx-smi 执行失败，可能缺少权限或驱动异常" >> "$OUTPUT_FILE"
+    fi
+    echo "----------------------------------------" >> "$OUTPUT_FILE"
+else
+    echo "未检测到沐曦显卡或驱动（需安装沐曦官方驱动及 mx-smi 工具）" >> "$OUTPUT_FILE"
+fi
+echo "" >> "$OUTPUT_FILE"
+
+# 天数（Days）显卡信息
+echo "=== 天数显卡信息 ===" >> "$OUTPUT_FILE"
+if command -v days-smi &> /dev/null; then
+    echo "days-smi 完整输出（原始信息）:" >> "$OUTPUT_FILE"
+    echo "----------------------------------------" >> "$OUTPUT_FILE"
+    # 天数也采用直接输出完整原始信息的方式，保持一致性
+    days-smi 2>/dev/null >> "$OUTPUT_FILE"
+    if [ $? -ne 0 ]; then
+        echo "警告：days-smi 执行失败，可能缺少权限或驱动异常" >> "$OUTPUT_FILE"
+    fi
+    echo "----------------------------------------" >> "$OUTPUT_FILE"
+else
+    echo "未检测到天数显卡或驱动（需安装 days-smi 工具）" >> "$OUTPUT_FILE"
+fi
+echo "" >> "$OUTPUT_FILE"
+
 # 华为昇腾 NPU 信息
 echo "=== 华为昇腾 NPU 信息 ===" >> "$OUTPUT_FILE"
 if command -v npu-smi &> /dev/null; then

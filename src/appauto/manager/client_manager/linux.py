@@ -394,17 +394,19 @@ class BaseLinux(object):
             logger.error(f"error occurred when detect if file exist: {str(e)}")
             return "unknown"
 
+    # TODO 可能不够健壮, 如果用户都装过，但目前只残留一种
+    # 也可能出现用户有多张卡，且类型不同
     @cached_property
     def gpu_type(self) -> Literal["nvidia", "muxi", "huawei", "unknown"]:
-        rc, _, _ = self.run("command -v nvidia-smi")
+        rc, _, _ = self.run("command -v nvidia-smi", sudo=False)
         if rc == 0:
             return "nvidia"
 
-        rc, _, _ = self.run("command -v npu-smi")
+        rc, _, _ = self.run("command -v npu-smi", sudo=False)
         if rc == 0:
             return "huawei"
 
-        rc, _, _ = self.run("command -v mx-smi")
+        rc, _, _ = self.run("command -v mx-smi", sudo=False)
         if rc == 0:
             return "muxi"
 
