@@ -117,7 +117,9 @@ class CommonMMLU:
     @classmethod
     @allure.step("gen_prediction")
     def gen_prediction(cls, prompt):
-        res = sglang.talk(prompt, sglang_server.served_model_name, temperature=0.6, stream=False, encode_result=True)
+        res = sglang.talk_to_llm(
+            prompt, sglang_server.served_model_name, temperature=0.6, stream=False, encode_result=True
+        )
         prediction = res.choices[0].message.content
 
         assert prediction

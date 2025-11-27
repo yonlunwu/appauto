@@ -152,7 +152,9 @@ class CommonHumanEval:
         prompt = cls.construct_prompt(prompt)
         # TODO temperature 要写死吗？
         # stream 最好不要修改, 因为内部涉及内容的解析
-        res = sglang.talk(prompt, sglang_server.served_model_name, temperature=0.6, stream=False, encode_result=True)
+        res = sglang.talk_to_llm(
+            prompt, sglang_server.served_model_name, temperature=0.6, stream=False, encode_result=True
+        )
         res = cls.filter_code(cls.fix_indents(res.choices[0].message.content))
         logger.info(f"filter code done: {res}")
 
