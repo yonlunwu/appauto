@@ -76,7 +76,7 @@ class TestSGLangAPISingle:
         """
         测试 stream=False 时可以正常工作.
         """
-        sglang.talk(
+        sglang.talk_to_llm(
             content=choice(prompt_list),
             model="DeepSeek-R1",
             stream=False,
@@ -89,7 +89,7 @@ class TestSGLangAPISingle:
 
     def test_stream_true_and_process_stream_correct(self):
         """测试 stream=True 时可以正常工作: 参数正确"""
-        sglang.talk(
+        sglang.talk_to_llm(
             content=choice(prompt_list),
             model="DeepSeek-R1",
             stream=True,
@@ -101,7 +101,7 @@ class TestSGLangAPISingle:
 
     def test_stream_true_and_process_stream_random(self):
         """测试 stream=True 时可以正常工作: 参数随机"""
-        sglang.talk(
+        sglang.talk_to_llm(
             content=choice(prompt_list),
             model="DeepSeek-R1",
             stream=True,
@@ -116,7 +116,7 @@ class TestSGLangAPISingle:
         "max_tokens", [-1, 0, 1, 5.0, 10, 512, 1024, 131072]
     )  # 必须 > 0，# 0.5 会直接 500 Internal Server Error
     def test_max_tokens(self, max_tokens):
-        sglang.talk(
+        sglang.talk_to_llm(
             content=choice(prompt_list),
             model="DeepSeek-R1",
             stream=choice([True, False]),
@@ -126,7 +126,7 @@ class TestSGLangAPISingle:
         )
 
     def test_no_temperature_and_no_top_p(self):
-        sglang.talk(
+        sglang.talk_to_llm(
             content=choice(prompt_list),
             model="DeepSeek-R1",
             stream=choice([True, False]),
@@ -139,7 +139,7 @@ class TestSGLangAPISingle:
         "temperature", [-1, 0, 1.0, 2.0, 1024, None]
     )  # temperature 必须非负, 会返回 200, error_msg 套在 response 中, 可以是 float
     def test_temperature(self, temperature):
-        sglang.talk(
+        sglang.talk_to_llm(
             content=choice(prompt_list),
             model="DeepSeek-R1",
             stream=choice([True, False]),
@@ -155,7 +155,7 @@ class TestSGLangAPISingle:
             - top_p 位于合理值 rc == 200;
             - 不合理时 rc == 400
         """
-        sglang.talk(
+        sglang.talk_to_llm(
             content=choice(prompt_list),
             model="DeepSeek-R1",
             stream=choice([True, False]),

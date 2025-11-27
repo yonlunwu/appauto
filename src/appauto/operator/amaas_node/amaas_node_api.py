@@ -15,7 +15,7 @@ from appauto.manager.component_manager.components.amaas.models.model_store impor
     BaseModelStore,
 )
 
-from appauto.manager.error_manager import ModelStoreCheckError, ModelStoreRunError
+from appauto.manager.error_manager import ModelCheckError, ModelRunError
 
 T = TypeVar("T", LLMModelStore, EmbeddingModelStore, VLMModelStore, RerankModelStore, ParserModelStore, AudioModelStore)
 
@@ -47,7 +47,7 @@ class AMaaSNodeApi(AMaaS):
 
         if res.data.messages:
             logger.error(f"error occurred while check model: {res.data.messages}")
-            raise ModelStoreCheckError(f"{model_store.name} check failed: {res.data.messages}, params: {params}")
+            raise ModelCheckError(f"{model_store.name} check failed: {res.data.messages}, params: {params}")
 
         return res
 
@@ -56,7 +56,7 @@ class AMaaSNodeApi(AMaaS):
             model_store.run(wait_for_running=True, running_timeout_s=timeout_s, **params)
         except Exception as e:
             logger.error(f"error occurred while running model: {str(e)}")
-            raise ModelStoreRunError(f"{model_store.name} check failed: {str(e)}, params: {params}")
+            raise ModelRunError(f"{model_store.name} check failed: {str(e)}, params: {params}")
 
     def launch_model_with_default(
         self, tp: Literal[1, 2, 4, 8], model_store: T, model_name: str = None, timeout_s: int = 900

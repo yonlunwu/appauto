@@ -8,7 +8,7 @@ from typing import Literal, Tuple, List
 from ..linux import BaseLinux
 from .docker import BaseDockerTool
 from appauto.manager.config_manager.config_logging import LoggingConfig
-from appauto.manager.utils_manager.format_output import str_to_list_by_split
+from appauto.manager.error_manager.model_store import ModelRunError
 
 logger = LoggingConfig.get_logger()
 
@@ -111,5 +111,14 @@ class BaseDockerContainer:
         interval_s=20,
         timeout_s=900,
     ):
-        self.wait_server_reachable(ip, port, interval_s, timeout_s)
-        assert self.check_server_reachable(ip, port)
+        try:
+            self.wait_server_reachable(ip, port, interval_s, timeout_s)
+            assert self.check_server_reachable(ip, port)
+
+        except AssertionError as e:
+            logger.error(f"Model {ip}:{port} running failed: {e}")
+            raise ModelRunError(f"Model {ip}:{port} running failed: {e}")
+
+        except Exception as e:
+            logger.error(f"Model {ip}:{port} running failed: {e}")
+            raise e

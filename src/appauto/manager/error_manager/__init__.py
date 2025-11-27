@@ -1,1 +1,1 @@
-from .model_store import ModelStoreCheckError, ModelStoreRunError
+from .model_store import ModelCheckError, ModelRunError

@@ -2,7 +2,6 @@ import pytest
 from time import sleep
 from enum import Enum
 from faker import Faker
-from openai import OpenAI
 from random import choice
 from tabulate import tabulate
 from typing import Dict, List, TypeVar, Literal, Type
@@ -17,8 +16,9 @@ from appauto.manager.component_manager.components.amaas.models.model_store impor
     ParserModelStore,
     BaseModelStore,
 )
+from appauto.validator.common import BaseValidator
 from appauto.manager.config_manager import LoggingConfig
-from appauto.manager.error_manager import ModelStoreCheckError, ModelStoreRunError
+from appauto.manager.error_manager import ModelCheckError, ModelRunError
 
 from testcases.amaas.gen_data import amaas, DefaultParams as DP
 
@@ -180,7 +180,7 @@ class CommonModelBaseStep:
                 result_item["question"] = model_store.question
                 # item["answer"] = llm.answer
 
-                assert DoCheck.check_gibberish(model_store.answer) == "no"
+                BaseValidator.check_gibberish(model_store.answer)
 
         except Exception as e:
             logger.info(f"model store: {model_store.name}, scene failed, error: {str(e)}")
@@ -316,21 +316,21 @@ class CommonModelBaseRunner:
             # check 失败后直接记录结果
             res = CommonModelBaseStep.model_store_check(result_item, model_store, params)
             if res.data.messages:
-                raise ModelStoreCheckError(f"model store: {model_store.name}, tp: {tp}, check failed")
+                raise ModelCheckError(f"model store: {model_store.name}, tp: {tp}, check failed")
 
             # run 失败了要主动 stop，不要影响其他的
             CommonModelBaseStep.model_store_run(result_item, model_store, params)
             if model_store.run_result == ModelBaseTestResult.failed:
-                raise ModelStoreRunError(f"model store: {model_store.name}, tp: {tp}, run failed")
+                raise ModelRunError(f"model store: {model_store.name}, tp: {tp}, run failed")
 
             CommonModelBaseStep.scene_and_stop(model_store, result_item)
 
             sleep(5)
 
-        except ModelStoreCheckError:
+        except ModelCheckError:
             logger.error(f"model store: {model_store.name}, tp: {tp}, check failed")
 
-        except ModelStoreRunError:
+        except ModelRunError:
             logger.error(f"model store: {model_store.name}, tp: {tp}, run failed")
             CommonModelBaseStep.scene_and_stop(model_store, result_item, skip_scene=True)
 
@@ -358,45 +358,3 @@ class DoCheck:
         assert item["run_result"] == ModelBaseTestResult.passed
 
         assert item["query_result"] in [ModelBaseTestResult.passed, ModelBaseTestResult.skipped]
-
-    @classmethod
-    def check_gibberish(cls, content) -> Literal["yes", "no"]:
-        client = OpenAI(
-            api_key="sk-lkxrwoxzkvjottwyuhxnosmivpxjnzhvlgpanemmmwlxpscw", base_url="https://api.siliconflow.cn/v1"
-        )
-        response = client.chat.completions.create(
-            model="Qwen/Qwen2.5-72B-Instruct",
-            messages=[
-                {
-                    "role": "system",
-                    "content": """
-    你是人类读者，完全从人类直观阅读感受出发，检测 3 类问题：
-    1. 语义连贯性：是否存在上下文逻辑断裂、话题突兀跳转、前后表述矛盾, 导致读不懂或理解卡顿；
-    2. 表达通顺度：是否存在句子结构生硬、语序混乱、读起来拗口、用词搭配不当，导致阅读不顺畅；
-    3. 内容有效性：是否存在乱码符号、无意义字符、与文本核心无关的杂乱信息，影响阅读体验（一些合理的表情或 markdown 格式除外）。
-
-    要求:
-    1. 无需额外解释，仅回复「有」或「没有」
-    2. 请你检测的内容来自 AI 大模型，可能有一些 markdown 格式或 think 标签之类的思考内容，这些都是合理情况
-    3. 如果是数学题之类的，也不用做过多检测，只需要检测语义即可
-    4. 如果内容为纯数字, 有可能是 ID 也有可能是乱码，需要自行判断是否为常见的 ID
-    5. 由于用户提问时可能设置了 max-tokens, 因此如果内容戛然而止，此时应该不是问题，属于被合理截断。
-    6. 如果内容反复重复，大概率是模型回答陷入死循环，此时也是有问题的。
-                    """,
-                },
-                {"role": "user", "content": content},
-            ],
-            stream=True,
-        )
-
-        res = None
-        for chunk in response:
-            if not chunk.choices:
-                continue
-            if chunk.choices[0].delta.content:
-                res = chunk.choices[0].delta.content
-
-        if "没有" in res:
-            return "no"
-        else:
-            return "yes"

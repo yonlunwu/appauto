@@ -11,6 +11,7 @@ from appauto.manager.client_manager import BaseDockerContainer
 from appauto.manager.component_manager.components.engine import SGLang
 from appauto.manager.config_manager.config_logging import LoggingConfig
 
+
 logger = LoggingConfig.get_logger()
 
 if TYPE_CHECKING:
@@ -31,10 +32,8 @@ class FTContainer(BaseDockerContainer):
         self.conda_env = conda_env
         self.engine = engine
 
-    # TODO 需要维护一个 api_server 用于 sanity_check
-    @property
-    def api_server(self):
-        return SGLang(self.node.mgt_ip)
+    def api_server(self, port):
+        return SGLang(self.node.mgt_ip, port)
 
     def launch_model(
         self,

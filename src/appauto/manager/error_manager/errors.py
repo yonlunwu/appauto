@@ -8,3 +8,9 @@ class OperationNotSupported(Exception):
     """Raised when params due to operation not supported."""
 
     pass
+
+
+class ModelGibberishError(Exception):
+    """Raised when model output is gibberish."""
+
+    pass

@@ -13,7 +13,7 @@ class CommonSpeed:
     def measure_speed(self, prompt, max_tokens) -> Tuple[float, float]:
         # TODO 除了 ttft 还需要 prefill_speed 和 decode_speed
         start_time = time()
-        ttft = sglang.talk(
+        ttft = sglang.talk_to_llm(
             prompt,
             sglang_server.served_model_name,
             stream=True,

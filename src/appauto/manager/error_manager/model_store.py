@@ -1,10 +1,10 @@
-class ModelStoreCheckError(Exception):
+class ModelCheckError(Exception):
     """Raised when model_store check failed."""
 
     pass
 
 
-class ModelStoreRunError(Exception):
+class ModelRunError(Exception):
     """Raised when model_store running failed."""
 
     pass

@@ -286,7 +286,7 @@ def perf(
     基于 evalscope 跑模型性能测试(基于 ft)
     """
     from appauto.operator.amaas_node import AMaaSNode
-    from appauto.manager.error_manager.model_store import ModelStoreCheckError, ModelStoreRunError
+    from appauto.manager.error_manager.model_store import ModelCheckError, ModelRunError
 
     assert base_ft or base_amaas, "Either --base-ft or --base-amaas must be specified."
 
@@ -312,7 +312,7 @@ def perf(
             if not keep_model:
                 ft.stop_model(model)
 
-        except (ModelStoreCheckError, ModelStoreRunError):
+        except (ModelCheckError, ModelRunError):
             ft.stop_model(model)
             print(f" ❌ test failed: {e}")
 
@@ -348,7 +348,7 @@ def perf(
             if not keep_model:
                 amaas.api.stop_model(model_store, "llm")
 
-        except (ModelStoreCheckError, ModelStoreRunError) as e:
+        except (ModelCheckError, ModelRunError) as e:
             amaas.api.stop_model(model_store, "llm")
             print(f" ❌ test failed: {e}")
 
