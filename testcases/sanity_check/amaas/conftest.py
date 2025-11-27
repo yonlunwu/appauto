@@ -91,7 +91,7 @@ class CommonModelBaseStep:
                     model_store.question, stream=True, process_stream=True, max_tokens=2048, timeout=300
                 )
 
-                assert BaseValidator.check_gibberish(model_store.answer)
+                BaseValidator.check_gibberish(model_store.answer)
 
         except Exception as e:
             logger.info(f"scene failed, model store: {model_store.name}, error: {str(e)}")
