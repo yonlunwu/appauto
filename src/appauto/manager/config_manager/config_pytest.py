@@ -52,6 +52,7 @@ markers =
     ci: marks tests as ci
     smoke: marks tests as smoke
     amaas_ci_sanity_check: marks tests as amaas sanity check(ci)
+    ft_ci_sanity_check: marks tests as ft sanity check(ci)
     night: marks tests as night
     dev: marks tests as dev
 
