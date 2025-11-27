@@ -32,3 +32,4 @@ assert Defaultparams.ft_port
 
 
 amaas = AMaaSNodeCli(Defaultparams.ip, Defaultparams.ssh_user, ssh_port=Defaultparams.ssh_port)
+ft_ctn = amaas.docker_ctn_factory.ft

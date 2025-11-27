@@ -13,7 +13,7 @@ from paramiko.ssh_exception import (
     SSHException,
     ProxyCommandFailure,
 )
-from typing import Tuple, Optional, Literal, List, TYPE_CHECKING
+from typing import Tuple, Optional, Literal, List
 from tenacity import retry, stop_after_attempt, wait_fixed, wait_chain
 
 from ..connection_manager.ssh import SSHClient
@@ -395,9 +395,40 @@ class BaseLinux(object):
             return "unknown"
 
     @cached_property
-    def gpu_type(self) -> str:
-        # TODO
-        return "nvidia"
+    def gpu_type(self) -> Literal["nvidia", "muxi", "huawei", "unknown"]:
+        rc, _, _ = self.run("command -v nvidia-smi")
+        if rc == 0:
+            return "nvidia"
+
+        rc, _, _ = self.run("command -v npu-smi")
+        if rc == 0:
+            return "huawei"
+
+        rc, _, _ = self.run("command -v mx-smi")
+        if rc == 0:
+            return "muxi"
+
+        return "unknown"
+
+    @cached_property
+    def gpu_sum(self) -> int:
+
+        def _count(cmd):
+            rc, res, _ = self.run(cmd)
+            if rc == 0:
+                return int(res)
+            return 8
+
+        if self.gpu_type == "nvidia":
+            return _count("nvidia-smi -L | wc -l")
+
+        elif self.gpu_type == "huawei":
+            return _count("npu-smi info -m 2>/dev/null | grep Ascend | wc -l")
+
+        elif self.gpu_type == "muxi":
+            return _count("mx-smi -L | grep UUID | wc -l")
+
+        return 0
 
     @cached_property
     def cpu_socket(self) -> int:
