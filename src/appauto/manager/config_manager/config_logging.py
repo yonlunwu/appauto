@@ -126,7 +126,8 @@ format=%(asctime)s|%(process)d:%(threadName)s:%(thread)d|%(name)s|%(levelname)-4
         if not cls.check_logging_ini():
             cls.init()
         logging.config.fileConfig(
-            fname=cls.joint_path(),
+            # fname=cls.joint_path(),
+            fname=cls.LOGGING_INI,
             defaults=os.makedirs("logs", exist_ok=True),
             disable_existing_loggers=False,
         )
