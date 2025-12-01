@@ -1,5 +1,6 @@
 import base64
 from time import time
+from pathlib import Path
 from ..amaas.base_component import BaseComponent
 from ....config_manager import LoggingConfig
 
@@ -8,6 +9,7 @@ logger = LoggingConfig.get_logger()
 
 class SGLang(BaseComponent):
     OBJECT_TOKEN = "sglang_id"
+    DEFAULT_IMAGE = str(Path(__file__).resolve().parents[4] / "assets" / "ci_test.image")
 
     POST_URL_MAP = dict(chat="v1/chat/completions")
 
@@ -108,7 +110,7 @@ class SGLang(BaseComponent):
         self,
         model: str,
         text: str = "请详细描述这张图片的内容，包括主体、颜色、场景等细节？",
-        image_path: str = "src/appauto/assets/ci_test.image",
+        image_path: str = None,
         stream=True,
         max_tokens: int = None,
         temperature: float = 0.6,
@@ -116,6 +118,7 @@ class SGLang(BaseComponent):
         timeout=None,
         encode_result=True,
     ):
+        image_path = image_path or self.DEFAULT_IMAGE
         assert image_path
 
         base64_data = self.image_to_base64(image_path)

@@ -1,3 +1,4 @@
+from pathlib import Path
 from addict import Dict as ADDict
 from functools import cached_property
 from functools import cached_property
@@ -17,7 +18,7 @@ T = TypeVar("T", LLMModelStore, EmbeddingModelStore, VLMModelStore, RerankModelS
 
 
 class BaseModelConfig:
-    YML_PATH = "src/appauto/organizer/model_params/model_config.yaml"
+    YML_PATH = str(Path(__file__).parent.parent / "model_config.yaml")
 
     @cached_property
     def model_config(self) -> ADDict:
