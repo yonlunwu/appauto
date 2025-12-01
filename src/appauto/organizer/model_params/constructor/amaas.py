@@ -2,9 +2,10 @@
 Module for constructing model parameters for amaas.
 """
 
+from pathlib import Path
 from random import choice
 from addict import Dict as ADDict
-from typing import Literal, TypeVar, Dict, TYPE_CHECKING
+from typing import TypeVar, TYPE_CHECKING
 from functools import cached_property
 from ....manager.file_manager.handle_yml import YMLHandler
 from ....manager.config_manager.config_logging import LoggingConfig
@@ -40,10 +41,12 @@ class AMaaSModelParams(BaseModelConfig):
 
     @cached_property
     def handler(self) -> YMLHandler:
-        yml_path = f"src/appauto/organizer/model_params/{self.amaas.cli.gpu_type}/{self.model_type}/"
-        yml_path += f"{self.model_family}/{self.model_name}.yaml" if self.model_family else f"{self.model_name}.yaml"
-
-        return YMLHandler(yml_path)
+        base_path = Path(__file__).parent.parent / self.amaas.cli.gpu_type / self.model_type
+        if self.model_family:
+            yml_path = base_path / self.model_family / f"{self.model_name}.yaml"
+        else:
+            yml_path = base_path / f"{self.model_name}.yaml"
+        return YMLHandler(str(yml_path))
 
     def __gen_params_from_rule(self) -> ADDict:
         """

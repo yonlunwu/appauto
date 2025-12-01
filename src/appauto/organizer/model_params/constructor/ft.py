@@ -4,6 +4,7 @@ Module for constructing model parameters.
     2. load_yaml 并根据 tp 和 mode 获取对应的启动命令
 """
 
+from pathlib import Path
 from typing import Literal, TYPE_CHECKING
 from functools import cached_property
 from ....manager.file_manager.handle_yml import YMLHandler
@@ -43,9 +44,12 @@ class FTModelParams(BaseModelConfig):
 
     @cached_property
     def handler(self) -> YMLHandler:
-        yml_path = (
-            f"src/appauto/organizer/model_params/{self.node.gpu_type}/"
-            f"{self.model_type}/{self.model_family}/{self.model_name}.yaml"
+        yml_path = str(
+            Path(__file__).parent.parent
+            / self.node.gpu_type
+            / self.model_type
+            / self.model_family
+            / f"{self.model_name}.yaml"
         )
         return YMLHandler(yml_path)
 

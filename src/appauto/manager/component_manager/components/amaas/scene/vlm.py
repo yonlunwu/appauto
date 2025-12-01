@@ -1,3 +1,4 @@
+from pathlib import Path
 from .base import BaseScene
 
 
@@ -6,6 +7,7 @@ import base64
 
 class VLM(BaseScene):
     OBJECT_TOKEN = "rerank_id"
+    DEFAULT_IMAGE = str(Path(__file__).resolve().parents[5] / "assets" / "ci_test.image")
 
     @classmethod
     def image_to_base64(cls, image_path="/Users/ryanyang/Desktop/WechatIMG1.jpeg"):
@@ -39,7 +41,7 @@ class VLM(BaseScene):
     def talk(
         self,
         text: str = "请解释这张图",
-        image_path: str = "src/appauto/assets/ci_test.image",
+        image_path: str = None,
         stream=True,
         max_tokens: int = 1024,
         top_p: int = 1,
@@ -48,6 +50,7 @@ class VLM(BaseScene):
         encode_result=False,
         process_stream=True,
     ):
+        image_path = image_path or self.DEFAULT_IMAGE
         assert image_path
 
         base64_data = self.image_to_base64(image_path)
