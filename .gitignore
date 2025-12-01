@@ -45,3 +45,5 @@ problem*.jsonl
 ft-docker-compose*.yaml
 
 *.xlsx
+
+dist/*
