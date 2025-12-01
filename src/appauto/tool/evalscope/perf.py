@@ -55,7 +55,7 @@ class EvalscopePerf:
     def cmd(self):
         prefix = "cd /mnt/data/models/perftest && source venv/evalscope-py/bin/activate && python perf_via_es10x.py"
         cmd = (
-            prefix + f" --ip {self.ip} --port {self.port} --parallel {self.parallel} --number {self.number} "
+            prefix + f" --ip {self.ip} --port {self.port} --parallel '{self.parallel}' --number '{self.number}' "
             f"{'' if not self.api_key else f'--api-key {self.api_key} '}"
             f"--model {self.model} --tokenizer-path {self.tokenizer_path} --input-length {self.input_length} "
             f"--output-length {self.output_length} --read-timeout {self.read_timeout} --seed {self.seed} "
