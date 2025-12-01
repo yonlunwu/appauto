@@ -152,7 +152,6 @@ class FTContainer(BaseDockerContainer):
         name="appauto-bench",
         debug=False,
         tokenizer_path: str = None,
-        perf_timeout: int = 3600,
     ):
         """
         tokenizer_path 默认不填, 使用模型自带 tokenizer
@@ -177,4 +176,4 @@ class FTContainer(BaseDockerContainer):
             debug,
             self,
         )
-        evalscope.run_perf()
+        return evalscope.run_perf()

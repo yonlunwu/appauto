@@ -81,4 +81,6 @@ class EvalscopePerf:
         self.download_script()
         self.node.run(self.cmd, sudo=False, print_screen=True)
         logger.info(f" ✅ The performance test data has been saved to: {self.output_csv}.csv, {self.output_csv}.xlsx")
-        self.node.download(f"/mnt/data/models/perftest/{self.output_csv}.xlsx", f"{self.output_csv}.xlsx")
+        self.output_xlsx = f"{self.output_csv}.xlsx"
+        self.node.download(f"/mnt/data/models/perftest/{self.output_xlsx}", self.output_xlsx)
+        return self.output_xlsx

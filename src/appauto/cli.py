@@ -230,6 +230,9 @@ def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
 @evalscope.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
+@click.option("--base-ft", is_flag=True, show_default=True, help="是否基于 ft 容器跑测试")
+@click.option("--base-amaas", is_flag=True, show_default=True, help="是否基于 amaas 跑测试")
+@click.option("--skip-launch", is_flag=True, show_default=True, help="是否需要拉起模型(模型已经运行则无需拉起模型.)")
 @click.option("--ip", default="192.168.110.15", show_default=True, help="服务器 IP")
 @click.option("--port", default=10011, show_default=True, help="API 端口, 基于 AMaaS 测试时固定为 10011.")
 @click.option("--ssh-user", default="zkyd", show_default=True, help="SSH 用户名")
@@ -257,8 +260,6 @@ def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
 @click.option("--output-length", type=int, default=512, show_default=True, help="输出长度")
 @click.option("--loop", type=int, default=1, show_default=True, help="循环次数")
 @click.option("--debug", is_flag=True, show_default=True, help="是否开启 debug 模式")
-@click.option("--base-ft", is_flag=True, show_default=True, help="是否基于 ft 容器跑测试")
-@click.option("--base-amaas", is_flag=True, show_default=True, help="是否基于 amaas 跑测试")
 @click.option("--read-timeout", type=int, default=600, show_default=True, help="读取超时时间")
 @click.option("--keep-model", is_flag=True, show_default=True, help="是否保持模型拉起状态")
 def perf(
@@ -281,6 +282,7 @@ def perf(
     base_ft,
     base_amaas,
     keep_model,
+    skip_launch,
 ):
     """
     基于 evalscope 跑模型性能测试(基于 ft)
@@ -294,9 +296,10 @@ def perf(
         ft = AMaaSNode(ip, ssh_user, ssh_password, ssh_port, skip_api=True).cli.docker_ctn_factory.ft
 
         try:
-            ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
+            if not skip_launch:
+                ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
 
-            ft.run_perf_via_evalscope(
+            res_xlsx = ft.run_perf_via_evalscope(
                 port,
                 model,
                 parallel,
@@ -312,6 +315,8 @@ def perf(
             if not keep_model:
                 ft.stop_model(model)
 
+            return res_xlsx
+
         except (ModelCheckError, ModelRunError):
             ft.stop_model(model)
             print(f" ❌ test failed: {e}")
@@ -326,7 +331,8 @@ def perf(
         model_store = amaas.api.init_model_store.llm.filter(name=model)[0]
 
         try:
-            amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout)
+            if not skip_launch:
+                amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout)
 
             evalscope = EvalscopePerf(
                 amaas.cli,
@@ -347,6 +353,8 @@ def perf(
 
             if not keep_model:
                 amaas.api.stop_model(model_store, "llm")
+
+            return evalscope.output_xlsx
 
         except (ModelCheckError, ModelRunError) as e:
             amaas.api.stop_model(model_store, "llm")
