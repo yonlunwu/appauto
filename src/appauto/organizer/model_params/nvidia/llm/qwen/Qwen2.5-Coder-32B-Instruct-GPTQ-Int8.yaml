@@ -10,6 +10,9 @@ engine:
     max-total-tokens: 32768
 
   correct:
+    1:
+      tensor-parallel-size: 1
+      max-total-tokens: 22000
     2:
       tensor-parallel-size: 2
 
@@ -21,6 +24,8 @@ engine:
 
 amaas:
   correct:
+    1: 
+      max_total_tokens: 22000
     2: default
     4: default
     8: default
@@ -32,6 +37,8 @@ amaas:
       disable-radix-cache: ""
 
   perf:
+    1: 
+      max_total_tokens: 22000
     2: default
     4: default
     8: default

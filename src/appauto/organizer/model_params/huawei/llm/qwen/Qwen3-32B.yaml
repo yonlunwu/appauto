@@ -2,13 +2,10 @@
 engine:
   common:
     model-path: /mnt/data/models/Qwen3-32B
-    served-model-name: Qwen3-32B
     attention-backend: ascend
     device: npu
     mem-fraction-static: 0.9
     chunked-prefill-size: 4096
-    trust-remote-code: true
-    enable-p2p-check: true
 
   correct:
     2:
@@ -19,7 +16,7 @@ engine:
       tp: 8
 
   perf_common:
-    max-total-tokens: 500000
+    max-total-tokens: 180000
     disable-radix-cache: true
     disable-chunked-prefix-cache: true
 
@@ -36,7 +33,7 @@ amaas:
     8: default
 
   perf_common:
-    max_total_tokens: 500000
+    max_total_tokens: 180000
     backend_parameters:
       disable-radix-cache: ""
       disable-chunked-prefix-cache: ""

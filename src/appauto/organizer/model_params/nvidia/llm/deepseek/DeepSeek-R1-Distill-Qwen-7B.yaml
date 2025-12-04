@@ -16,15 +16,14 @@ engine:
       tensor-parallel-size: 2
     4:
       tensor-parallel-size: 4
-    8:
-      tensor-parallel-size: 8
+
 
 amaas:
   correct:
     1: default
     2: default
     4: default
-    8: default
+
 
   perf_common:
     max_total_tokens: 131072
@@ -36,4 +35,4 @@ amaas:
     1: default
     2: default
     4: default
-    8: default
+
