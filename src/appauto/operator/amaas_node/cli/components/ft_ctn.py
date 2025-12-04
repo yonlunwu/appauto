@@ -25,7 +25,7 @@ class FTContainer(BaseDockerContainer):
         name: str = "zhiwen-ft",
         conda_path="/root/miniforge3/bin/conda",
         conda_env="ftransformers",
-        engine="ftransformers",
+        engine: Literal["ftransformers", "sglang"] = "ftransformers",
     ):
         super().__init__(node, name)
         self.conda_path = conda_path
@@ -51,10 +51,11 @@ class FTContainer(BaseDockerContainer):
         """
         nohup 启动模型并将模型日志重定向至指定路径。
         """
-        cmd = (
-            f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && "
-            f"{FTModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
-        )
+
+        cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
+        if self.engine == "ftransformers":
+            cmd = f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
+
         timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'
 
@@ -79,10 +80,10 @@ class FTContainer(BaseDockerContainer):
         ip="127.0.0.1",
     ) -> Tuple[Queue, Thread]:
 
-        cmd = (
-            f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && "
-            f"{FTModelParams(self.node, 'ft', model_name, tp, mode, port).as_cmd}"
-        )
+        cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
+        if self.engine == "ftransformers":
+            cmd = f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
+
         timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'
 
@@ -96,11 +97,7 @@ class FTContainer(BaseDockerContainer):
         return th, q
 
     def stop_model(self, model_name) -> bool:
-        """
-        主动停止指定模型
-        """
-        logger.info(f"stop model: {model_name}")
-        self.node.stop_process_by_keyword(self.engine, model_name, force=True)
+        super().stop_model(model_name, self.engine)
 
     def run_eval_via_evalscope(
         self,

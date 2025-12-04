@@ -122,3 +122,10 @@ class BaseDockerContainer:
         except Exception as e:
             logger.error(f"Model {ip}:{port} running failed: {e}")
             raise e
+
+    def stop_model(self, model_name, engine: Literal["ftransformers", "sglang"]) -> bool:
+        """
+        主动停止指定模型
+        """
+        logger.info(f"stop model: {model_name}")
+        self.node.stop_process_by_keyword(engine, model_name, force=True)

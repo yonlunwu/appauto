@@ -11,7 +11,7 @@ amaas = AMaaSNode("192.168.110.4").cli
 class TestModelParams:
     def test_nvidia_deepseek_r1_0528_correct_2tp_cmd(self):
         correct_model_params = FTModelParams(
-            node=amaas, engine="ft", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="correct"
+            node=amaas, engine="ftransformers", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="correct"
         )
         cmd = correct_model_params.as_cmd
         logger.info(cmd)
@@ -25,7 +25,7 @@ class TestModelParams:
         assert "--max-total-tokens 50000" in cmd
 
         perf_model_params = FTModelParams(
-            node=amaas, engine="ft", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="perf"
+            node=amaas, engine="ftransformers", model_name="DeepSeek-R1-0528-GPU-weight", tp=2, mode="perf"
         )
         cmd = perf_model_params.as_cmd
         logger.info(cmd)

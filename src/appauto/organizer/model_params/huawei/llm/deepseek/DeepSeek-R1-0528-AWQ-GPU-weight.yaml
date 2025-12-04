@@ -1,0 +1,36 @@
+# 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
+engine:
+  common:
+    model-path: /mnt/data/models/DeepSeek-R1-0528-AWQ-GPU-weight
+    attention-backend: ascend
+    device: npu
+    mem-fraction-static: 0.9
+
+  correct:
+    8:
+      tp: 8
+
+  perf_common: 
+    disable-chunked-prefix-cache: true
+    disable-radix-cache: true
+    max-total-tokens: 37000
+    max-running-requests: 37
+
+  perf:
+    8:
+      tp: 8
+
+
+# 基于 amaas
+amaas:
+  correct:
+    8: default
+
+  perf_common:
+    max_total_tokens: 37000
+    backend_parameters:
+      disable-chunked-prefix-cache: ''
+      disable-radix-cache: ''
+
+  perf:
+    8: default
