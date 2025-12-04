@@ -2,13 +2,10 @@
 engine:
   common:
     model-path: /mnt/data/models/Qwen3-30B-A3B
-    served-model-name: Qwen3-30B-A3B
     attention-backend: ascend
     device: npu
     mem-fraction-static: 0.85
     chunked-prefill-size: 4096
-    trust-remote-code: true
-    enable-p2p-check: true
 
   correct:
     2:
