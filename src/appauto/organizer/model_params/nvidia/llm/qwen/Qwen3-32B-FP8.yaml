@@ -26,7 +26,7 @@ engine:
 amaas:
   correct:
     1: 
-      max-total-tokens: 26000
+      max_total_tokens: 26000
     2: default
     4: default
     8: default
@@ -39,7 +39,7 @@ amaas:
 
   perf:
     1: 
-      max-total-tokens: 26000
+      max_total_tokens: 26000
     2: default
     4: default
     8: default
