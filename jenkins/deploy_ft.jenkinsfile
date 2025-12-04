@@ -25,8 +25,7 @@ pipeline {
                     echo "buildNumber: ${buildNumber}"
 
                     dir('./appauto') {
-                        sh "appauto env deploy ft --ip '${ip}' --user '${user}' --ssh-user '${ssh_user}' --tag '${tag}' --tar-name '${tar_name}' --server-port '${server_port}'"
-                        // TODO 如果有 user 则加上 user
+                        sh "appauto env deploy ft --ip '${ip}' --user '${user}' --ssh-user '${ssh_user}' --tag '${tag}' --tar-name '${tar_name}'"
                     }
                 }
             }
