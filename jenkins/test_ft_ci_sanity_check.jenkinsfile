@@ -1,0 +1,111 @@
+pipeline {
+    agent { label 'slave-1' }
+
+    options {
+        timeout(time: "${timeoutHours}", unit: 'HOURS')
+    }
+
+    stages {
+
+        stage('Download Source Code') {
+            steps {
+                sh """
+                    cd ./appauto
+                    git checkout ${git_branch} && git pull
+                    pip install --upgrade pip
+                    pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple
+                """
+            }
+        }
+
+        stage('Deploy FT') {
+            steps {
+                script {
+                    echo "🚀 Starting Deploy FT..."
+
+                    deploy_status = sh(
+                        script: """
+                            cd ./appauto
+                            appauto env deploy ft \
+                                --user '${user}' \
+                                --ip ${ip} \
+                                --ssh-user ${ssh_user} \
+                                --ssh-port ${ssh_port} \
+                                --tag ${zhiwen_ft_tag} \
+                                --tar-name ${tar_name}
+                        """,
+                        returnStatus: true
+                    )
+
+                    echo "📌 Deploy exit code = ${deploy_status}"
+                }
+            }
+        }
+
+        stage('Run Test') {
+            when {
+                expression { deploy_status == 0 }
+            }
+            steps {
+                script {
+                    echo "🎯 Deploy success → Running test stage"
+
+                    sh """
+                        cd ./appauto
+                        sleep 180
+                        appauto run pytest \
+                            --lark-user '${user}' \
+                            --topic '${topic}' \
+                            --testpaths testcases/sanity_check/ft/test_ft.py \
+                            --ip=${ip} \
+                            --ft_port=${ft_port} \
+                            --case-level ft_ci_sanity_check \
+                            --model_priority=${model_priority} \
+                            --ssh_user=${ssh_user} \
+                            --ssh_port=${ssh_port} \
+                            --notify-group oc_6904399bb84c27191bfa1d7ce0c91066 \
+                            --report-server=192.168.110.11:9080 \
+                            --report-url=job/${env.JOB_NAME}/${env.BUILD_NUMBER}/allure/
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo "📦 Generating Allure Report..."
+
+                def allureResultsDir = sh(
+                    script: """
+                        cd ./appauto
+                        grep -Po '(?<=alluredir=)[^\\s]+' pytest.ini || echo 'reports/allure-results'
+                    """,
+                    returnStdout: true
+                ).trim()
+
+                echo "📁 Allure Results Dir Detected: ${allureResultsDir}"
+
+                // check dir exists
+                def exists = sh(
+                    script: "test -d ./appauto/${allureResultsDir} && echo true || echo false",
+                    returnStdout: true
+                ).trim()
+
+                if (exists == "true") {
+                    echo "🧪 Allure directory exists → generating..."
+
+                    allure([
+                        includeProperties: false,
+                        jdk: '',
+                        reportBuildPolicy: 'ALWAYS',
+                        results: [[path: "appauto/${allureResultsDir}"]]
+                    ])
+                } else {
+                    echo "⚠️ No allure results found at: appauto/${allureResultsDir}"
+                }
+            }
+        }
+    }
+}

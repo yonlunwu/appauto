@@ -16,16 +16,11 @@ class DockerContainerFactory:
     # 基于 ft 做测试，name 就是 zhiwen-ft
     @cached_property
     def ft(self) -> FTContainer:
-        name, engine = "", ""
+        name, engine = "zhiwen-ft", "ftransformers"
 
-        if self.node.gpu_type == "nvidia":
-            name = "zhiwen-ft"
-            engine = "ftransformers"
-        elif self.node.gpu_type == "huawei":
+        if self.node.gpu_type == "huawei":
             name = "zhiwen-ft-ascend"
             engine = "sglang"
-
-        assert engine
 
         return FTContainer(self.node, name=name, engine=engine)
 

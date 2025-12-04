@@ -20,10 +20,20 @@ class DeployFT(BaseDeploy):
         ssh_password="madsys123",
         ssh_port=22,
         deploy_path="/mnt/data/deploy/",
-        ctn_name="zhiwen-ft",
+        ctn_name: str = None,
     ):
         super().__init__(mgt_ip, ssh_user, ssh_password, ssh_port, deploy_path)
-        self.ctn_names = ctn_name
+        self.ctn_names = self.set_ctn_name(ctn_name)
+
+    def set_ctn_name(self, ctn_name=None):
+
+        if ctn_name:
+            return ctn_name
+
+        if self.gpu_type == "huawei":
+            return "zhiwen-ft-ascend"
+
+        return "zhiwen-ft"
 
     def gen_docker_compose(
         self,

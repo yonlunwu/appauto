@@ -14,7 +14,6 @@ from appauto.manager.component_manager.components.amaas.models.model_store impor
 )
 from appauto.validator.common import BaseValidator
 from appauto.manager.config_manager import LoggingConfig
-from appauto.manager.error_manager.errors import OperationNotSupported
 
 from testcases.sanity_check.amaas.gen_data import amaas, DefaultParams as DP
 
@@ -177,9 +176,6 @@ class CommonModelBaseStep:
     def launch_model(cls, model_store: T, tp: Literal[1, 2, 4, 8]):
         try:
             amaas.api.launch_model_with_default(tp, model_store)
-        except OperationNotSupported as e:
-            logger.info(f"{str(e)}")
-            pytest.skip(str(e))
         except Exception as e:
             logger.error(f"error occurred while launch model: {str(e)}")
             raise e
