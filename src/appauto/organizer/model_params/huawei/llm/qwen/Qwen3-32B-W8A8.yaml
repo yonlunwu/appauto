@@ -1,0 +1,54 @@
+# 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
+engine:
+  common:
+    model-path: /mnt/data/models/Qwen3-32B-W8A8
+    attention-backend: ascend
+    device: npu
+    mem-fraction-static: 0.85
+    quantization: w8a8_int8
+
+
+  correct:
+    2:
+      tp: 2
+
+    4:
+      tp: 4
+
+    8:
+      tp: 8
+
+
+  perf_common:
+    max-total-tokens: 200000
+    disable-chunked-prefix-cache: true
+    disable-radix-cache: true
+    quantization: w8a8_int8
+
+
+  # 能用 4 卡和 8 卡, 但不建议
+  perf:
+    2:
+      tp: 2
+
+
+amaas:
+  correct:
+    2: 
+      backend_parameters:
+        quantization: w8a8_int8
+    4: 
+      backend_parameters:
+        quantization: w8a8_int8
+
+
+  perf_common:
+    max_total_tokens: 200000
+    backend_parameters:
+      disable-chunked-prefix-cache: ""
+      disable-radix-cache: ""
+      quantization: w8a8_int8
+
+  perf:
+    # 能用 4 卡和 8 卡, 但不建议
+    2: default
