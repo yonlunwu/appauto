@@ -1,0 +1,44 @@
+# 参数组成：common + dynamic + (correct_common + correct) 或者 (perf_common + perf)
+engine:
+  common:
+    model-path: /mnt/data/models/Qwen3-30B-A3B-AWQ
+    attention-backend: ascend
+    device: npu
+    mem-fraction-static: 0.85
+
+  correct:
+    1:
+      tp: 1
+    2:
+      tp: 2
+    4:
+      tp: 4
+    8:
+      tp: 8
+
+  perf_common:
+    max-total-tokens: 200000
+    disable-radix-cache: true
+    disable-chunked-prefix-cache: true
+
+  # perf 仅建议 2 卡
+  perf:
+    2:
+      tp: 2
+
+
+amaas:
+  correct:
+    1: default
+    2: default
+    4: default
+    8: default
+
+  perf_common:
+    max_total_tokens: 200000
+    backend_parameters:
+      disable-radix-cache: ""
+      disable-chunked-prefix-cache: ""
+
+  perf:
+    2: default

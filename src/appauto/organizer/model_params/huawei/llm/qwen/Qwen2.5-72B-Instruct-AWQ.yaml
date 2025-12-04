@@ -1,0 +1,40 @@
+# 参数组成：common + dynamic + (correct_common + correct) 或 (perf_common + perf)
+engine:
+  common:
+    model-path: /mnt/data/models/Qwen2.5-72B-Instruct-AWQ
+    device: npu
+    attention-backend: ascend
+    mem-fraction-static: 0.8
+
+  correct:
+    2:
+      tp: 2
+    4:
+      tp: 4
+    8:
+      tp: 8
+
+  perf_common:
+    max-total-tokens: 180000
+    disable-radix-cache: true
+    disable-chunked-prefix-cache: true
+
+  perf:
+    2:
+      tp: 2
+
+
+amaas:
+  correct:
+    2: default
+    4: default
+    8: default
+
+  perf_common:
+    max_total_tokens: 180000
+    backend_parameters:
+      disable-radix-cache: ""
+      disable-chunked-prefix-cache: ""
+
+  perf:
+    2: default
