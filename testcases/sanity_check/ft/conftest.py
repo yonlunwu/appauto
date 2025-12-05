@@ -12,6 +12,12 @@ from testcases.sanity_check.ft.gen_data import amaas, ft_ctn, Defaultparams as D
 logger = LoggingConfig.get_logger()
 
 
+@pytest.fixture(autouse=True)
+def global_fixture_for_amaas_ci_sanity_check():
+    # TODO 是否要优先 stop 所有模型
+    amaas.wait_gpu_release()
+
+
 @pytest.fixture(autouse=True, scope="session")
 def worker_gpu_count():
     try:
