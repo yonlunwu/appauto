@@ -1,6 +1,12 @@
 pipeline {
     agent { label 'slave-1' }
 
+    parameters {
+        // 添加一个 Boolean 参数来控制是否更新依赖
+        booleanParam(name: 'UPDATE_DEPENDENCIES', defaultValue: false, description: '是否强制更新项目的 Python 依赖 (pip install -e .)')
+        // 假设其他参数 (timeoutHours, git_branch, user, ip, ssh_user, ssh_port, zhiwen_ft_tag, tar_name, topic, ft_port, model_priority) 已在其他地方定义或作为字符串参数存在
+    }
+
     options {
         timeout(time: "${timeoutHours}", unit: 'HOURS')
     }
@@ -12,7 +18,21 @@ pipeline {
                 sh """
                     cd ./appauto
                     git checkout ${git_branch} && git pull
-                    pip install --upgrade pip
+                """
+            }
+        }
+        
+        // 新增一个依赖安装阶段，并使用 when 检查参数
+        stage('Install Dependencies') {
+            when {
+                expression { params.UPDATE_DEPENDENCIES == true } // 仅当 UPDATE_DEPENDENCIES 为 true 时执行
+            }
+            steps {
+                echo "⬇️ 依赖更新参数为 true，开始安装/更新依赖..."
+                sh """
+                    cd ./appauto
+                    pip install --upgrade pip 
+                    # 仅在 UPDATE_DEPENDENCIES 为 true 时，重新安装项目依赖
                     pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple
                 """
             }

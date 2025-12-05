@@ -3,6 +3,7 @@ import shlex
 from time import sleep, time
 from queue import Queue
 from threading import Thread
+import xml.etree.ElementTree as ET
 from functools import cached_property
 from paramiko.ssh_exception import (
     NoValidConnectionsError,
@@ -13,12 +14,14 @@ from paramiko.ssh_exception import (
     SSHException,
     ProxyCommandFailure,
 )
-from typing import Tuple, Optional, Literal, List
+from typing import Tuple, Optional, Literal, List, Union
 from tenacity import retry, stop_after_attempt, wait_fixed, wait_chain
 
 from ..connection_manager.ssh import SSHClient
 from ..config_manager import LoggingConfig
 from ..utils_manager.format_output import str_to_list_by_split, remove_line_break
+from ..data_manager.linux import GPUsOverallView, GPUInstance, MEM_THRESHOLD, COMPUTE_THRESHOLD
+
 
 logger = LoggingConfig.get_logger()
 
@@ -451,3 +454,67 @@ class BaseLinux(object):
     @cached_property
     def cpuinfer(self) -> int:
         return self.cpu_core_per_socket * self.cpu_socket
+
+    @property
+    def gpus_overall_view(self) -> Union[GPUsOverallView, List]:
+        # TODO 当前只适用于 nvidia
+        gpu_summaries: List[GPUInstance] = []
+
+        if self.gpu_type == "nvidia":
+            rc, res, _ = self.run("nvidia-smi -q -x")
+
+            if rc == 0:
+                # 解析 XML
+                root = ET.fromstring(res)
+                device_nodes = root.findall("./gpu")
+                total_gpus = len(device_nodes)
+
+                logger.info(f"total gpu count: {total_gpus}")
+
+                for i, gpu_node in enumerate(device_nodes):
+                    name = gpu_node.find("product_name").text
+
+                    # 提取显存信息
+                    mem_node = gpu_node.find("fb_memory_usage")
+                    total_mem_mib = int(mem_node.find("total").text.replace(" MiB", ""))
+                    used_mem_mib = int(mem_node.find("used").text.replace(" MiB", ""))
+
+                    # 提取利用率信息
+                    util_node = gpu_node.find("utilization")
+                    gpu_util = int(util_node.find("gpu_util").text.replace(" %", ""))
+
+                    # 计算和判断
+                    mem_util = (used_mem_mib / total_mem_mib) * 100 if total_mem_mib > 0 else 0
+
+                    is_idle = mem_util < MEM_THRESHOLD and gpu_util < COMPUTE_THRESHOLD
+
+                    summary = GPUInstance(i, name, total_mem_mib, used_mem_mib, mem_util, gpu_util, is_idle)
+                    gpu_summaries.append(summary)
+
+                idle_gpus = sum(1 for s in gpu_summaries if s.is_idle)
+                busy_gpus = total_gpus - idle_gpus
+
+                return GPUsOverallView(total_gpus, idle_gpus, busy_gpus, gpu_summaries)
+
+            return []
+
+        return []
+
+    def wait_gpu_release(self, interval_s: int = 20, timeout_s: int = 180, need_release: int = None):
+        start_time = time()
+
+        summary = self.gpus_overall_view
+        need_release = need_release or summary.total_gpus
+
+        while time() - start_time <= timeout_s:
+            smy = self.gpus_overall_view
+            if smy:
+                if smy.idle_gpus >= need_release:
+                    return
+
+            sleep(interval_s)
+
+        raise TimeoutError(
+            f"timeout while waiting for gpu released. total: {summary.total_gpus}, "
+            f"need_release: {need_release}, empty: {smy.idle_gpus}"
+        )

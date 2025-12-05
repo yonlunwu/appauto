@@ -35,3 +35,15 @@ class TestBaseLinux:
 
         dir_path = os.path.dirname("/mnt/data/deploy/ft-docker-compose_v3.3.0-test5.yaml")
         linux._grant_dir_permission(dir_path)
+
+    def test_gpus_overall(self):
+        gpus_overall = linux.gpus_overall_view
+        logger.info(f"res.total_gpus: {gpus_overall.total_gpus}")
+        logger.info(f"res.idle_gpus: {gpus_overall.idle_gpus}")
+        logger.info(f"res.busy_gpus: {gpus_overall.busy_gpus}")
+
+        for ins in gpus_overall.instances:
+            logger.info(ins)
+
+    def test_wait_gpu_replease(self):
+        linux.wait_gpu_release(10, 30, need_release=2)
