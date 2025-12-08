@@ -247,7 +247,7 @@ def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
     help="每个线程内部依次请求数, 比如设置为 5, 表示每个线程内部都会顺序发 5 个请求。",
 )
 @click.option("--model", type=str, required=True, help="模型名称, 比如: DeepSeek-R1-0528-GPU-weight")
-@click.option("--tp", type=int, required=True, help="几卡拉起模型")
+@click.option("--tp", type=int, show_default=True, help="几卡拉起模型")
 @click.option("--launch-timeout", type=int, default=900, show_default=True, help="模型拉起超时时间(S)")
 @click.option(
     "--tokenizer-path",
