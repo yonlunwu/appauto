@@ -317,8 +317,11 @@ def perf(
 
             return res_xlsx
 
-        except (ModelCheckError, ModelRunError):
+        except (ModelCheckError, ModelRunError) as e:
             ft.stop_model(model)
+            print(f" ❌ test failed: {e}")
+
+        except Exception as e:
             print(f" ❌ test failed: {e}")
 
         return
@@ -358,6 +361,9 @@ def perf(
 
         except (ModelCheckError, ModelRunError) as e:
             amaas.api.stop_model(model_store, "llm")
+            print(f" ❌ test failed: {e}")
+
+        except Exception as e:
             print(f" ❌ test failed: {e}")
 
         return
