@@ -1,0 +1,32 @@
+pipeline {
+    // 目前只在 slave-1 上搞了 license 依赖
+    agent { label 'slave-1' }
+
+    stages {
+        stage("Gen LICENSE.txt") {
+            steps {
+                script {
+                    dir('~') {
+                        sh "rm -f /home/jenkins/agent/workspace/gen_license/LICENSE.txt"
+                        sh "cd ~ && python gen_license.py -s ${start_date} -e ${end_date} -m '${mac_address}'"
+                        sh "pwd && ls -l /home/jenkins/LICENSE.txt"
+                        sh "mv /home/jenkins/LICENSE.txt /home/jenkins/agent/workspace/gen_license/"
+                        // /home/jenkins/agent/workspace/gen_license/~
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts(
+                artifacts: 'LICENSE.txt',  // 要归档的文件路径（相对工作空间）
+                onlyIfSuccessful: true,  // 仅当测试成功时归档（可选，推荐）
+                fingerprint: true,        // 生成文件指纹（用于追踪版本，可选）
+                followSymlinks: false,     // 是否跟随符号链接（默认false，可选）
+                allowEmptyArchive: true
+            )
+        }
+    }
+}
