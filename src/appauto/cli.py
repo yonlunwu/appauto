@@ -320,11 +320,11 @@ def perf(
         except (ModelCheckError, ModelRunError) as e:
             ft.stop_model(model)
             print(f" ❌ test failed: {e}")
+            raise e
 
         except Exception as e:
             print(f" ❌ test failed: {e}")
-
-        return
+            raise e
 
     elif base_amaas:
         from appauto.tool.evalscope.perf import EvalscopePerf
@@ -362,11 +362,11 @@ def perf(
         except (ModelCheckError, ModelRunError) as e:
             amaas.api.stop_model(model_store, "llm")
             print(f" ❌ test failed: {e}")
+            raise e
 
         except Exception as e:
             print(f" ❌ test failed: {e}")
-
-        return
+            raise e
 
 
 def parse_extra_args(args: List[str]) -> Dict[str, str | bool]:
