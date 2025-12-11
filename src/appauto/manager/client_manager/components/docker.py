@@ -1,3 +1,4 @@
+import re
 from typing import Literal, Optional, Dict, List
 from ..linux import BaseLinux
 from ...utils_manager.format_output import remove_line_break
@@ -137,6 +138,32 @@ class BaseDockerTool:
         cmd = f"docker {resource} prune -f"
         self.node.run(cmd, sudo=False)
 
+    def _get_compose_cmd(self) -> str:
+        candidate_cmds = [("docker compose", "V2"), ("docker-compose", "V1")]
+
+        for cmd, version in candidate_cmds:
+            try:
+                check_cmd = f"{cmd} --help"
+                rc, res, _ = self.node.run(check_cmd)
+
+                if rc == 0:
+                    if re.search(r"(-f|--file)", res):
+                        logger.info(f"Find Docker Compose cmd that support the -f option:: {cmd} ({version})")
+                        return cmd
+
+                    logger.warning(f"Docker Compose cmd {cmd} ({version}) exists, but the -f option is not supported.")
+
+            except Exception as e:
+                logger.error(f"error occurred while get compose cmd, error: {e}")
+                continue
+
+        raise RuntimeError(
+            "No Docker Compose or docker-compose cmds supporting the -f/--file option were found. "
+            "Please check your Docker installation and version."
+        )
+
     def up_ctn_from_compose(self, path: str, compose_file: str):
-        cmd = f"cd {path} && sudo docker compose -f {compose_file} up -d"
+        compose_cmd = self._get_compose_cmd()
+
+        cmd = f"cd {path} && sudo {compose_cmd} -f {compose_file} up -d"
         self.node.run_with_check(cmd, sudo=False)
