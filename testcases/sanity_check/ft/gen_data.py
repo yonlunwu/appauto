@@ -29,6 +29,7 @@ class Defaultparams:
     ]
     vlm_image_path: str = TEST_DATA_DICT.get("vlm_image_path", _DEFAULT_IMAGE)
     model_priority = eval(TEST_DATA_DICT.get("model_priority", "['P0', 'P1']"))  # "None": 获取全部; "['P0']": 仅筛选 P0
+    need_release: int = TEST_DATA_DICT.get("need_empty_gpu_count", 0)
 
 
 assert Defaultparams.ip
