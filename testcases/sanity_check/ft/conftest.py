@@ -15,7 +15,7 @@ logger = LoggingConfig.get_logger()
 @pytest.fixture(autouse=True)
 def global_fixture_for_amaas_ci_sanity_check():
     # TODO 是否要优先 stop 所有模型
-    amaas.wait_gpu_release()
+    amaas.wait_gpu_release(need_release=int(DP.need_release) or None)
 
 
 @pytest.fixture(autouse=True, scope="session")

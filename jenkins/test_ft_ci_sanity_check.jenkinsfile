@@ -52,7 +52,7 @@ pipeline {
                                 --ssh-user ${ssh_user} \
                                 --ssh-port ${ssh_port} \
                                 --tag ${zhiwen_ft_tag} \
-                                --tar-name ${tar_name}
+                                --tar-name ${tar_name} \
                         """,
                         returnStatus: true
                     )
@@ -83,6 +83,7 @@ pipeline {
                             --model_priority=${model_priority} \
                             --ssh_user=${ssh_user} \
                             --ssh_port=${ssh_port} \
+                            --need_empty_gpu_count=${need_empty_gpu_count} \
                             --notify-group oc_6904399bb84c27191bfa1d7ce0c91066 \
                             --report-server=192.168.110.11:9080 \
                             --report-url=job/${env.JOB_NAME}/${env.BUILD_NUMBER}/allure/

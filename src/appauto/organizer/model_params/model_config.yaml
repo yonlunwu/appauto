@@ -127,10 +127,10 @@ Kimi-K2-Instruct-GPU-weight:
 # glm-llm
 GLM-4.5-GPU-weight:
   type: llm
-  priority: P2
+  priority: P0
 GLM-4.5-Air-GPU-weight:
   type: llm
-  priority: P2
+  priority: P0
 
 
 # glm-vlm
