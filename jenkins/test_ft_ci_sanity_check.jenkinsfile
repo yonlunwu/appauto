@@ -4,11 +4,21 @@ pipeline {
     parameters {
         // 添加一个 Boolean 参数来控制是否更新依赖
         booleanParam(name: 'UPDATE_DEPENDENCIES', defaultValue: false, description: '是否强制更新项目的 Python 依赖 (pip install -e .)')
-        // 假设其他参数 (timeoutHours, git_branch, user, ip, ssh_user, ssh_port, zhiwen_ft_tag, tar_name, topic, ft_port, model_priority) 已在其他地方定义或作为字符串参数存在
+        // 【新增参数】控制是否执行 Deploy FT 阶段
+        booleanParam(name: 'DEPLOY_FT', defaultValue: true, description: '是否执行 FT 服务的部署操作 (appauto env deploy ft)')
+        // 假设其他参数 (timeoutHours, git_branch, user, ip, ssh_user, ssh_port, zhiwen_ft_tag, tar_name, topic, ft_port, model_priority, need_empty_gpu_count) 已在其他地方定义或作为字符串参数存在
     }
 
     options {
         timeout(time: "${timeoutHours}", unit: 'HOURS')
+    }
+    
+    // 【修复 BUG】使用 environment 块来定义跨阶段变量。
+    // 在 Declarative Pipeline 中，这是最常用的跨阶段共享信息的方式。
+    environment {
+        // DEPLOY_STATUS 默认设置为 '0' (成功)，用于 Run Test 阶段的 when 判断。
+        // 如果跳过 Deploy FT，则保留 '0'，测试阶段会运行。
+        DEPLOY_STATUS = '0'
     }
 
     stages {
@@ -22,28 +32,30 @@ pipeline {
             }
         }
         
-        // 新增一个依赖安装阶段，并使用 when 检查参数
         stage('Install Dependencies') {
             when {
-                expression { params.UPDATE_DEPENDENCIES == true } // 仅当 UPDATE_DEPENDENCIES 为 true 时执行
+                expression { params.UPDATE_DEPENDENCIES == true } 
             }
             steps {
                 echo "⬇️ 依赖更新参数为 true，开始安装/更新依赖..."
                 sh """
                     cd ./appauto
                     pip install --upgrade pip 
-                    # 仅在 UPDATE_DEPENDENCIES 为 true 时，重新安装项目依赖
                     pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple
                 """
             }
         }
 
         stage('Deploy FT') {
+            when {
+                expression { params.DEPLOY_FT == true }
+            }
             steps {
                 script {
                     echo "🚀 Starting Deploy FT..."
 
-                    deploy_status = sh(
+                    // 运行部署命令，将结果状态码转换为字符串并保存到 environment 变量中
+                    def status = sh(
                         script: """
                             cd ./appauto
                             appauto env deploy ft \
@@ -52,27 +64,35 @@ pipeline {
                                 --ssh-user ${ssh_user} \
                                 --ssh-port ${ssh_port} \
                                 --tag ${zhiwen_ft_tag} \
-                                --tar-name ${tar_name} \
+                                --tar-name ${tar_name}
+                            sleep 180
                         """,
                         returnStatus: true
                     )
+                    
+                    // 【关键修改】更新 environment 变量 DEPLOY_STATUS
+                    env.DEPLOY_STATUS = "${status}"
 
-                    echo "📌 Deploy exit code = ${deploy_status}"
+                    echo "📌 Deploy exit code = ${env.DEPLOY_STATUS}"
                 }
             }
         }
 
         stage('Run Test') {
             when {
-                expression { deploy_status == 0 }
+                // 【关键修改】在 when 表达式中直接使用 environment 变量
+                expression { env.DEPLOY_STATUS == '0' }
             }
             steps {
                 script {
-                    echo "🎯 Deploy success → Running test stage"
+                    if (params.DEPLOY_FT == true) {
+                        echo "🎯 Deploy success (Status: ${env.DEPLOY_STATUS}) → Running test stage"
+                    } else {
+                        echo "🎯 Deploy skipped (Status: ${env.DEPLOY_STATUS}), proceeding to test stage"
+                    }
 
                     sh """
                         cd ./appauto
-                        sleep 180
                         appauto run pytest \
                             --lark-user '${user}' \
                             --topic '${topic}' \
@@ -84,6 +104,7 @@ pipeline {
                             --ssh_user=${ssh_user} \
                             --ssh_port=${ssh_port} \
                             --need_empty_gpu_count=${need_empty_gpu_count} \
+                            --tp=${tp} \
                             --notify-group oc_6904399bb84c27191bfa1d7ce0c91066 \
                             --report-server=192.168.110.11:9080 \
                             --report-url=job/${env.JOB_NAME}/${env.BUILD_NUMBER}/allure/
@@ -108,7 +129,6 @@ pipeline {
 
                 echo "📁 Allure Results Dir Detected: ${allureResultsDir}"
 
-                // check dir exists
                 def exists = sh(
                     script: "test -d ./appauto/${allureResultsDir} && echo true || echo false",
                     returnStdout: true

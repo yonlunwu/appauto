@@ -1,29 +1,68 @@
 pipeline {
     agent { label 'slave-1' }
 
+    parameters {
+        // 1. 【新增参数】控制是否更新依赖
+        booleanParam(name: 'UPDATE_DEPENDENCIES', defaultValue: false, description: '是否强制更新项目的 Python 依赖 (pip install -e .)')
+        // 2. 【新增参数】控制是否执行 Deploy AMaaS 阶段
+        booleanParam(name: 'DEPLOY_AMAAS', defaultValue: true, description: '是否执行 AMaaS 服务的部署操作 (appauto env deploy amaas)')
+        // 假设其他参数 (timeoutHours, git_branch, user, ip, ssh_user, ssh_port, amaas_tag, tar_name, topic, model_priority) 已存在
+    }
+
     options {
         timeout(time: "${timeoutHours}", unit: 'HOURS')
     }
 
+    // 使用 environment 块来定义跨阶段变量。
+    environment {
+        // DEPLOY_STATUS 默认设置为 '0' (成功)。
+        // 如果 DEPLOY_AMAAS=false，则该值保持 '0'，Run Test 阶段会运行。
+        AMAAS_DEPLOY_STATUS = '0' 
+    }
+
     stages {
 
-        stage('Download Source Code') {
+        stage('Download Source Code & Install Basic Dependencies') {
             steps {
                 sh """
                     cd ./appauto
                     git checkout ${git_branch} && git pull
+                    # 保持基础依赖安装，但将项目依赖安装移至单独的 when 阶段
+                """
+            }
+        }
+        
+        // 【新增阶段】根据参数控制是否安装/更新项目依赖
+        stage('Install Project Dependencies') {
+            when {
+                expression { params.UPDATE_DEPENDENCIES == true } // 仅当 UPDATE_DEPENDENCIES 为 true 时执行
+            }
+            steps {
+                echo "⬇️ 依赖更新参数为 true，开始安装/更新项目依赖..."
+                sh """
+                    cd ./appauto
                     pip install --upgrade pip
+                    # 仅在 UPDATE_DEPENDENCIES 为 true 时，重新安装项目依赖
                     pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple
                 """
             }
         }
+        
+        // 【注意】原 Download 阶段中的 `pip install -e .` 已被移除，并放在 Install Project Dependencies 阶段，
+        // 除非 UPDATE_DEPENDENCIES 为 true，否则该项目依赖安装步骤会被跳过。
+        // 为了确保流水线在依赖被跳过时也能运行，您可能需要确保 slave 环境或之前的阶段已经满足基础依赖要求。
 
         stage('Deploy AMaaS') {
+            // 【修改】仅当 DEPLOY_AMAAS 参数为 true 时执行此阶段
+            when {
+                expression { params.DEPLOY_AMAAS == true }
+            }
             steps {
                 script {
                     echo "🚀 Starting Deploy AMaaS..."
 
-                    deploy_status = sh(
+                    // 运行部署命令，捕获状态码
+                    def status = sh(
                         script: """
                             cd ./appauto
                             appauto env deploy amaas \
@@ -36,20 +75,28 @@ pipeline {
                         """,
                         returnStatus: true
                     )
+                    
+                    // 【关键修改】更新 environment 变量 AMAAS_DEPLOY_STATUS
+                    env.AMAAS_DEPLOY_STATUS = "${status}"
 
-                    echo "📌 Deploy exit code = ${deploy_status}"
+                    echo "📌 Deploy exit code = ${env.AMAAS_DEPLOY_STATUS}"
                 }
             }
         }
 
         stage('Run Test') {
             when {
-                expression { deploy_status == 0 }
+                // 【修改】使用 environment 变量 AMAAS_DEPLOY_STATUS 来判断是否继续执行
+                expression { env.AMAAS_DEPLOY_STATUS == '0' }
             }
             steps {
                 script {
-                    echo "🎯 Deploy success → Running test stage"
-
+                    if (params.DEPLOY_AMAAS == true) {
+                        echo "🎯 Deploy success (Status: ${env.AMAAS_DEPLOY_STATUS}) → Running test stage"
+                    } else {
+                        echo "🎯 Deploy skipped (Status: ${env.AMAAS_DEPLOY_STATUS}), proceeding to test stage"
+                    }
+                    
                     sh """
                         cd ./appauto
                         sleep 180
@@ -86,7 +133,6 @@ pipeline {
 
                 echo "📁 Allure Results Dir Detected: ${allureResultsDir}"
 
-                // check dir exists
                 def exists = sh(
                     script: "test -d ./appauto/${allureResultsDir} && echo true || echo false",
                     returnStdout: true
