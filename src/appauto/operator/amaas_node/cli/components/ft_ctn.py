@@ -19,18 +19,19 @@ if TYPE_CHECKING:
 
 
 class FTContainer(BaseDockerContainer):
-    def __init__(
-        self,
-        node: "AMaaSNodeCli",
-        name: str = "zhiwen-ft",
-        conda_path="/root/miniforge3/bin/conda",
-        conda_env="ftransformers",
-        engine: Literal["ftransformers", "sglang"] = "ftransformers",
-    ):
+    def __init__(self, node: "AMaaSNodeCli", name: str = "zhiwen-ft"):
         super().__init__(node, name)
-        self.conda_path = conda_path
-        self.conda_env = conda_env
-        self.engine = engine
+        self.set_conda_path()
+        self.conda_env = "serve"
+        self.engine = "sglang"
+
+    def set_conda_path(self):
+        rc, res, _ = self.run("which conda")
+        if rc == 0:
+            self.conda_path = res
+            return
+
+        self.conda_path = "/root/miniforge3/bin/conda"
 
     def api_server(self, port):
         return SGLang(self.node.mgt_ip, port)
@@ -55,6 +56,8 @@ class FTContainer(BaseDockerContainer):
         cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
         if self.engine == "ftransformers":
             cmd = f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
+        elif self.engine == "sglang":
+            cmd = f"source /opt/miniconda3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
 
         timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'
@@ -83,6 +86,8 @@ class FTContainer(BaseDockerContainer):
         cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
         if self.engine == "ftransformers":
             cmd = f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
+        elif self.engine == "sglang":
+            cmd = f"source /opt/miniconda3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
 
         timestamp = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         nohup_cmd = f'nohup bash -c "{cmd} > /tmp/{model_name}_{timestamp}.log 2>&1 &"'

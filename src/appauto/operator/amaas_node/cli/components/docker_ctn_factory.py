@@ -16,13 +16,12 @@ class DockerContainerFactory:
     # 基于 ft 做测试，name 就是 zhiwen-ft
     @cached_property
     def ft(self) -> FTContainer:
-        name, engine = "zhiwen-ft", "ftransformers"
+        name = "zhiwen-ft"
 
         if self.node.gpu_type == "huawei":
             name = "zhiwen-ft-ascend"
-            engine = "sglang"
 
-        return FTContainer(self.node, name=name, engine=engine)
+        return FTContainer(self.node, name)
 
     # # 基于 ames 做测试，name 是 instance_name
     # def amaas_model_instance(self, ins_name: str) -> BaseDockerContainer:
