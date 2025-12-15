@@ -370,6 +370,134 @@ def perf(
             raise e
 
 
+@evalscope.command(
+    context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
+)
+@click.option("--base-ft", is_flag=True, show_default=True, help="是否基于 ft 容器跑测试")
+@click.option("--base-amaas", is_flag=True, show_default=True, help="是否基于 amaas 跑测试")
+@click.option("--skip-launch", is_flag=True, show_default=True, help="是否需要拉起模型(模型已经运行则无需拉起模型.)")
+@click.option("--ip", default="192.168.110.15", show_default=True, help="服务器 IP")
+@click.option("--port", default=10011, show_default=True, help="API 端口, 基于 AMaaS 测试时固定为 10011.")
+@click.option("--ssh-user", default="zkyd", show_default=True, help="SSH 用户名")
+@click.option("--ssh-password", default="zkyd@12#$", show_default=True, help="SSH 密码")
+@click.option("--ssh-port", type=int, default=22, show_default=True, help="SSH 端口")
+@click.option("--model", type=str, required=True, help="模型名称, 比如: DeepSeek-R1-0528-GPU-weight")
+@click.option("--tp", type=int, show_default=True, help="几卡拉起模型")
+@click.option("--launch-timeout", type=int, default=900, show_default=True, help="模型拉起超时时间(S)")
+@click.option("--dataset", type=str, default="aime24", show_default=True, help="Dataset names, e.g., 'aime24'")
+@click.option(
+    "--dataset-args",
+    type=str,
+    default=None,
+    show_default=True,
+    help=(
+        'Dataset arguments, in JSON format, enclosed in quotes, e.g., \'{"aime24": '
+        '{"prompt_template": "{question}\nPlease reason step by step and place your final answer within boxed{{}}. '
+        "Force Requirement: 1.only the final answer should be wrapped in boxed{{}}; "
+        "2.no other numbers or text should be enclosed in boxed{{}}. 3.Answer in English.\"}}'"
+    ),
+)
+@click.option("--max-tokens", type=int, default=None, show_default=True, help="Maximum tokens for input + output")
+@click.option("--concurrency", type=int, default="2", show_default=True, help="并发度")
+@click.option("--limit", type=int, default=None, show_default=True, help="限制每个子集只跑前 n 题")
+@click.option("--temperature", type=float, default=0.6, show_default=True, help="温度, 默认 0.6")
+@click.option("--keep-model", is_flag=True, show_default=True, help="是否保持模型拉起状态")
+@click.option("--enable-thinking", is_flag=True, show_default=True, help="是否开启 thinking 模式")
+@click.option("--debug", is_flag=True, show_default=True, help="是否开启 debug 模式")
+def eval(
+    ip,
+    port,
+    ssh_user,
+    ssh_password,
+    ssh_port,
+    dataset,
+    max_tokens,
+    model,
+    tp,
+    launch_timeout,
+    concurrency,
+    limit,
+    dataset_args,
+    temperature,
+    enable_thinking,
+    debug,
+    base_ft,
+    base_amaas,
+    keep_model,
+    skip_launch,
+):
+
+    from appauto.operator.amaas_node import AMaaSNode
+    from appauto.manager.error_manager.model_store import ModelCheckError, ModelRunError
+
+    if base_ft:
+        ft = AMaaSNode(ip, ssh_user, ssh_password, ssh_port, skip_api=True).cli.docker_ctn_factory.ft
+
+        try:
+            if not skip_launch:
+                ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
+
+            score = ft.run_eval_via_evalscope(
+                port, model, dataset, max_tokens, concurrency, limit, dataset_args, temperature
+            )
+            print(f"eval finished. score: {score}")
+            return score
+
+        except (ModelCheckError, ModelRunError) as e:
+            ft.stop_model(model)
+            print(f" ❌ test failed: {e}")
+            raise e
+
+        except Exception as e:
+            print(f" ❌ test failed: {e}")
+            raise e
+
+    # TODO 测试
+    elif base_amaas:
+        from appauto.tool.evalscope.eval import EvalscopeEval
+
+        amaas = AMaaSNode(ip, ssh_user, ssh_password, ssh_port)
+
+        model_store = amaas.api.init_model_store.llm.filter(name=model)[0]
+
+        try:
+            if not skip_launch:
+                amaas.api.launch_model_with_default(tp, model_store, model, launch_timeout)
+
+            evalscope = EvalscopeEval(
+                amaas.cli,
+                model,
+                "127.0.0.1",
+                port,
+                dataset,
+                max_tokens,
+                concurrency,
+                limit,
+                dataset_args,
+                temperature,
+                enable_thinking,
+                debug,
+                api_key=amaas.api.api_keys[0].value,
+            )
+
+            evalscope.run_eval()
+            print(f"score: {evalscope.score}")
+
+            if not keep_model:
+                amaas.api.stop_model(model_store, "llm")
+
+            return evalscope.score
+
+        except (ModelCheckError, ModelRunError) as e:
+            amaas.api.stop_model(model_store, "llm")
+            print(f" ❌ test failed: {e}")
+            raise e
+
+        except Exception as e:
+            print(f" ❌ test failed: {e}")
+            raise e
+
+
 def parse_extra_args(args: List[str]) -> Dict[str, str | bool]:
     """解析额外参数
     支持以下格式：
