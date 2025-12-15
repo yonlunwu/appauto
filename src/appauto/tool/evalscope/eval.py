@@ -49,9 +49,26 @@ class EvalscopeEval:
         self.work_dir = work_dir or str(uuid4())
         self.api_key = api_key
 
+    def validate_env(self):
+        self.node.run_with_check("test -d /mnt/data/models/perftest")
+        self.node.run_with_check("test -f /mnt/data/models/perftest/venv/evalscope-py/bin/activate")
+        self.node.run_with_check("test -f /mnt/data/models/perftest/eval_via_es10x.py")
+
+    def validate_script(self):
+        try:
+            dst = "/mnt/data/models/perftest/eval_via_es10x.py"
+            self.node.run_with_check(f"test -f {dst}")
+            return "yes"
+        except AssertionError:
+            raise FileExistsError(f"{dst} not found.")
+
+        except Exception as e:
+            logger.error(f"error occurred while validating script: {str(e)}")
+            raise e
+
     @cached_property
     def cmd(self):
-
+        self.validate_env()
         prefix = "cd /mnt/data/models/perftest && source venv/evalscope-py/bin/activate && python eval_via_es10x.py"
         cmd = (
             prefix
@@ -68,7 +85,7 @@ class EvalscopeEval:
         if self.max_tokens:
             cmd += f" --max-tokens {self.max_tokens}"
 
-        if "aime" in self.dataset.lower():
+        if self.dataset.lower().startswith("aime24"):
             template = {
                 "prompt_template": (
                     "{question}\nPlease reason step by step and place your final answer within boxed{{}}. "
@@ -91,13 +108,23 @@ class EvalscopeEval:
         _, res, _ = self.node.run(cmd, sudo=False)
         return res
 
-    # TODO 先探测, 没有再 download
+    # TODO 需要能连通 110.11
     def download_script(self):
-        cmd = (
-            "curl -s -o /mnt/data/models/perftest/eval_via_es10x.py "
-            "http://192.168.110.11:8090/scripts/eval_via_es10x.py"
-        )
-        self.node.run(cmd)
+        try:
+            self.validate_script()
+        except FileExistsError:
+            cmd = (
+                "curl -s -o /mnt/data/models/perftest/eval_via_es10x.py "
+                "http://192.168.110.11:8090/scripts/eval_via_es10x.py"
+            )
+            self.node.run(cmd)
+
+        except Exception as e:
+            logger.error(f"error occurred while downloading script: {str(e)}")
+            raise e
+
+        finally:
+            self.validate_script()
 
     def run_eval(self):
         """
