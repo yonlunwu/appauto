@@ -49,7 +49,7 @@ class BaseLinux(object):
         reraise=True,
     )
     def run(
-        self, cmd, sudo=True, bash=False, shell=False, print_screen=False, timeout=None
+        self, cmd, sudo=True, bash=False, shell=False, print_screen=False, timeout=None, silent=False
     ) -> Tuple[int, Optional[str], Optional[str]]:
         try:
             if sudo and shell:
@@ -68,13 +68,15 @@ class BaseLinux(object):
                 while not stdout.channel.exit_status_ready():
                     if stdout.channel.recv_ready():
                         line = stdout.channel.recv(4096).decode("utf-8")
-                        logger.info(f"STDOUT: {line.strip()}")
+                        if not silent:
+                            logger.info(f"STDOUT: {line.strip()}")
                     if stderr.channel.recv_ready():
                         line = stderr.channel.recv(4096).decode("utf-8")
                         logger.info(f"STDERR: {line.strip()}")
 
             stdouts = stdout.read().decode("utf-8")
-            logger.info(f"STDOUT: {stdouts}")
+            if not silent:
+                logger.info(f"STDOUT: {stdouts}")
             stderrs = stderr.read().decode("utf-8")
             if stderrs != "":
                 logger.info(f"STDERR: {stderrs}")
@@ -104,7 +106,7 @@ class BaseLinux(object):
         reraise=True,
     )
     def run_with_check(
-        self, cmd, sudo=True, bash=False, shell=False, print_screen=False, timeout=None
+        self, cmd, sudo=True, bash=False, shell=False, print_screen=False, timeout=None, silent=False
     ) -> Tuple[int, Optional[str], Optional[str]]:
         try:
             if sudo and shell:
@@ -123,13 +125,15 @@ class BaseLinux(object):
                 while not stdout.channel.exit_status_ready():
                     if stdout.channel.recv_ready():
                         line = stdout.channel.recv(4096).decode("utf-8")
-                        logger.info(f"STDOUT: {line.strip()}")
+                        if not silent:
+                            logger.info(f"STDOUT: {line.strip()}")
                     if stderr.channel.recv_ready():
                         line = stderr.channel.recv(4096).decode("utf-8")
                         logger.info(f"STDERR: {line.strip()}")
 
             stdouts = stdout.read().decode("utf-8")
-            logger.info(f"STDOUT: {stdouts}")
+            if not silent:
+                logger.info(f"STDOUT: {stdouts}")
             stderrs = stderr.read().decode("utf-8")
             if stderrs != "":
                 logger.info(f"STDERR: {stderrs}")
@@ -155,7 +159,7 @@ class BaseLinux(object):
             raise e
 
     def run_in_docker(
-        self, ctn_name: str, cmd: str, print_screen=False, timeout=None
+        self, ctn_name: str, cmd: str, print_screen=False, timeout=None, silent=False
     ) -> Tuple[int, Optional[str], Optional[str]]:
         """
         需要提前将当前的 ssh_user 加入到 docker 组，否则会报权限错误
@@ -170,13 +174,15 @@ class BaseLinux(object):
                 while not stdout.channel.exit_status_ready():
                     if stdout.channel.recv_ready():
                         line = stdout.channel.recv(4096).decode("utf-8")
-                        logger.info(f"STDOUT: {line.strip()}")
+                        if not silent:
+                            logger.info(f"STDOUT: {line.strip()}")
                     if stderr.channel.recv_ready():
                         line = stderr.channel.recv(4096).decode("utf-8")
                         logger.info(f"STDERR: {line.strip()}")
 
             stdouts = stdout.read().decode("utf-8")
-            logger.info(f"STDOUT: {stdouts}")
+            if not silent:
+                logger.info(f"STDOUT: {stdouts}")
             stderrs = stderr.read().decode("utf-8")
             if stderrs != "":
                 logger.info(f"STDERR: {stderrs}")
@@ -461,7 +467,7 @@ class BaseLinux(object):
         gpu_summaries: List[GPUInstance] = []
 
         if self.gpu_type == "nvidia":
-            rc, res, _ = self.run("nvidia-smi -q -x")
+            rc, res, _ = self.run("nvidia-smi -q -x", silent=True)
 
             if rc == 0:
                 # 解析 XML
