@@ -81,9 +81,25 @@ class FTContainer(BaseDockerContainer):
         timeout_s=900,
         sudo=True,
         ip="127.0.0.1",
-    ) -> Tuple[Queue, Thread]:
-
+        max_total_tokens:int=None,
+        kt_num_gpu_experts:int=None,
+    ) -> Tuple[Queue, Thread]:        
         cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
+        cmd_lst = cmd.split()
+        # 替换 max_total_tokens 和 kt_num_gpu_experts
+        if max_total_tokens:
+            if "--max-total-tokens" in cmd_lst:
+                cmd_lst[cmd_lst.index("--max-total-tokens") + 1] = max_total_tokens
+            # 如果没有该参数就加上
+            else:
+                cmd_lst.extend(["--max-total-tokens", max_total_tokens])
+        if kt_num_gpu_experts:
+            if "--kt-num-gpu-experts" in cmd_lst:
+                cmd_lst[cmd_lst.index("--kt-num-gpu-experts") + 1] = kt_num_gpu_experts
+            # 如果没有该参数就加上
+            else:
+                cmd_lst.extend(["--kt-num-gpu-experts", kt_num_gpu_experts])
+        cmd = " ".join(cmd_lst)
         if self.engine == "ftransformers":
             cmd = f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
         elif self.engine == "sglang":
