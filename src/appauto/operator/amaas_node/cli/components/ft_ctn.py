@@ -78,9 +78,32 @@ class FTContainer(BaseDockerContainer):
         timeout_s=900,
         sudo=True,
         ip="127.0.0.1",
+        max_total_tokens:int=None,
+        num_gpu_experts:int=None,
     ) -> Tuple[Queue, Thread]:
 
         cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
+        cmd_lst = cmd.split()
+        # 替换 max_total_tokens 和 num_gpu_experts
+        if max_total_tokens:
+            if "--max-total-tokens" in cmd_lst:
+                cmd_lst[cmd_lst.index("--max-total-tokens") + 1] = max_total_tokens
+            # 如果没有该参数就加上
+            else:
+                cmd_lst.extend(["--max-total-tokens", max_total_tokens])
+            # 计算并设置 max-running-requests
+            max_running_requests = str(int(int(max_total_tokens) / 1000))
+            if "--max-running-requests" in cmd_lst:
+                cmd_lst[cmd_lst.index("--max-running-requests") + 1] = max_running_requests
+            else:
+                cmd_lst.extend(["--max-running-requests", max_running_requests])
+        if num_gpu_experts:
+            if "--num-gpu-experts" in cmd_lst:
+                cmd_lst[cmd_lst.index("--num-gpu-experts") + 1] = num_gpu_experts
+            # 如果没有该参数就加上
+            else:
+                cmd_lst.extend(["--num-gpu-experts", num_gpu_experts])
+        cmd = " ".join(cmd_lst)
         if self.engine == "ftransformers":
             cmd = f"source /root/miniforge3/etc/profile.d/conda.sh && conda activate {self.conda_env} && " + cmd
 
