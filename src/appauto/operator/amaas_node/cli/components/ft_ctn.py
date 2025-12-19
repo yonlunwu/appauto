@@ -93,6 +93,12 @@ class FTContainer(BaseDockerContainer):
             # 如果没有该参数就加上
             else:
                 cmd_lst.extend(["--max-total-tokens", max_total_tokens])
+            # 计算并设置 max-running-requests
+            max_running_requests = str(int(int(max_total_tokens) / 1000))
+            if "--max-running-requests" in cmd_lst:
+                cmd_lst[cmd_lst.index("--max-running-requests") + 1] = max_running_requests
+            else:
+                cmd_lst.extend(["--max-running-requests", max_running_requests])
         if kt_num_gpu_experts:
             if "--kt-num-gpu-experts" in cmd_lst:
                 cmd_lst[cmd_lst.index("--kt-num-gpu-experts") + 1] = kt_num_gpu_experts
