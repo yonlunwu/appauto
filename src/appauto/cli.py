@@ -263,6 +263,8 @@ def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, image, tag):
 @click.option("--debug", is_flag=True, show_default=True, help="是否开启 debug 模式")
 @click.option("--read-timeout", type=int, default=600, show_default=True, help="读取超时时间")
 @click.option("--keep-model", is_flag=True, show_default=True, help="是否保持模型拉起状态")
+@click.option("--max-total-tokens", type=str, default=None, show_default=False, help="最大上下文长度,仅拉起模型时使用")
+@click.option("--kt-num-gpu-experts", type=str, default=None, show_default=False, help="专家数,仅拉起模型时使用")
 def perf(
     ip,
     port,
@@ -284,6 +286,8 @@ def perf(
     base_amaas,
     keep_model,
     skip_launch,
+    max_total_tokens,
+    kt_num_gpu_experts
 ):
     """
     基于 evalscope 跑模型性能测试(基于 ft)
@@ -298,7 +302,7 @@ def perf(
 
         try:
             if not skip_launch:
-                ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
+                ft.launch_model_in_thread(model, tp, "perf", port, max_total_tokens=max_total_tokens, kt_num_gpu_experts=kt_num_gpu_experts, wait_for_running=True, timeout_s=launch_timeout)
 
             res_xlsx = ft.run_perf_via_evalscope(
                 port,
@@ -336,7 +340,7 @@ def perf(
 
         try:
             if not skip_launch:
-                amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout)
+                amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout, max_total_tokens,kt_num_gpu_experts)
 
             evalscope = EvalscopePerf(
                 amaas.cli,

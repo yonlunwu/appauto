@@ -72,17 +72,28 @@ class AMaaSNodeApi(AMaaS):
         self.model_store_run(model_store, params, timeout_s)
 
     def launch_model_with_perf(
-        self, tp: Literal[1, 2, 4, 8], model_store: T, model_name: str = None, timeout_s: int = 900
+        self, tp: Literal[1, 2, 4, 8], model_store: T, model_name: str = None, timeout_s: int = 900, max_total_tokens: int = None,kt_num_gpu_experts: int = None
     ):
         """
         从 yml 中读取默认性能测试参数, 发起检测 -> 拉起 -> 性能测试场景
         """
         params = AMaaSModelParams(self.node, model_store, tp, model_name).gen_perf_params
-
+        # 替换 max_total_tokens
+        if max_total_tokens:
+            params["max_total_tokens"] = max_total_tokens
+        # 替换 kt_num_gpu_experts
+        if kt_num_gpu_experts:
+            # 查找并替换或添加参数
+            backend_params = params["backend_parameters"]
+            if "--kt_num_gpu_experts" in backend_params:
+                backend_params[backend_params.index("--kt_num_gpu_experts") + 1] = str(kt_num_gpu_experts)
+            else:
+                backend_params.extend(["--kt_num_gpu_experts", str(kt_num_gpu_experts)])
+        logger.info(f"launch model with perf params: {params}")
         assert params, f"invalid params: {params}"
 
-        self.model_store_check(model_store, params)
-        self.model_store_run(model_store, params, timeout_s)
+        # self.model_store_check(model_store, params)
+        # self.model_store_run(model_store, params, timeout_s)
 
     def stop_model(self, model_store: T, type_: Literal["llm", "vlm", "embedding", "rerank", "parser", "audio"]):
 
