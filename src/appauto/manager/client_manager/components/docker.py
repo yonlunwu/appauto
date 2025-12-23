@@ -29,8 +29,40 @@ class BaseDockerTool:
             return remove_line_break(res)
 
     def load_image(self, full_tar_path: str):
-        cmd = f"docker load -i {full_tar_path}"
-        self.node.run_with_check(cmd)
+        """
+        docker load tar 并返回 (image, tag)
+        失败时返回 (None, None)
+        """
+        try:
+            assert full_tar_path, "tar path is required."
+
+            cmd = f"docker load -i {full_tar_path}"
+            rc, res, err = self.node.run(cmd, sudo=False)
+
+            if rc != 0:
+                logger.error(f"docker load failed, rc={rc}, err={err}")
+                return None, None
+
+            # 直接用正则拆 image / tag
+            pattern = r"Loaded image:\s+([^\s:]+(?:/[^\s:]+)*):([^\s]+)"
+
+            m = re.search(pattern, res or "")
+            if not m:
+                m = re.search(pattern, err or "")
+
+            if not m:
+                logger.error(f"cannot parse image/tag from docker load output, out={res}, err={err}")
+                return None, None
+
+            image, tag = m.group(1), m.group(2)
+
+            logger.info(f"image loaded: {image}:{tag}")
+            return image, tag
+
+        except Exception as e:
+            logger.error(f"error occurred while load image from tar: {str(e)}")
+            return None, None
+
 
     # 一次性查询获取所有 map
     def get_ctn_names_ids_map(self, ctn_names: List = None) -> Dict[str, Optional[str]]:
