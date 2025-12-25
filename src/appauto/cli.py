@@ -198,18 +198,16 @@ def amaas(ip, user, ssh_user, ssh_password, ssh_port, tar_name, tag):
 @click.option("--ssh-user", default="qujing", required=True, show_default=True, help="SSH 用户名")
 @click.option("--ssh-password", default="qujing@$#21", show_default=True, help="SSH 密码")
 @click.option("--ssh-port", default=22, show_default=True, help="SSH 端口")
-@click.option("--image", required=True, show_default=True, help="image name, 比如: approachingai/ktransformers")
-@click.option("--tag", required=True, show_default=True, help="目标 tag, 比如: 3.3.2rc1.post1")
 @click.option(
     "--tar-name", required=True, show_default=True, help="tar 包名, 默认在 /mnt/data/deploy/ 下, 需要自行上传."
 )
-def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name, image, tag):
+def ft(ip, user, ssh_user, ssh_password, ssh_port, tar_name):
     """在远程服务器部署 zhiwen-ft"""
     from appauto.env import DeployFT
     from appauto.manager.notify_manager import LarkClient
 
     deploy = DeployFT(ip, ssh_user, ssh_password, ssh_port)
-    result = deploy.deploy(tar_name, tag=tag, image=image)
+    result = deploy.deploy(tar_name)
 
     result_summary = {"PASSED": "yes"} if result == "succeed" else {"FAILED": "yes"}
 

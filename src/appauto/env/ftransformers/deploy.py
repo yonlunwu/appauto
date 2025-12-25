@@ -55,7 +55,7 @@ class DeployFT(BaseDeploy):
   $ctn_name:
     image: $image:$tag
     container_name: $ctn_name
-    shm_size: "32GB"
+    shm_size: "64GB"
     privileged: true
     network_mode: host
     volumes:
@@ -95,32 +95,28 @@ class DeployFT(BaseDeploy):
     def deploy(
         self,
         tar_name,
-        image="zhiwen-ftransformers",
-        tag="v3.3.0-test2",
         output="ft-docker-compose",
         stop_old=True,
     ) -> Literal["succeed", "failed"]:
         """
-        部署 ft 镜像, 请先在 cls.deploy_path(默认 /mnt/data/deploy) 下传新的 image, 如果需要停止旧的, 也请传入旧容器和旧 tag.
+    部署 ft 镜像, 请先在 cls.deploy_path(默认 /mnt/data/deploy) 下上传新的 tar 包.
 
-        参数:
-            ### 直接部署:
-            - tar_name: tar 包, 如: zhiwen-ftransformers-v3.3.0-test4.tar
-            - image: 镜像名称
-            - tag: 镜像 tag
-            - output: 输出文件前缀, 最终是: $output_$tag.yaml
+    参数:
+        ### 直接部署:
+        - tar_name: tar 包, 如: zhiwen-ftransformers-v3.3.0-test4.tar
+        - output: 输出文件前缀, 最终是: $output_<image_ref>.yaml (由 tar 内镜像信息决定)
 
-            ### 停掉旧 container
-            - stop_old: bool
-
-        步骤:
-            1. 停止和删除旧容器
-            2. load 镜像并部署新容器
+        ### 停掉旧 container
+        - stop_old: bool
         """
 
         try:
-            # 检查是否有 image
+            # 检查是否有 tar
             assert self.have_tar(tar_name) == "yes", f"The {tar_name} doesn't exist."
+
+            # 先 load 新镜像，解析出 image:tag（image_ref）
+            image, tag = self.docker_tool.load_image(f"{self.deploy_path}{tar_name}")
+            assert image and tag, f"load image failed from tar: {tar_name}"
 
             if cur_ctn_id := self.docker_tool.get_ctn_id_by_name(self.ctn_names):
                 # 停止旧容器
@@ -129,21 +125,17 @@ class DeployFT(BaseDeploy):
 
                 self.docker_tool.rm_ctn(cur_ctn_id)
 
-            self.docker_tool.rm_image_by_tag(image, tag, force=True)
+            # 不删旧的image
 
-            # 部署新容器
-            docker_compose = self.gen_docker_compose(image, tag, output)
-
+            # 部署新容器：compose 直接写 image_ref
+            docker_compose = self.gen_docker_compose(image=image, tag=tag, output=output)
+            
             self.upload(f"{self.deploy_path}{docker_compose}", docker_compose)
-
-            self.docker_tool.load_image(f"{self.deploy_path}{tar_name}")
 
             self.docker_tool.up_ctn_from_compose(self.deploy_path, docker_compose)
 
             ctn_id = self.docker_tool.get_ctn_id_by_name(self.ctn_names)
             assert self.docker_tool.is_running(ctn_id) == "yes"
-
-            logger.info(f"{self.ctn_names}:{tag} has been deployed.")
 
             return "succeed"
 
