@@ -99,15 +99,15 @@ class DeployFT(BaseDeploy):
         stop_old=True,
     ) -> Literal["succeed", "failed"]:
         """
-    部署 ft 镜像, 请先在 cls.deploy_path(默认 /mnt/data/deploy) 下上传新的 tar 包.
+        部署 ft 镜像, 请先在 cls.deploy_path(默认 /mnt/data/deploy) 下上传新的 tar 包.
 
-    参数:
-        ### 直接部署:
-        - tar_name: tar 包, 如: zhiwen-ftransformers-v3.3.0-test4.tar
-        - output: 输出文件前缀, 最终是: $output_<image_ref>.yaml (由 tar 内镜像信息决定)
+        参数:
+            ### 直接部署:
+            - tar_name: tar 包, 如: zhiwen-ftransformers-v3.3.0-test4.tar
+            - output: 输出文件前缀, 最终是: $output_<image_ref>.yaml (由 tar 内镜像信息决定)
 
-        ### 停掉旧 container
-        - stop_old: bool
+            ### 停掉旧 container
+            - stop_old: bool
         """
 
         try:
@@ -129,7 +129,7 @@ class DeployFT(BaseDeploy):
 
             # 部署新容器：compose 直接写 image_ref
             docker_compose = self.gen_docker_compose(image=image, tag=tag, output=output)
-            
+
             self.upload(f"{self.deploy_path}{docker_compose}", docker_compose)
 
             self.docker_tool.up_ctn_from_compose(self.deploy_path, docker_compose)

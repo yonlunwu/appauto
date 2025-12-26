@@ -81,9 +81,9 @@ class FTContainer(BaseDockerContainer):
         timeout_s=900,
         sudo=True,
         ip="127.0.0.1",
-        max_total_tokens:int=None,
-        kt_num_gpu_experts:int=None,
-    ) -> Tuple[Queue, Thread]:        
+        max_total_tokens: int = None,
+        kt_num_gpu_experts: int = None,
+    ) -> Tuple[Queue, Thread]:
         cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
         cmd_lst = cmd.split()
         # 替换 max_total_tokens 和 kt_num_gpu_experts

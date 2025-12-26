@@ -28,4 +28,4 @@ class TestDeployFT:
         assert deploy.docker_tool.is_running(ctn_id) == "yes"
 
     def test_deploy_ft(self):
-        deploy.deploy("zhiwen-ftransformers-3.3.2rc1.post1.tar", tag="3.3.2rc1.post1")
+        deploy.deploy("zhiwen-ftransformers-3.3.2rc1.post1.tar")

@@ -285,7 +285,7 @@ def perf(
     keep_model,
     skip_launch,
     max_total_tokens,
-    kt_num_gpu_experts
+    kt_num_gpu_experts,
 ):
     """
     基于 evalscope 跑模型性能测试(基于 ft)
@@ -300,7 +300,16 @@ def perf(
 
         try:
             if not skip_launch:
-                ft.launch_model_in_thread(model, tp, "perf", port, max_total_tokens=max_total_tokens, kt_num_gpu_experts=kt_num_gpu_experts, wait_for_running=True, timeout_s=launch_timeout)
+                ft.launch_model_in_thread(
+                    model,
+                    tp,
+                    "perf",
+                    port,
+                    max_total_tokens=max_total_tokens,
+                    kt_num_gpu_experts=kt_num_gpu_experts,
+                    wait_for_running=True,
+                    timeout_s=launch_timeout,
+                )
 
             res_xlsx = ft.run_perf_via_evalscope(
                 port,
@@ -338,7 +347,9 @@ def perf(
 
         try:
             if not skip_launch:
-                amaas.api.launch_model_with_perf(tp, model_store, model, launch_timeout, max_total_tokens,kt_num_gpu_experts)
+                amaas.api.launch_model_with_perf(
+                    tp, model_store, model, launch_timeout, max_total_tokens, kt_num_gpu_experts
+                )
 
             evalscope = EvalscopePerf(
                 amaas.cli,
