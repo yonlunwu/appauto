@@ -63,7 +63,6 @@ class BaseDockerTool:
             logger.error(f"error occurred while load image from tar: {str(e)}")
             return None, None
 
-
     # 一次性查询获取所有 map
     def get_ctn_names_ids_map(self, ctn_names: List = None) -> Dict[str, Optional[str]]:
         assert ctn_names and isinstance(ctn_names, list)

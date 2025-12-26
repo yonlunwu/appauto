@@ -78,8 +78,8 @@ class FTContainer(BaseDockerContainer):
         timeout_s=900,
         sudo=True,
         ip="127.0.0.1",
-        max_total_tokens:int=None,
-        num_gpu_experts:int=None,
+        max_total_tokens: int = None,
+        num_gpu_experts: int = None,
     ) -> Tuple[Queue, Thread]:
 
         cmd = f"{FTModelParams(self.node, self.engine, model_name, tp, mode, port).as_cmd}"
