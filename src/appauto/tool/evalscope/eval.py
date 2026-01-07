@@ -85,7 +85,7 @@ class EvalscopeEval:
         if self.max_tokens:
             cmd += f" --max-tokens {self.max_tokens}"
 
-        if self.dataset.lower().startswith("aime24"):
+        if self.dataset.lower().startswith("aime"):
             template = {
                 "prompt_template": (
                     "{question}\nPlease reason step by step and place your final answer within boxed{{}}. "
@@ -142,9 +142,7 @@ class EvalscopeEval:
         # 转义命令中的单引号，避免嵌套引号冲突
         escaped_cmd = self.cmd.replace("'", "'\"'\"'")
 
-        background_cmd = (
-            f"nohup bash -c '{escaped_cmd}' > {log_file} 2>&1 & echo $! > {pid_file}"
-        )
+        background_cmd = f"nohup bash -c '{escaped_cmd}' > {log_file} 2>&1 & echo $! > {pid_file}"
 
         logger.info(f"Starting eval test in background, work_dir: {self.work_dir}")
         logger.info(f"Log file: {log_file}, PID file: {pid_file}")
@@ -186,11 +184,7 @@ class EvalscopeEval:
 
         # 3. 检查日志文件中是否有错误
         log_file = f"/mnt/data/models/perftest/{self.work_dir}.log"
-        rc, log_tail, _ = self.node.run(
-            f"test -f {log_file} && tail -n 50 {log_file}",
-            sudo=False,
-            silent=True
-        )
+        rc, log_tail, _ = self.node.run(f"test -f {log_file} && tail -n 50 {log_file}", sudo=False, silent=True)
 
         if rc == 0 and log_tail:
             # 进程不在运行且无结果文件，检查是否有错误
@@ -214,11 +208,7 @@ class EvalscopeEval:
         """
         log_file = f"/mnt/data/models/perftest/{self.work_dir}.log"
 
-        rc, log_tail, _ = self.node.run(
-            f"test -f {log_file} && tail -n 10 {log_file}",
-            sudo=False,
-            silent=True
-        )
+        rc, log_tail, _ = self.node.run(f"test -f {log_file} && tail -n 10 {log_file}", sudo=False, silent=True)
 
         if rc == 0 and log_tail:
             return log_tail.strip()

@@ -7,7 +7,6 @@ import csv
 import json
 import click
 from glob import glob
-from uuid import uuid4
 from datetime import datetime
 import pandas as pd
 from openpyxl import Workbook
@@ -117,10 +116,11 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 )
 @click.option("--ip", type=str, default="127.0.0.1", show_default=True, help="AMaaS 管理 IP")
 @click.option("--port", type=str, default=10011, show_default=True, help="AMaaS API 端口")
+@click.option("--rate", type=int, default=None, show_default=True)
 @click.option("--parallel", type=str, default="1 4", show_default=True, help="并发数, 请用引号引起来, 如 '1 4'")
 @click.option("--number", type=str, default="1 4", show_default=True, help="请求数, 请用引号引起来, 如 '1 4'")
-@click.option("--model", type=str, default="DeepSeek-R1", show_default=True, help="模型名称")
-@click.option("--tokenizer-path", type=str, default="/mnt/data/models/DeepSeek-R1-GPTQ4-experts", show_default=True)
+@click.option("--model", type=str, default="/mnt/shared/models/DeepSeek-R1-0528", show_default=True, help="模型名称")
+@click.option("--tokenizer-path", type=str, default="/mnt/shared/models/DeepSeek-R1-0528", show_default=True)
 @click.option(
     "--api-key",
     type=str,
@@ -130,16 +130,18 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 )
 @click.option("--input-length", type=int, default=128, show_default=True)
 @click.option("--output-length", type=int, default=512, show_default=True)
-@click.option("--read-timeout", type=int, default=600, show_default=True)
+@click.option("--read-timeout", type=int, default=3600, show_default=True)
 @click.option("--seed", type=int, default=42, show_default=True)
 @click.option("--loop", type=int, default=1, show_default=True)
 @click.option("--name", type=str, default="appauto-bench", show_default=True, help="任务名称")
 @click.option("--debug", is_flag=True, show_default=True)
+@click.option("--use-chat", is_flag=True, show_default=True)
 @click.option("--output-csv", type=str, default=None, show_default=True, help="输出 csv 文件名称, 不填写会默认填充")
 @click.option("--output-xlsx", type=str, default=None, show_default=True, help="同时输出一份 xlsx 文件")
 def runner(
     ip,
     port,
+    rate,
     parallel,
     number,
     model,
@@ -152,6 +154,7 @@ def runner(
     loop,
     name,
     debug,
+    use_chat,
     output_csv,
     output_xlsx,
 ):
@@ -162,6 +165,8 @@ def runner(
     number = [int(n) for n in number.split()]
     parallel = [int(p) for p in parallel.split()]
 
+    url = f"http://{ip}:{int(port)}/v1/completions" if not use_chat else f"http://{ip}:{int(port)}/v1/chat/completions"
+
     for i in range(0, int(loop)):
         print(f" loop {i} ".center(100, "*"))
 
@@ -169,7 +174,7 @@ def runner(
             parallel=parallel,
             number=number,
             model=model,
-            url=f"http://{ip}:{int(port)}/v1/chat/completions",
+            url=url,
             api_key=api_key,
             api="openai",
             dataset="random",
@@ -187,6 +192,9 @@ def runner(
             debug=debug,
             stream=True,
         )
+
+        if rate:
+            task_cfg.rate = int(rate)
 
         # len(number) != 1: ./outputs/20250709_142517/{name}/parallel_x_number_x/benchmark_summary.json
         # len(number) == 1: ./outputs/20250708_232819/{name}/benchmark_summary.json

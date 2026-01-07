@@ -1,6 +1,11 @@
 pipeline {
     agent { label 'slave-1' }
 
+    parameters {
+        // 添加一个 Boolean 参数来控制是否更新依赖
+        booleanParam(name: 'UPDATE_DEPENDENCIES', defaultValue: false, description: '是否强制更新项目的 Python 依赖 (pip install -e .)')
+    }
+
     options {
         timeout(time: "${timeoutHours}", unit: 'HOURS')
     }
@@ -8,11 +13,24 @@ pipeline {
     stages {
         stage('Download Source Code') {
             steps {
-                dir('./appauto') {
-                    sh "git checkout ${git_branch} & git pull"
-                    sh 'pip install --upgrade pip'
-                    sh 'pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple'
-                }
+                sh """
+                    cd ./appauto
+                    git checkout ${git_branch} && git pull
+                """
+            }
+        }
+        
+        stage('Install Dependencies') {
+            when {
+                expression { params.UPDATE_DEPENDENCIES == true } 
+            }
+            steps {
+                echo "⬇️ 依赖更新参数为 true，开始安装/更新依赖..."
+                sh """
+                    cd ./appauto
+                    pip install --upgrade pip 
+                    pip install -e . --break-system-packages -i https://pypi.tuna.tsinghua.edu.cn/simple
+                """
             }
         }
 
