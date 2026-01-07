@@ -6,14 +6,16 @@ import os
 import csv
 import json
 import click
-from glob import glob
-from datetime import datetime
+import httpx
 import pandas as pd
+from glob import glob
+from random import randint
+from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-from evalscope.perf.main import run_perf_benchmark
 from evalscope.perf.arguments import Arguments
+from evalscope.perf.main import run_perf_benchmark
 
 
 def extract_json_to_csv(input_dir, output_csv, input_length, output_length, loop, concurrency: int = None):
@@ -116,6 +118,8 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 )
 @click.option("--ip", type=str, default="127.0.0.1", show_default=True, help="AMaaS 管理 IP")
 @click.option("--port", type=str, default=10011, show_default=True, help="AMaaS API 端口")
+@click.option("--ft-ip", type=str, default="127.0.0.1", show_default=True, help="Flush cache IP")
+@click.option("--ft-port", type=str, default="30000", show_default=True, help="Flush cache Port")
 @click.option("--rate", type=int, default=None, show_default=True)
 @click.option("--parallel", type=str, default="1 4", show_default=True, help="并发数, 请用引号引起来, 如 '1 4'")
 @click.option("--number", type=str, default="1 4", show_default=True, help="请求数, 请用引号引起来, 如 '1 4'")
@@ -157,60 +161,71 @@ def runner(
     use_chat,
     output_csv,
     output_xlsx,
+    ft_ip,
+    ft_port,
 ):
+
     start_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_csv = f"{output_csv}.csv" if output_csv else f"{start_time}.csv"
     output_xlsx = output_csv.replace(".csv", ".xlsx")
 
-    number = [int(n) for n in number.split()]
-    parallel = [int(p) for p in parallel.split()]
+    number_list = [int(n) for n in number.split()]
+    parallel_list = [int(p) for p in parallel.split()]
 
     url = f"http://{ip}:{int(port)}/v1/completions" if not use_chat else f"http://{ip}:{int(port)}/v1/chat/completions"
 
     for i in range(0, int(loop)):
         print(f" loop {i} ".center(100, "*"))
 
-        task_cfg = Arguments(
-            parallel=parallel,
-            number=number,
-            model=model,
-            url=url,
-            api_key=api_key,
-            api="openai",
-            dataset="random",
-            min_tokens=int(output_length),
-            max_tokens=int(output_length),
-            read_timeout=int(read_timeout),
-            prefix_length=0,
-            min_prompt_length=int(input_length),
-            max_prompt_length=int(input_length),
-            tokenizer_path=tokenizer_path,
-            extra_args={"ignore_eos": True},
-            # swanlab_api_key="local",
-            seed=int(seed),
-            name=f"{name}-{i}",
-            debug=debug,
-            stream=True,
-        )
+        for p, n in zip(parallel_list, number_list):
+            flush_success = True
+            print(f" Running parallel: {p}, number: {n} ".center(80, "-"))
 
-        if rate:
-            task_cfg.rate = int(rate)
+            # Flush cache
+            flush_url = f"http://{ft_ip}:{ft_port}/flush_cache"
+            print(f"Flushing cache: {flush_url}")
+            try:
+                with httpx.Client(timeout=10) as client:
+                    resp = client.post(flush_url)
+                    print(f"Flush cache response status: {resp.status_code}")
+            except Exception as e:
+                flush_success = False
+                print(f"Warning: Failed to flush cache: {e}")
 
-        # len(number) != 1: ./outputs/20250709_142517/{name}/parallel_x_number_x/benchmark_summary.json
-        # len(number) == 1: ./outputs/20250708_232819/{name}/benchmark_summary.json
-        run_perf_benchmark(task_cfg)
+            task_cfg = Arguments(
+                parallel=[p],
+                number=[n],
+                model=model,
+                url=url,
+                api_key=api_key,
+                api="openai",
+                dataset="random",
+                min_tokens=int(output_length),
+                max_tokens=int(output_length),
+                read_timeout=int(read_timeout),
+                prefix_length=0,
+                min_prompt_length=int(input_length),
+                max_prompt_length=int(input_length),
+                tokenizer_path=tokenizer_path,
+                extra_args={"ignore_eos": True},
+                # swanlab_api_key="local",
+                seed=int(seed) if flush_success else randint(0, 100),
+                name=f"{name}-{i}-p{p}",
+                debug=debug,
+                stream=True,
+            )
 
-        # 从 json 提取至 csv
-        if len(number) == 1:
-            # 读 json TODO 如何感知 timestamp? -> args.outputs_dir 可以感知到
-            json_dir = task_cfg.outputs_dir  # 已经包括了 name
+            if rate:
+                task_cfg.rate = int(rate)
 
-        elif len(number) > 1:
-            json_dir = "/".join(task_cfg.outputs_dir.split("/")[:-2])
+            # 执行压测
+            run_perf_benchmark(task_cfg)
 
-        extract_json_to_csv(
-            json_dir, output_csv, input_length, output_length, i, None if len(parallel) > 1 else parallel[0]
-        )
+            # 从 json 提取至 csv
+            # 因为每次只跑一组 (p, n)，evalscope 会直接在 task_cfg.outputs_dir 下生成 json
+            json_dir = task_cfg.outputs_dir
+
+            extract_json_to_csv(json_dir, output_csv, input_length, output_length, i, p)
 
     print(f"Save the csv result to: {output_csv}")
 
