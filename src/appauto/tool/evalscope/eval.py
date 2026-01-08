@@ -1,4 +1,5 @@
 import json
+import time
 from uuid import uuid4
 from functools import cached_property
 from typing import Dict, TYPE_CHECKING, Literal, Optional, Tuple
@@ -152,51 +153,82 @@ class EvalscopeEval:
 
         return self.work_dir
 
-    def check_eval_status(self) -> Tuple[Literal["running", "completed", "failed", "unknown"], Optional[str]]:
+    def check_eval_status(
+        self, retry_log_check=3
+    ) -> Tuple[Literal["running", "completed", "failed", "unknown"], Optional[str]]:
         """
-        检查 eval 测试的运行状态
+        检查评估任务的当前运行状态 (State Machine Logic)。
+
+        检测逻辑如下：
+        1. **进程存活检查 (Process Liveness)**:
+           优先检查 PID 进程是否在运行。如果存活，直接返回 "running"。
+
+        2. **日志收尾校验 (Log Verification)**:
+           如果进程已退出，进入“收尾校验”阶段。为了防止 NFS/IO 延迟导致日志未落盘，
+           会进行 `retry_log_check` 次重试：
+           - 扫描日志结尾，若包含 "Evaluation task completed" -> 判定为 "completed"。
+           - 扫描日志结尾，若包含 "error" / "traceback" -> 判定为 "failed"。
+
+        3. **兜底结果检查 (Fallback)**:
+           如果日志分析未果，检查最终结果 JSON 文件是否存在。若存在 -> 判定为 "completed"。
+
+        4. **未知状态 (Unknown)**:
+           如果既无进程，也无日志结果，亦无 JSON 文件，判定为 "unknown"。
+           (外层调用者应捕获此状态并继续轮询，而不是直接报错)。
+
+        Args:
+            retry_log_check (int): 进程退出后，读取日志的重试次数，防止 IO 延迟。
 
         Returns:
             Tuple[status, message]:
-                - status: "running", "completed", "failed", "unknown"
-                - message: 状态说明信息
+                - status: "running" | "completed" | "failed" | "unknown"
+                - message: 状态描述信息
         """
         pid_file = f"/mnt/data/models/perftest/{self.work_dir}.pid"
-        result_file = f"/mnt/data/models/perftest/{self.work_dir}/*/reports/{self.model}/{self.dataset}.json"
+        log_file = f"/mnt/data/models/perftest/{self.work_dir}.log"
 
         # 1. 检查进程是否还在运行
         rc, pid_output, _ = self.node.run(f"test -f {pid_file} && cat {pid_file}", sudo=False, silent=True)
 
         if rc == 0 and pid_output.strip():
             pid = pid_output.strip()
+            # 检查 PID 是否存活
             rc_ps, _, _ = self.node.run(f"ps -p {pid}", sudo=False, silent=True)
-
             if rc_ps == 0:
-                # 进程还在运行
-                return "running", f"Process {pid} is still running"
+                return "running", f"Process {pid} is running"
 
-        # 2. 检查结果文件是否存在
+
+        success_keyword = "Evaluation task completed"
+
+        for i in range(retry_log_check):
+            # 读取日志最后 10 行
+            rc, log_tail, _ = self.node.run(f"test -f {log_file} && tail -n 10 {log_file}", sudo=False, silent=True)
+
+            if rc == 0 and log_tail:
+                # 判定 A: 日志包含成功关键词
+                if success_keyword in log_tail:
+                    return "completed", "Log verified: Evaluation task completed"
+
+                # 判定 B: 出现了明显的 Python 报错
+                lower_tail = log_tail.lower()
+                if "traceback" in lower_tail or "error" in lower_tail:
+                    return "failed", f"Found error in log: {log_tail.splitlines()[-1]}"
+
+            # 如果进程没了，但日志既没成功也没报错，可能是文件系统延迟，稍微等一下重试
+            if i < retry_log_check - 1:
+                time.sleep(2)
+
+        # 2. 兜底检查：如果在日志里没找到，检查一下结果 JSON 文件是不是生成了
+        # 有时候日志打印不全，但文件生成了也算成功
+        result_file = f"/mnt/data/models/perftest/{self.work_dir}/*/reports/{self.model}/{self.dataset}.json"
         rc, _, _ = self.node.run(f"ls {result_file} 2>/dev/null", sudo=False, silent=True)
-
         if rc == 0:
-            # 结果文件存在，测试已完成
-            return "completed", "Result file found, test completed"
-
-        # 3. 检查日志文件中是否有错误
-        log_file = f"/mnt/data/models/perftest/{self.work_dir}.log"
-        rc, log_tail, _ = self.node.run(f"test -f {log_file} && tail -n 50 {log_file}", sudo=False, silent=True)
-
-        if rc == 0 and log_tail:
-            # 进程不在运行且无结果文件，检查是否有错误
-            if "error" in log_tail.lower() or "exception" in log_tail.lower() or "failed" in log_tail.lower():
-                return "failed", f"Test failed, check log: {log_file}"
-            elif "traceback" in log_tail.lower():
-                return "failed", f"Test failed with exception, check log: {log_file}"
-
-        # 4. 如果进程不在运行，也没有结果，可能是刚启动或已失败
+            return "completed", "Result file found (Log verification skipped)"
+        
         if rc_ps != 0:
             return "unknown", "Process not running and no result file found yet"
 
+        # 3. 既没进程，也没日志成功标记，也没结果文件 -> 判定为失败
         return "unknown", "Unable to determine test status"
 
     def get_eval_progress(self) -> Optional[str]:
@@ -217,12 +249,59 @@ class EvalscopeEval:
 
     def run_eval(self):
         """
-        原有的同步执行方法（保持向后兼容）
-        1. 下载脚本
-        2. 生成 cmd 并执行测试(在宿主机执行测试)
-        3. 从 work_dir 中读取 report_json 从而获取分数
+        执行评测的主入口（异步启动 + 动态轮询模式）。
+        
+        流程：
+        1. 通过 nohup 在远程后台启动评测任务。
+        2. 进入 while 循环，定期轮询任务状态 (check_eval_status)。
+        3. 处理网络波动（SSH异常）与 任务真实失败（RuntimeError）。
+        4. 任务完成后拉取最终分数。
         """
-        self.download_script()
-        self.node.run(self.cmd, sudo=False, print_screen=True)
-        logger.info(f"score: {self.score}")
+        # 1. 后台启动任务
+        self.start_eval_background()
+
+        logger.info(f"Evaluation started in background. WorkDir: {self.work_dir}")
+        logger.info("Waiting for evaluation to complete...")
+
+        start_time = time.time()
+
+        # 2. 动态轮询循环
+        while True:
+            # 检查超时
+            if time.time() - start_time > self.timeout_s:
+                raise TimeoutError(f"Evaluation timed out after {self.timeout_s} seconds")
+
+            try:
+                # 【修改】增加 try-except 容错
+                # 如果这里的 SSH 发生 Connection reset 等网络波动，不会导致脚本直接炸掉
+                status, msg = self.check_eval_status()
+
+                if status == "running":
+                    progress = self.get_eval_progress()
+                    if progress:
+                        logger.info(f"Eval Progress: {progress.splitlines()[-1]}")
+                    time.sleep(30)
+
+                elif status == "completed":
+                    logger.info(f"Evaluation finished successfully: {msg}")
+                    break
+
+                elif status == "failed":
+                    logger.error(f"Evaluation failed: {msg}")
+                    raise RuntimeError(f"Evaluation task failed: {msg}")
+
+                else:
+                    logger.warning(f"Unknown status: {msg}, retrying...")
+                    time.sleep(10)
+
+            except Exception as e:
+                if isinstance(e, RuntimeError) and "Evaluation task failed" in str(e):
+                    raise e  # 真的失败了，往外抛
+
+                # 网络波动等临时异常，打印 warning 并重试
+                logger.warning(f"Error during status check (network fluctuation?): {str(e)}. Retrying in 10s...")
+                time.sleep(10)
+
+        # 3. 任务完成，获取分数并返回
+        logger.info(f"Final Score: {self.score}")
         return self.score

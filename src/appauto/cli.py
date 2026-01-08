@@ -397,6 +397,7 @@ def perf(
 @click.option("--model", type=str, required=True, help="模型名称, 比如: DeepSeek-R1-0528-GPU-weight")
 @click.option("--tp", type=int, show_default=True, help="几卡拉起模型")
 @click.option("--launch-timeout", type=int, default=900, show_default=True, help="模型拉起超时时间(S)")
+@click.option("--eval-timeout-h", type=int, default=4, show_default=True, help="评测超时时间(小时)")
 @click.option("--dataset", type=str, default="aime24", show_default=True, help="Dataset names, e.g., 'aime24'")
 @click.option(
     "--dataset-args",
@@ -428,6 +429,7 @@ def eval(
     model,
     tp,
     launch_timeout,
+    eval_timeout_h,
     concurrency,
     limit,
     dataset_args,
@@ -451,7 +453,15 @@ def eval(
                 ft.launch_model_in_thread(model, tp, "perf", port, wait_for_running=True, timeout_s=launch_timeout)
 
             score = ft.run_eval_via_evalscope(
-                port, model, dataset, max_tokens, concurrency, limit, dataset_args, temperature
+                port,
+                model,
+                dataset,
+                max_tokens,
+                concurrency,
+                limit,
+                dataset_args,
+                temperature,
+                timeout_s=eval_timeout_h * 3600,
             )
             print(f"eval finished. score: {score}")
             return score
@@ -491,6 +501,7 @@ def eval(
                 enable_thinking,
                 debug,
                 api_key=amaas.api.api_keys[0].value,
+                timeout_s=eval_timeout_h * 3600,
             )
 
             evalscope.run_eval()
