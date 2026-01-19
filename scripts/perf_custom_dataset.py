@@ -155,12 +155,15 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 )
 # TODO input 和 output length 动态获取？
 @click.option("--loop", type=int, default=1, show_default=True)
+@click.option("--rate", type=float, default=None, show_default=True)
 @click.option("--name", type=str, default="appauto-bench", show_default=True, help="任务名称")
+@click.option("--test-connection", is_flag=True, show_default=True)
+@click.option("--use-chat", is_flag=True, show_default=True)
 @click.option("--debug", is_flag=True, show_default=True)
 @click.option(
     "--dataset-path",
     type=str,
-    default="custom_dataset.txt",
+    default="/data/models/datasets/txdata.jsonl",
     show_default=True,
     help="输出 csv 文件名称, 不填写会默认填充",
 )
@@ -174,7 +177,10 @@ def runner(
     model,
     api_key,
     loop,
+    rate,
     name,
+    use_chat,
+    test_connection,
     debug,
     dataset_path,
     output_csv,
@@ -189,6 +195,8 @@ def runner(
     number = [int(n) for n in number.split()]
     parallel = [int(p) for p in parallel.split()]
 
+    url = f"http://{ip}:{int(port)}/v1/completions" if not use_chat else f"http://{ip}:{int(port)}/v1/chat/completions"
+
     for i in range(0, int(loop)):
         print(f" loop {i} ".center(100, "*"))
 
@@ -196,7 +204,7 @@ def runner(
             parallel=parallel,
             number=number,
             model=model,
-            url=f"http://{ip}:{int(port)}/v1/chat/completions",
+            url=url,
             api_key=api_key,
             api="openai",
             dataset="custom",
@@ -204,12 +212,14 @@ def runner(
             extra_args={"ignore_eos": True},
             name=f"{name}-{i}",
             debug=debug,
-            max_tokens=512,
-            min_tokens=512,
+            max_tokens=3000,
+            min_tokens=3000,  # 并行那边测试用的是最大 3k 输出
             # 如果是自定义数据集，就不能指定输入长度相关参数
             # max_prompt_length=512,
             # min_prompt_length=512,
             stream=True,
+            no_test_connection=not test_connection,
+            rate=eval(str(rate)) if rate else -1,
         )
 
         run_perf_benchmark(task_cfg)
