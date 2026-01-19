@@ -1,6 +1,7 @@
 """
 通过 evalscope 跑 perf 测试并生成 csv & xlsx.
 """
+
 import os
 import csv
 import json
@@ -14,6 +15,8 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from evalscope.perf.arguments import Arguments
 from evalscope.perf.main import run_perf_benchmark
+
+
 def extract_json_to_csv(input_dir, output_csv, input_length, output_length, loop, concurrency: int = None):
     # 初始化空列表存储所有JSON字段和临时行数据
     exclude_fields = ["Number of concurrency"]
@@ -50,6 +53,8 @@ def extract_json_to_csv(input_dir, output_csv, input_length, output_length, loop
             writer.writerow(headers)
         # 写入排序后的所有行
         writer.writerows(temp_rows)
+
+
 def parse_csv_to_xlsx(in_csv, out_xlsx):
     # 1. 读数据
     df = pd.read_csv(in_csv)
@@ -108,6 +113,8 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
     df.to_csv(out_xlsx.replace(".xlsx", ".csv"), index=False)
     wb.save(out_xlsx)
     print("Save the xlsx result to: ", out_xlsx)
+
+
 @click.command(
     context_settings=dict(ignore_unknown_options=True, allow_extra_args=True, help_option_names=["-h", "--help"])
 )
@@ -195,5 +202,7 @@ def runner(
             extract_json_to_csv(json_dir, output_csv, input_length, output_length, i, p)
     print(f"Save the csv result to: {output_csv}")
     parse_csv_to_xlsx(output_csv, output_xlsx)
+
+
 if __name__ == "__main__":
     runner(obj={})

@@ -1,8 +1,8 @@
 """
-# 评测Qwen3-Coder模型工具调用能力("bfcl_v3")
 https://evalscope.readthedocs.io/zh-cn/latest/best_practice/qwen3_coder.html
 https://evalscope.readthedocs.io/zh-cn/latest/third_party/bfcl_v3.html
 https://evalscope.readthedocs.io/zh-cn/latest/third_party/tau_bench.html
+https://evalscope.readthedocs.io/zh-cn/latest/third_party/tau2_bench.html
 """
 
 import sys
@@ -11,6 +11,9 @@ import subprocess
 from typing import Literal
 from evalscope.run import run_task
 from evalscope.config import TaskConfig
+
+
+SUPT_DATASETS = ["bfcl_v3", "tau_bench", "tau2_bench"]
 
 
 def get_ft_port() -> int | None:
@@ -22,8 +25,10 @@ def get_ft_port() -> int | None:
         return None
 
 
-def construct_dataset_args(model, datasets: Literal["bfcl_v3", "tau_bench"], api_key, ip, port, max_tokens):
-    assert datasets in ["bfcl_v3", "tau_bench"]
+def construct_dataset_args(
+    model, datasets: Literal["bfcl_v3", "tau_bench", "tau2_bench"], api_key, ip, port, max_tokens
+):
+    assert datasets in SUPT_DATASETS
 
     if datasets == "bfcl_v3":
         dataset_args = {
@@ -45,7 +50,25 @@ def construct_dataset_args(model, datasets: Literal["bfcl_v3", "tau_bench"], api
                     "user_model": model,
                     "api_key": api_key,
                     "api_base": f"http://{ip}:{port}/v1/",
-                    "generation_config": {"temperature": 0.7, "max_tokens": max_tokens},
+                    "generation_config": {
+                        "temperature": 0.6,
+                        "max_tokens": max_tokens,
+                        "chat_template_kwargs": {"thinking": True},
+                        "extra_body": {"chat_template_kwargs": {"thinking": True}},
+                    },
+                },
+            }
+        }
+
+    elif datasets == "tau2_bench":
+        dataset_args = {
+            "tau2_bench": {
+                "subset_list": ["airline", "retail", "telecom"],  # 选择评测领域
+                "extra_params": {
+                    "user_model": model,
+                    "api_key": api_key,
+                    "api_base": f"http://{ip}:{port}/v1/",
+                    "generation_config": {"temperature": 0.6, "max_tokens": max_tokens},
                 },
             }
         }
@@ -53,9 +76,9 @@ def construct_dataset_args(model, datasets: Literal["bfcl_v3", "tau_bench"], api
     return dataset_args
 
 
-def construct_generation_config(model, datasets: Literal["bfcl_v3", "tau_bench"], max_tokens: int = None):
+def construct_generation_config(model, datasets: Literal["bfcl_v3", "tau_bench", "tau2_bench"], max_tokens: int = None):
 
-    assert datasets in ["bfcl_v3", "tau_bench"]
+    assert datasets in SUPT_DATASETS
 
     if datasets == "bfcl_v3":
         if model == "Qwen3-Coder-480B-A35B-Instruct-GPU-weight":
@@ -67,14 +90,15 @@ def construct_generation_config(model, datasets: Literal["bfcl_v3", "tau_bench"]
 
         else:
             generation_config = {
-                "temperature": 0.7,
+                "temperature": 0.6,
                 "top_p": 0.8,
                 "top_k": 20,
                 "repetition_penalty": 1.05,
                 "parallel_tool_calls": True,  # 启用并行函数调用
+                "extra_body": {"chat_template_kwargs": {"thinking": True}},
             }
 
-    elif datasets == "tau_bench":
+    elif datasets in ["tau_bench", "tau2_bench"]:
 
         generation_config = {"temperature": 0.6, "n": 1}
 
