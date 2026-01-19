@@ -6,7 +6,6 @@ import os
 import csv
 import json
 import click
-import httpx
 import pandas as pd
 from glob import glob
 from random import randint
@@ -120,7 +119,7 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 )
 @click.option("--ip", type=str, default="127.0.0.1", show_default=True, help="AMaaS 管理 IP")
 @click.option("--port", type=str, default=10011, show_default=True, help="AMaaS API 端口")
-@click.option("--rate", type=int, default=None, show_default=True)
+@click.option("--rate", type=float, default=-1, show_default=True)
 @click.option("--parallel", type=str, default="1 4", show_default=True, help="并发数, 请用引号引起来, 如 '1 4'")
 @click.option("--number", type=str, default="1 4", show_default=True, help="请求数, 请用引号引起来, 如 '1 4'")
 @click.option("--model", type=str, default="/mnt/shared/models/DeepSeek-R1-0528", show_default=True, help="模型名称")
@@ -137,6 +136,7 @@ def parse_csv_to_xlsx(in_csv, out_xlsx):
 @click.option("--read-timeout", type=int, default=3600, show_default=True)
 @click.option("--loop", type=int, default=1, show_default=True)
 @click.option("--name", type=str, default="appauto-bench", show_default=True, help="任务名称")
+@click.option("--test-connection", is_flag=True, show_default=True)
 @click.option("--debug", is_flag=True, show_default=True)
 @click.option("--use-chat", is_flag=True, show_default=True)
 @click.option("--output-csv", type=str, default=None, show_default=True, help="输出 csv 文件名称, 不填写会默认填充")
@@ -157,6 +157,7 @@ def runner(
     name,
     debug,
     use_chat,
+    test_connection,
     output_csv,
     output_xlsx,
 ):
@@ -165,11 +166,14 @@ def runner(
     output_xlsx = output_csv.replace(".csv", ".xlsx")
     number_list = [int(n) for n in number.split()]
     parallel_list = [int(p) for p in parallel.split()]
+
     url = f"http://{ip}:{int(port)}/v1/completions" if not use_chat else f"http://{ip}:{int(port)}/v1/chat/completions"
+
     for i in range(0, int(loop)):
         print(f" loop {i} ".center(100, "*"))
         for p, n in zip(parallel_list, number_list):
             print(f" Running parallel: {p}, number: {n} ".center(80, "-"))
+
             task_cfg = Arguments(
                 parallel=[p],
                 number=[n],
@@ -190,17 +194,20 @@ def runner(
                 seed=randint(0, 200),
                 name=f"{name}-{i}-p{p}",
                 debug=debug,
+                no_test_connection=not test_connection,
                 stream=True,
+                rate=float(rate) or -1,
             )
-            if rate:
-                task_cfg.rate = int(rate)
+
             # 执行压测
             run_perf_benchmark(task_cfg)
             # 从 json 提取至 csv
             # 因为每次只跑一组 (p, n)，evalscope 会直接在 task_cfg.outputs_dir 下生成 json
             json_dir = task_cfg.outputs_dir
             extract_json_to_csv(json_dir, output_csv, input_length, output_length, i, p)
+
     print(f"Save the csv result to: {output_csv}")
+
     parse_csv_to_xlsx(output_csv, output_xlsx)
 
 
