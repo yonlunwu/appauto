@@ -533,3 +533,4 @@ def parse_extra_args(args: List[str]) -> Dict[str, str | bool]:
 
 if __name__ == "__main__":
     cli()
+    

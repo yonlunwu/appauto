@@ -305,3 +305,4 @@ class EvalscopeEval:
         # 3. 任务完成，获取分数并返回
         logger.info(f"Final Score: {self.score}")
         return self.score
+        
