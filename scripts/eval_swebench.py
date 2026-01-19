@@ -6,10 +6,11 @@ from evalscope import TaskConfig, run_task
 @click.option("--model", default="DeepSeek-V3.2", type=str, show_default=True, help="模型名称或路径")
 @click.option("--ip", default="127.0.0.1", type=str, show_default=True, help="API服务的IP地址")
 @click.option("--port", default=35000, type=int, show_default=True, help="API服务的端口号")
+@click.option("--concurrency", default=4, type=int, show_default=True, help="并发数")
 @click.option("--temperature", default=1.0, type=float, show_default=True, help="模型生成的温度系数（控制随机性）")
 @click.option("--limit", default=100, type=int, show_default=True, help="评测任务的数量限制")
 @click.option("--retry", default=50, type=int, show_default=True, help="模型调用失败后的重试次数")
-def run_eval_task(model: str, ip: str, port: int, temperature: float, limit: int, retry: int):
+def run_eval_task(model: str, ip: str, port: int, concurrency: int, temperature: float, limit: int, retry: int):
     """
     基于evalscope的模型评测命令行工具，支持自定义核心运行参数
     """
@@ -32,8 +33,8 @@ def run_eval_task(model: str, ip: str, port: int, temperature: float, limit: int
                 }
             }
         },
-        eval_batch_size=3,
-        judge_worker_num=3,  # 并行评测任务的工作线程数
+        eval_batch_size=concurrency,
+        judge_worker_num=concurrency,  # 并行评测任务的工作线程数
         limit=limit,  # 命令行传入的数量限制
         generation_config={
             "temperature": temperature,  # 命令行传入的温度系数
